@@ -109,16 +109,18 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
         [playerIds[3], playerIds[4]],
       ];
 
-      // Match pairs against each other: pair0 vs pair1, pair2 vs pair3
-      for (let i = 0; i < pairs.length; i += 2) {
-        newMatches.push({
-          id: generateId(),
-          matchweek: newMatchweek,
-          division: division.number,
-          team1: pairs[i],
-          team2: pairs[i + 1],
-          played: false,
-        });
+      // Each pair plays every other pair = 6 matches per division
+      for (let i = 0; i < pairs.length; i++) {
+        for (let j = i + 1; j < pairs.length; j++) {
+          newMatches.push({
+            id: generateId(),
+            matchweek: newMatchweek,
+            division: division.number,
+            team1: pairs[i],
+            team2: pairs[j],
+            played: false,
+          });
+        }
       }
     });
 
