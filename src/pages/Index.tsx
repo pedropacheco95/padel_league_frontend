@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTournament } from "@/context/TournamentContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { UserPlus, Trash2, RotateCcw, Calculator, Shuffle, Zap } from "lucide-react";
+import { UserPlus, Trash2, RotateCcw, Calculator, Shuffle, Zap, Users } from "lucide-react";
 import { StandingsTable } from "@/components/StandingsTable";
 import { MatchCard } from "@/components/MatchCard";
 import { DivisionView } from "@/components/DivisionView";
@@ -53,6 +53,28 @@ const Index = () => {
     }
     generateMatchweek();
     toast.success(`Matchweek ${state.currentMatchweek + 1} generated!`);
+  };
+
+  const TEST_NAMES = [
+    "Carlos García", "Miguel Torres", "Pablo Ruiz", "Alejandro López", "Javier Martín",
+    "Daniel Sánchez", "Fernando Díaz", "Andrés Moreno", "Diego Hernández", "Rafael Jiménez",
+    "Sergio Romero", "Álvaro Navarro", "Iván Domínguez", "Hugo Vázquez", "Marcos Gil",
+    "Adrián Molina", "Óscar Ortega", "Rubén Delgado", "Jorge Ramos", "Luis Prieto",
+    "Manuel Blanco", "Víctor Castro", "Pedro Méndez", "Antonio Guerrero", "Roberto Peña",
+    "Tomás Medina", "Eduardo Santos", "Raúl Iglesias", "Nicolás Crespo", "Gabriel Flores",
+    "Mario Ferrer", "Enrique Cabrera", "David Suárez", "Samuel Herrera", "Martín Aguilar",
+    "Alberto Pascual", "Santiago Cortés", "Felipe Caballero", "Ricardo Campos", "Gonzalo León",
+    "Ignacio Vega", "Emilio Fuentes", "Bruno Reyes", "Lucas Carrasco", "Mateo Gallego",
+    "Jaime Nieto", "Arturo Pardo", "Cristian Lara",
+  ];
+
+  const handleLoadTestPlayers = () => {
+    if (state.players.length > 0) {
+      toast.error("Reset first before loading test players");
+      return;
+    }
+    TEST_NAMES.forEach((name) => addPlayer(name));
+    toast.success("48 test players loaded!");
   };
 
   const handleReset = () => {
@@ -110,6 +132,12 @@ const Index = () => {
               <UserPlus className="h-4 w-4 mr-1" />
               Add
             </Button>
+            {state.players.length === 0 && (
+              <Button variant="outline" onClick={handleLoadTestPlayers} className="border-accent/30 text-accent hover:bg-accent/10">
+                <Users className="h-4 w-4 mr-1" />
+                Load 48 Test Players
+              </Button>
+            )}
           </div>
 
           {/* Action buttons */}
