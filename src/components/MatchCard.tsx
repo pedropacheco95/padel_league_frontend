@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Check } from "lucide-react";
 
-export function MatchCard({ matchId }: { matchId: string }) {
+export function MatchCard({ matchId, gameNumber }: { matchId: string; gameNumber?: number }) {
   const { state, getPlayerById, submitResult } = useTournament();
   const match = state.matches.find((m) => m.id === matchId);
   const [s1, setS1] = useState("");
@@ -30,7 +30,7 @@ export function MatchCard({ matchId }: { matchId: string }) {
     <div className={`rounded-lg bg-card border ${divColorClass} p-4 animate-fade-in`}>
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          Division {match.division} · ×{mult}
+          {gameNumber ? `Game ${gameNumber} · ` : ""}Division {match.division} · ×{mult}
         </span>
         {match.played && (
           <span className="text-xs px-2 py-0.5 rounded bg-win/20 text-win font-medium">

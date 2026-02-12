@@ -6,10 +6,54 @@ import { UserPlus, Trash2, RotateCcw, Calculator, Shuffle, Zap, Users } from "lu
 import { StandingsTable } from "@/components/StandingsTable";
 import { MatchCard } from "@/components/MatchCard";
 import { DivisionView } from "@/components/DivisionView";
-import { DIVISION_MULTIPLIERS } from "@/types/tournament";
+import { DIVISION_MULTIPLIERS, Match } from "@/types/tournament";
 import { toast } from "sonner";
 
 type Tab = "standings" | "matches" | "divisions";
+
+// Order matches so that pair 1 (1st+8th) plays games 1, 3, 5
+// Round-robin of 4 teams: T0vT1, T2vT3, T0vT2, T1vT3, T0vT3, T1vT2
+function orderMatches(matches: Match[]): Match[] {
+  // Group by division, then interleave so each team alternates
+  const byDiv = new Map<number, Match[]>();
+  matches.forEach((m) => {
+    if (!byDiv.has(m.division)) byDiv.set(m.division, []);
+    byDiv.get(m.division)!.push(m);
+  });
+
+  const result: Match[] = [];
+  byDiv.forEach((divMatches) => {
+    // Find the 4 unique teams (as serialized pairs)
+    const teamSet = new Map<string, [string, string]>();
+    divMatches.forEach((m) => {
+      const k1 = m.team1.join(",");
+      const k2 = m.team2.join(",");
+      if (!teamSet.has(k1)) teamSet.set(k1, m.team1);
+      if (!teamSet.has(k2)) teamSet.set(k2, m.team2);
+    });
+    const teams = Array.from(teamSet.entries());
+
+    // Desired order: T0vT1, T2vT3, T0vT2, T1vT3, T0vT3, T1vT2
+    const schedule = [[0,1],[2,3],[0,2],[1,3],[0,3],[1,2]];
+
+    const ordered: Match[] = [];
+    for (const [a, b] of schedule) {
+      const ta = teams[a]?.[0];
+      const tb = teams[b]?.[0];
+      if (!ta || !tb) continue;
+      const found = divMatches.find((m) => {
+        const k1 = m.team1.join(",");
+        const k2 = m.team2.join(",");
+        return (k1 === ta && k2 === tb) || (k1 === tb && k2 === ta);
+      });
+      if (found) ordered.push(found);
+    }
+    // Add any remaining matches not matched by the schedule
+    divMatches.forEach((m) => { if (!ordered.includes(m)) ordered.push(m); });
+    result.push(...ordered);
+  });
+  return result;
+}
 
 const Index = () => {
   const {
@@ -24,6 +68,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState<Tab>("standings");
   const [newPlayerName, setNewPlayerName] = useState("");
   const [selectedDivision, setSelectedDivision] = useState(1);
+  const [matchesDivFilter, setMatchesDivFilter] = useState(0); // 0 = all
 
   const handleAddPlayer = () => {
     const name = newPlayerName.trim();
@@ -204,17 +249,51 @@ const Index = () => {
 
         {activeTab === "matches" && (
           <div>
-            <h2 className="font-display font-bold text-lg mb-4">
-              Matchweek {state.currentMatchweek}
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display font-bold text-lg">
+                Matchweek {state.currentMatchweek}
+              </h2>
+            </div>
+
+            {/* Division filter */}
+            {state.divisions.length > 0 && (
+              <div className="flex gap-2 mb-4 flex-wrap">
+                <button
+                  onClick={() => setMatchesDivFilter(0)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border ${
+                    matchesDivFilter === 0
+                      ? "bg-primary/20 border-primary/50 text-primary"
+                      : "bg-secondary border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  All
+                </button>
+                {state.divisions.map((d) => (
+                  <button
+                    key={d.number}
+                    onClick={() => setMatchesDivFilter(d.number)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border ${
+                      matchesDivFilter === d.number
+                        ? `bg-division-${d.number}/20 border-division-${d.number}/50 text-division-${d.number}`
+                        : "bg-secondary border-border text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Div {d.number}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {currentMatches.length === 0 ? (
               <div className="bg-card rounded-lg border border-border p-8 text-center text-muted-foreground">
                 Generate a matchweek to see matches
               </div>
             ) : (
               <div className="grid gap-3 md:grid-cols-2">
-                {currentMatches.map((match) => (
-                  <MatchCard key={match.id} matchId={match.id} />
+                {orderMatches(
+                  currentMatches.filter((m) => matchesDivFilter === 0 || m.division === matchesDivFilter)
+                ).map((match, idx) => (
+                  <MatchCard key={match.id} matchId={match.id} gameNumber={idx + 1} />
                 ))}
               </div>
             )}
@@ -228,15 +307,17 @@ const Index = () => {
                 {Array.from({ length: state.currentMatchweek - 1 }, (_, i) => i + 1)
                   .reverse()
                   .map((mw) => {
-                    const mwMatches = state.matches.filter((m) => m.matchweek === mw);
+                    const mwMatches = state.matches.filter(
+                      (m) => m.matchweek === mw && (matchesDivFilter === 0 || m.division === matchesDivFilter)
+                    );
                     return (
                       <details key={mw} className="mb-3">
                         <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground py-2">
                           Matchweek {mw} ({mwMatches.filter((m) => m.played).length}/{mwMatches.length} played)
                         </summary>
                         <div className="grid gap-3 md:grid-cols-2 mt-2">
-                          {mwMatches.map((match) => (
-                            <MatchCard key={match.id} matchId={match.id} />
+                          {orderMatches(mwMatches).map((match, idx) => (
+                            <MatchCard key={match.id} matchId={match.id} gameNumber={idx + 1} />
                           ))}
                         </div>
                       </details>
