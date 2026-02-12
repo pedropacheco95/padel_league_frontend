@@ -1,42 +1,25 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
-
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
-}
+/* Division color safelist for Tailwind JIT */
+.bg-division-1\/20 { background-color: hsl(var(--division-1) / 0.2); }
+.bg-division-2\/20 { background-color: hsl(var(--division-2) / 0.2); }
+.bg-division-3\/20 { background-color: hsl(var(--division-3) / 0.2); }
+.bg-division-4\/20 { background-color: hsl(var(--division-4) / 0.2); }
+.bg-division-5\/20 { background-color: hsl(var(--division-5) / 0.2); }
+.bg-division-6\/20 { background-color: hsl(var(--division-6) / 0.2); }
+.text-division-1 { color: hsl(var(--division-1)); }
+.text-division-2 { color: hsl(var(--division-2)); }
+.text-division-3 { color: hsl(var(--division-3)); }
+.text-division-4 { color: hsl(var(--division-4)); }
+.text-division-5 { color: hsl(var(--division-5)); }
+.text-division-6 { color: hsl(var(--division-6)); }
+.border-division-1\/30 { border-color: hsl(var(--division-1) / 0.3); }
+.border-division-2\/30 { border-color: hsl(var(--division-2) / 0.3); }
+.border-division-3\/30 { border-color: hsl(var(--division-3) / 0.3); }
+.border-division-4\/30 { border-color: hsl(var(--division-4) / 0.3); }
+.border-division-5\/30 { border-color: hsl(var(--division-5) / 0.3); }
+.border-division-6\/30 { border-color: hsl(var(--division-6) / 0.3); }
+.border-division-1\/50 { border-color: hsl(var(--division-1) / 0.5); }
+.border-division-2\/50 { border-color: hsl(var(--division-2) / 0.5); }
+.border-division-3\/50 { border-color: hsl(var(--division-3) / 0.5); }
+.border-division-4\/50 { border-color: hsl(var(--division-4) / 0.5); }
+.border-division-5\/50 { border-color: hsl(var(--division-5) / 0.5); }
+.border-division-6\/50 { border-color: hsl(var(--division-6) / 0.5); }
