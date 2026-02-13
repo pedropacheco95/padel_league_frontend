@@ -17,6 +17,7 @@ export interface Match {
   score1?: number;
   score2?: number;
   played: boolean;
+  removedPlayers?: string[]; // player IDs removed from this match (no points)
 }
 
 export interface Division {
