@@ -8,6 +8,7 @@ interface TournamentContextType {
   calculateDivisions: () => void;
   generateMatchweek: () => void;
   submitResult: (matchId: string, score1: number, score2: number) => void;
+  editResult: (matchId: string, score1: number, score2: number) => void;
   resetTournament: () => void;
   getPlayerById: (id: string) => Player | undefined;
   getDivisionForPlayer: (playerId: string) => number;
@@ -188,6 +189,58 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     }));
   };
 
+  const editResult = (matchId: string, newScore1: number, newScore2: number) => {
+    setState((s) => {
+      const matchIdx = s.matches.findIndex((m) => m.id === matchId);
+      if (matchIdx === -1) return s;
+      const match = s.matches[matchIdx];
+      if (!match.played) return s;
+
+      const oldScore1 = match.score1!;
+      const oldScore2 = match.score2!;
+      const multiplier = DIVISION_MULTIPLIERS[match.division] || 1;
+      const updatedPlayers = [...s.players];
+      const removed = match.removedPlayers || [];
+
+      const revertPlayer = (id: string, wasWin: boolean, wasDraw: boolean) => {
+        const idx = updatedPlayers.findIndex((p) => p.id === id);
+        if (idx === -1) return;
+        const p = { ...updatedPlayers[idx] };
+        p.gamesPlayed -= 1;
+        if (wasWin) { p.wins -= 1; p.points -= 3 * multiplier; }
+        else if (wasDraw) { p.draws -= 1; p.points -= 1 * multiplier; }
+        else { p.losses -= 1; }
+        updatedPlayers[idx] = p;
+      };
+
+      const oldT1Won = oldScore1 > oldScore2;
+      const oldDraw = oldScore1 === oldScore2;
+      match.team1.forEach((id) => { if (!removed.includes(id)) revertPlayer(id, oldT1Won, oldDraw); });
+      match.team2.forEach((id) => { if (!removed.includes(id)) revertPlayer(id, !oldT1Won && !oldDraw, oldDraw); });
+
+      const applyPlayer = (id: string, won: boolean, drew: boolean) => {
+        const idx = updatedPlayers.findIndex((p) => p.id === id);
+        if (idx === -1) return;
+        const p = { ...updatedPlayers[idx] };
+        p.gamesPlayed += 1;
+        if (won) { p.wins += 1; p.points += 3 * multiplier; }
+        else if (drew) { p.draws += 1; p.points += 1 * multiplier; }
+        else { p.losses += 1; }
+        updatedPlayers[idx] = p;
+      };
+
+      const newT1Won = newScore1 > newScore2;
+      const newDraw = newScore1 === newScore2;
+      match.team1.forEach((id) => { if (!removed.includes(id)) applyPlayer(id, newT1Won, newDraw); });
+      match.team2.forEach((id) => { if (!removed.includes(id)) applyPlayer(id, !newT1Won && !newDraw, newDraw); });
+
+      const updatedMatches = [...s.matches];
+      updatedMatches[matchIdx] = { ...match, score1: newScore1, score2: newScore2 };
+
+      return { ...s, players: updatedPlayers, matches: updatedMatches };
+    });
+  };
+
   const resetTournament = () => {
     setState(defaultState);
     localStorage.removeItem(STORAGE_KEY);
@@ -202,6 +255,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
         calculateDivisions,
         generateMatchweek,
         submitResult,
+        editResult,
         resetTournament,
         getPlayerById,
         getDivisionForPlayer,
