@@ -11,6 +11,7 @@ interface TournamentContextType {
   resetTournament: () => void;
   getPlayerById: (id: string) => Player | undefined;
   getDivisionForPlayer: (playerId: string) => number;
+  removePlayerFromMatchweek: (playerId: string, matchweek: number) => void;
 }
 
 const TournamentContext = createContext<TournamentContextType | null>(null);
@@ -172,6 +173,17 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     });
   };
 
+  const removePlayerFromMatchweek = (playerId: string, matchweek: number) => {
+    setState((s) => ({
+      ...s,
+      matches: s.matches.filter((m) => {
+        if (m.matchweek !== matchweek) return true;
+        const involves = m.team1.includes(playerId) || m.team2.includes(playerId);
+        return !involves;
+      }),
+    }));
+  };
+
   const resetTournament = () => {
     setState(defaultState);
     localStorage.removeItem(STORAGE_KEY);
@@ -189,6 +201,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
         resetTournament,
         getPlayerById,
         getDivisionForPlayer,
+        removePlayerFromMatchweek,
       }}
     >
       {children}
