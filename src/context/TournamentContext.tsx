@@ -162,9 +162,10 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
 
       const team1Won = score1 > score2;
       const isDraw = score1 === score2;
+      const removed = match.removedPlayers || [];
 
-      match.team1.forEach((id) => updatePlayer(id, team1Won, isDraw));
-      match.team2.forEach((id) => updatePlayer(id, !team1Won && !isDraw, isDraw));
+      match.team1.forEach((id) => { if (!removed.includes(id)) updatePlayer(id, team1Won, isDraw); });
+      match.team2.forEach((id) => { if (!removed.includes(id)) updatePlayer(id, !team1Won && !isDraw, isDraw); });
 
       const updatedMatches = [...s.matches];
       updatedMatches[matchIdx] = { ...match, score1, score2, played: true };
@@ -176,10 +177,13 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
   const removePlayerFromMatchweek = (playerId: string, matchweek: number) => {
     setState((s) => ({
       ...s,
-      matches: s.matches.filter((m) => {
-        if (m.matchweek !== matchweek) return true;
+      matches: s.matches.map((m) => {
+        if (m.matchweek !== matchweek) return m;
         const involves = m.team1.includes(playerId) || m.team2.includes(playerId);
-        return !involves;
+        if (!involves) return m;
+        const removed = m.removedPlayers || [];
+        if (removed.includes(playerId)) return m;
+        return { ...m, removedPlayers: [...removed, playerId] };
       }),
     }));
   };
