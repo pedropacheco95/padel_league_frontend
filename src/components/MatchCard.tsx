@@ -20,6 +20,7 @@ export function MatchCard({ matchId, gameNumber }: { matchId: string; gameNumber
   const match = state.matches.find((m) => m.id === matchId);
   const [s1, setS1] = useState("");
   const [s2, setS2] = useState("");
+  const [inputFocused, setInputFocused] = useState(false);
   const [playerToRemove, setPlayerToRemove] = useState<{ id: string; name: string } | null>(null);
 
   if (!match) return null;
@@ -104,7 +105,7 @@ export function MatchCard({ matchId, gameNumber }: { matchId: string; gameNumber
         </div>
 
         {/* Unsaved warning */}
-        {!match.played && hasUnsavedResult && (
+        {!match.played && hasUnsavedResult && !inputFocused && (
           <div className="flex items-center gap-1.5 mb-3 px-2 py-1.5 rounded bg-accent/10 border border-accent/20">
             <AlertTriangle className="h-3 w-3 text-accent" />
             <span className="text-xs text-accent font-medium">Result not saved yet</span>
@@ -130,6 +131,8 @@ export function MatchCard({ matchId, gameNumber }: { matchId: string; gameNumber
                 className="w-12 text-center h-9 bg-secondary border-border"
                 value={s1}
                 onChange={(e) => setS1(e.target.value)}
+                onFocus={() => setInputFocused(true)}
+                onBlur={() => setInputFocused(false)}
                 placeholder="0"
               />
               <span className="text-muted-foreground text-xs px-1">-</span>
@@ -137,6 +140,8 @@ export function MatchCard({ matchId, gameNumber }: { matchId: string; gameNumber
                 className="w-12 text-center h-9 bg-secondary border-border"
                 value={s2}
                 onChange={(e) => setS2(e.target.value)}
+                onFocus={() => setInputFocused(true)}
+                onBlur={() => setInputFocused(false)}
                 placeholder="0"
               />
             </div>
