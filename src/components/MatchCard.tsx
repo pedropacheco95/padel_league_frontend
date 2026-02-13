@@ -3,7 +3,7 @@ import { useTournament } from "@/context/TournamentContext";
 import { DIVISION_MULTIPLIERS } from "@/types/tournament";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Save, UserMinus, AlertTriangle } from "lucide-react";
+import { Save, UserMinus, AlertTriangle, Pencil } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,11 +16,12 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export function MatchCard({ matchId, gameNumber }: { matchId: string; gameNumber?: number }) {
-  const { state, getPlayerById, submitResult, removePlayerFromMatchweek } = useTournament();
+  const { state, getPlayerById, submitResult, removePlayerFromMatchweek, editResult } = useTournament();
   const match = state.matches.find((m) => m.id === matchId);
   const [s1, setS1] = useState("");
   const [s2, setS2] = useState("");
   const [inputFocused, setInputFocused] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [playerToRemove, setPlayerToRemove] = useState<{ id: string; name: string } | null>(null);
 
   if (!match) return null;
@@ -29,13 +30,25 @@ export function MatchCard({ matchId, gameNumber }: { matchId: string; gameNumber
   const t2Names = match.team2.map((id) => getPlayerById(id)?.name || "?");
   const mult = DIVISION_MULTIPLIERS[match.division] || 1;
 
-  const hasUnsavedResult = !match.played && (s1 !== "" || s2 !== "") && (s1 !== "" && s2 !== "");
+  const isEditing = !match.played || editing;
+  const hasUnsavedResult = isEditing && (s1 !== "" && s2 !== "");
 
   const handleSubmit = () => {
     const score1 = parseInt(s1);
     const score2 = parseInt(s2);
     if (isNaN(score1) || isNaN(score2)) return;
-    submitResult(match.id, score1, score2);
+    if (editing) {
+      editResult(match.id, score1, score2);
+      setEditing(false);
+    } else {
+      submitResult(match.id, score1, score2);
+    }
+  };
+
+  const handleEdit = () => {
+    setS1(String(match.score1 ?? ""));
+    setS2(String(match.score2 ?? ""));
+    setEditing(true);
   };
 
   const handleRemovePlayer = (playerId: string) => {
@@ -86,12 +99,23 @@ export function MatchCard({ matchId, gameNumber }: { matchId: string; gameNumber
             {gameNumber ? `Game ${gameNumber} · ` : ""}Division {match.division} · ×{mult}
           </span>
           <div className="flex items-center gap-2">
-            {match.played && (
-              <span className="text-xs px-2 py-0.5 rounded bg-win/20 text-win font-medium">
-                Completed
-              </span>
+            {match.played && !editing && (
+              <>
+                <span className="text-xs px-2 py-0.5 rounded bg-win/20 text-win font-medium">
+                  Completed
+                </span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleEdit}
+                  className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                >
+                  <Pencil className="h-3 w-3" />
+                  Edit
+                </Button>
+              </>
             )}
-            {!match.played && hasUnsavedResult && (
+            {isEditing && hasUnsavedResult && (
               <Button
                 size="sm"
                 onClick={handleSubmit}
@@ -105,7 +129,7 @@ export function MatchCard({ matchId, gameNumber }: { matchId: string; gameNumber
         </div>
 
         {/* Unsaved warning */}
-        {!match.played && hasUnsavedResult && !inputFocused && (
+        {isEditing && hasUnsavedResult && !inputFocused && (
           <div className="flex items-center gap-1.5 mb-3 px-2 py-1.5 rounded bg-accent/10 border border-accent/20">
             <AlertTriangle className="h-3 w-3 text-accent" />
             <span className="text-xs text-accent font-medium">Result not saved yet</span>
@@ -119,7 +143,7 @@ export function MatchCard({ matchId, gameNumber }: { matchId: string; gameNumber
             <PlayerName id={match.team1[1]} name={t1Names[1]} />
           </div>
 
-          {match.played ? (
+          {match.played && !editing ? (
             <div className="flex items-center gap-2 px-3">
               <span className="font-display font-bold text-xl text-foreground">{match.score1}</span>
               <span className="text-muted-foreground text-xs">-</span>
