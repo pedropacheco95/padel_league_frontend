@@ -1,0 +1,262 @@
+@use "../variables" as *;
+
+@keyframes animateContainer {
+	0% {
+		opacity: 0;
+		transform: scale(0);
+		box-shadow: 0px 0px 0px 65px rgba(255, 255, 255, 0.25) inset,
+			0px 0px 0px 65px rgba(255, 255, 255, 0.25) inset;
+	}
+	25% {
+		opacity: 1;
+		transform: scale(0.9);
+		box-shadow: 0px 0px 0px 65px rgba(255, 255, 255, 0.25) inset,
+			0px 0px 0px 65px rgba(255, 255, 255, 0.25) inset;
+	}
+	43.75% {
+		transform: scale(1.15);
+		box-shadow: 0px 0px 0px 43.334px rgba(255, 255, 255, 0.25) inset,
+			0px 0px 0px 65px rgba(255, 255, 255, 0.25) inset;
+	}
+	62.5% {
+		transform: scale(1);
+		box-shadow: 0px 0px 0px 0px rgba(255, 255, 255, 0.25) inset,
+			0px 0px 0px 21.667px rgba(255, 255, 255, 0.25) inset;
+	}
+	81.25% {
+		box-shadow: 0px 0px 0px 0px rgba(255, 255, 255, 0.25) inset,
+			0px 0px 0px 0px rgba(255, 255, 255, 0.25) inset;
+	}
+	100% {
+		opacity: 1;
+		box-shadow: 0px 0px 0px 0px rgba(255, 255, 255, 0.25) inset,
+			0px 0px 0px 0px rgba(255, 255, 255, 0.25) inset;
+	}
+}
+
+@keyframes animateCheck {
+	from {
+		stroke-dashoffset: 80;
+	}
+	to {
+		stroke-dashoffset: 0;
+	}
+}
+
+@keyframes animateShadow {
+	0% {
+		opacity: 0;
+		width: 100%;
+		height: 15%;
+	}
+	25% {
+		opacity: 0.25;
+	}
+	43.75% {
+		width: 40%;
+		height: 7%;
+		opacity: 0.35;
+	}
+	100% {
+		width: 85%;
+		height: 15%;
+		opacity: 0.25;
+	}
+}
+
+$loader-size: 6.25rem; // 50px
+$ball-size: 2.5rem; // 20px
+$box-shadow-offset: 3.750rem; // 30px
+$translate-amount: 1.875rem; // 15px
+$margin-bottom: 1.25rem; // 10px
+$margin-top: 2.5rem; // 20px
+
+.loader {
+  animation: rotate 1s infinite;
+  height: $loader-size;
+  width: $loader-size;
+
+  &::before,
+  &::after {
+    border-radius: 50%;
+    content: "";
+    display: block;
+    height: $ball-size;
+    width: $ball-size;
+  }
+
+  &::before {
+    animation: ball1 1s infinite;
+    background-color: $color-primary-dark;
+    box-shadow: $box-shadow-offset 0 0 $color-primary-light;
+    margin-bottom: $margin-bottom;
+  }
+
+  &::after {
+    animation: ball2 1s infinite;
+    background-color: $color-primary-light;
+    box-shadow: $box-shadow-offset 0 0 $color-primary-dark;
+  }
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg) scale(0.8);
+  }
+  50% {
+    transform: rotate(360deg) scale(1.2);
+  }
+  100% {
+    transform: rotate(720deg) scale(0.8);
+  }
+}
+
+@keyframes ball1 {
+  0% {
+    box-shadow: $box-shadow-offset 0 0 $color-primary-light;
+  }
+  50% {
+    box-shadow: 0 0 0 $color-primary-light;
+    margin-bottom: 0;
+    transform: translate($translate-amount, $translate-amount);
+  }
+  100% {
+    box-shadow: $box-shadow-offset 0 0 $color-primary-light;
+    margin-bottom: $margin-bottom;
+  }
+}
+
+@keyframes ball2 {
+  0% {
+    box-shadow: $box-shadow-offset 0 0 $color-primary-dark;
+  }
+  50% {
+    box-shadow: 0 0 0 $color-primary-dark;
+    margin-top: -$margin-top;
+    transform: translate($translate-amount, $translate-amount);
+  }
+  100% {
+    box-shadow: $box-shadow-offset 0 0 $color-primary-dark;
+    margin-top: 0;
+  }
+}
+
+$brand-success: $gray-shade;
+$chatbot_loader-size: 8em;
+$check-height: calc($chatbot_loader-size/2);
+$check-width: calc($check-height/2);
+$check-left: calc($check-width - $check-width/8);
+$check-top: calc($check-height - $check-width/8);
+$check-thickness: 5px;
+$check-color: $brand-success;
+
+.circle-chatbot_loader {
+    margin-bottom: calc($chatbot_loader-size / 2);
+    border: 5px solid rgba(0, 0, 0, 0.2);
+    border-left-color: $check-color;
+    animation: chatbot_loader-spin 1.2s infinite linear;
+    position: relative;
+    display: inline-block;
+    vertical-align: top;
+    border-radius: 50%;
+    width: $chatbot_loader-size;
+    height: $chatbot_loader-size;
+}
+
+.load-complete {
+    animation: none;
+    border-color: $check-color;
+    transition: 500ms ease-out;
+}
+
+.checkmark {
+    display: none;
+    transition: 500ms;
+
+    &.draw:after {
+        animation-duration: 800ms;
+        animation-timing-function: ease;
+        animation-name: checkmark;
+        transform: scaleX(-1) rotate(135deg);
+    }
+
+    &:after {
+        opacity: 1;
+        height: $check-height;
+        width: $check-width;
+        transform-origin: left top;
+        border-right: $check-thickness solid $check-color;
+        border-top: $check-thickness solid $check-color;
+        content: '';
+        left: $check-left;
+        top: $check-top;
+        position: absolute;
+    }
+}
+
+@keyframes chatbot_loader-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes checkmark {
+    0% {
+        height: 0;
+        width: 0;
+        opacity: 1;
+    }
+    20% {
+        height: 0;
+        width: $check-width;
+        opacity: 1;
+    }
+    40% {
+        height: $check-height;
+        width: $check-width;
+        opacity: 1;
+    }
+    100% {
+        height: $check-height;
+        width: $check-width;
+        opacity: 1;
+    }
+}
+
+.chatbot_loader {
+    width: 48px;
+    height: 48px;
+    display: inline-block;
+    position: relative;
+  
+    &::after,
+    &::before {
+      content: '';
+      width: 48px;
+      height: 48px;
+      border: 2px solid $color-secondary-dark;
+      position: absolute;
+      left: 0;
+      top: 0;
+      box-sizing: border-box;
+      animation: rotation 2s ease-in-out infinite;
+    }
+  
+    &::after {
+      border-color: $color-primary-dark;
+      animation-delay: 1s;
+    }
+}
+
+@keyframes rotation {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+  
