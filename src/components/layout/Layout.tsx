@@ -155,7 +155,7 @@ export default function Layout({ children }: Props) {
           <div className="c-footer__section c-footer__sponsors">
             <h4 className="c-footer__title">Patrocinadores</h4>
             <div className="c-footer__sponsor-logos">
-              {sponsors.map(sponsor => (
+              {(sponsors ?? []).map(sponsor => (
                 <a key={sponsor.id} href={sponsor.url}>
                   <div className="c-footer__sponsor-logo">
                     <img src={sponsor.imageUrl ?? ''} alt={sponsor.name} />
