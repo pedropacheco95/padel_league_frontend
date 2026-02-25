@@ -159,22 +159,22 @@ export default function TournamentPage() {
           >
             <thead>
               <tr>
-                <th name="h_position" />
-                <th name="h_image" />
-                <th name="h_player" />
-                <th name="h_appearances" className="optional_table_columns">
+                <th />
+                <th />
+                <th />
+                <th className="optional_table_columns">
                   Presenças
                 </th>
-                <th name="h_wins" className="optional_table_columns">
+                <th className="optional_table_columns">
                   V
                 </th>
-                <th name="h_draws" className="optional_table_columns">
+                <th className="optional_table_columns">
                   E
                 </th>
-                <th name="h_losts" className="optional_table_columns">
+                <th className="optional_table_columns">
                   D
                 </th>
-                <th name="h_points">Pontos</th>
+                <th>Pontos</th>
               </tr>
             </thead>
             <tbody>
@@ -184,8 +184,8 @@ export default function TournamentPage() {
                   className="player_classification_row"
                   id={String(row.player.id)}
                 >
-                  <td name="position">{row.position}</td>
-                  <td name="image">
+                  <td>{row.position}</td>
+                  <td>
                     <Link
                       className="c-trigger"
                       to={row.player.id ? `/players/${row.player.id}` : '#'}
@@ -196,20 +196,20 @@ export default function TournamentPage() {
                       />
                     </Link>
                   </td>
-                  <td name="player">{row.player.name}</td>
-                  <td name="appearances" className="optional_table_columns">
+                  <td>{row.player.name}</td>
+                  <td className="optional_table_columns">
                     {row.appearances}
                   </td>
-                  <td name="wins" className="optional_table_columns">
+                  <td className="optional_table_columns">
                     {row.wins}
                   </td>
-                  <td name="draws" className="optional_table_columns">
+                  <td className="optional_table_columns">
                     {row.draws}
                   </td>
-                  <td name="losts" className="optional_table_columns">
+                  <td className="optional_table_columns">
                     {row.losts}
                   </td>
-                  <td name="points">{row.points}</td>
+                  <td>{row.points}</td>
                 </tr>
               ))}
             </tbody>
