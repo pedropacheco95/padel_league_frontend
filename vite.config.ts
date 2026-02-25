@@ -15,6 +15,13 @@ export default defineConfig(({ mode }) => ({
       },
     },
   },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        api: 'modern-compiler',
+      },
+    },
+  },
   plugins: [
     react(),
     mode === 'development' && componentTagger(),
@@ -22,6 +29,7 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "sass-embedded": "sass",
     },
   },
 }));
