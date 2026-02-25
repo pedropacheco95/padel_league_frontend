@@ -270,6 +270,10 @@ html {
     font-size: 2rem;
     color: #fff;
     padding: 0 1rem;
+    input {
+      background-color: #ffffff4d;
+      border-radius: 0.4rem;
+    }
   }
   .c-teams__iandt_submit {
     width: 33%;
@@ -364,6 +368,8 @@ html {
 }
 
 .big-date {
+  font-size: 1.5rem;
+  margin-left: 1.5rem;
   @include size-query(small) {
     display: none;
   }
@@ -386,9 +392,14 @@ html {
   }
 }
 .c-teams__iandt_submit:last-child {
-  width: 10%;
-  @include size-query(small) {
-    width: 15% !important;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  button{
+    height: 3rem;
+    span{
+      font-size: 1.5rem;
+    }
   }
 }
 .c-teams__iandt_edit:last-child {

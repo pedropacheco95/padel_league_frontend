@@ -1,4 +1,4 @@
-import { IndexData, TournamentsData, TournamentDetail, PlayerRanking, PlayerDetail, User } from '../types'
+import { IndexData, TournamentsData, TournamentDetail, PlayerRanking, PlayerDetail, ForEditData, User } from '../types'
 
 export const USE_MOCK = import.meta.env.VITE_USE_MOCK_DATA === 'true'
 export const MOCK_LOGGED_IN = import.meta.env.VITE_MOCK_LOGGED_IN === 'true'
@@ -429,4 +429,13 @@ export const mockTournamentDetails: Record<number, TournamentDetail> = {
     allMatches: allMatches51 as TournamentDetail['allMatches'],
     players: [P_PANCHO, P_CUCA, P_CARLO, P_MALAFAYA, P_BC, P_DINIS, P_FRED, P_MIGUELSG],
   },
+}
+
+// ---------------------------------------------------------------------------
+// /api/v1/matches/for_edit  (matchweek 3 — all unplayed)
+// ---------------------------------------------------------------------------
+
+export const mockForEditData: ForEditData = {
+  matches: allMatches51.filter(m => !m.played) as ForEditData['matches'],
+  divisions: mockIndexData.tournaments,
 }

@@ -112,6 +112,18 @@ export interface TournamentDetail {
   players: PlayerShort[]
 }
 
+export interface ForEditData {
+  matches: Match[]
+  divisions: Division[]
+}
+
+export interface EditMatchPayload {
+  homeGames: number
+  awayGames: number
+  field: string
+  playersEliminated: { slot: string; playerId: number }[]
+}
+
 export interface PlayerTournamentRow {
   divisionId: number
   divisionName: string
