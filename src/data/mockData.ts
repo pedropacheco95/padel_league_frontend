@@ -1,6 +1,20 @@
-import { IndexData, TournamentsData, TournamentDetail } from '../types'
+import { IndexData, TournamentsData, TournamentDetail, User } from '../types'
 
 export const USE_MOCK = import.meta.env.VITE_USE_MOCK_DATA === 'true'
+
+// ---------------------------------------------------------------------------
+// Auth
+// ---------------------------------------------------------------------------
+
+export const MOCK_TOKEN = 'mock-admin-token'
+
+export const mockUser: User = {
+  id: 1,
+  username: 'admin',
+  email: 'admin@padelleague.pt',
+  isAdmin: true,
+  playerId: 7,
+}
 
 /** Simulates network latency so loading states are testable */
 export function mockResponse<T>(data: T): Promise<{ data: T }> {

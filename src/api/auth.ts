@@ -1,5 +1,6 @@
 import { api } from "@/api/client";
 import { User } from '../types'
+import { USE_MOCK, mockResponse, mockUser, MOCK_TOKEN } from '../data/mockData'
 
 export interface LoginPayload {
   username: string
@@ -18,15 +19,32 @@ export interface RegisterPayload {
   birth_date?: string
 }
 
+function mockLoginError(): never {
+  throw { response: { data: { error: 'Credenciais inválidas.' } } }
+}
+
 export const authApi = {
-  login: (data: LoginPayload) =>
-    api.post<{ user: User; access_token: string }>('/auth/login', data),
+  login: (data: LoginPayload) => {
+    if (USE_MOCK) {
+      if (data.username === 'admin' && data.password === 'admin') {
+        return mockResponse({ user: mockUser, access_token: MOCK_TOKEN })
+      }
+      mockLoginError()
+    }
+    return api.post<{ user: User; access_token: string }>('/auth/login', data)
+  },
 
   logout: () =>
-    api.post('/auth/logout'),
+    USE_MOCK ? mockResponse({}) : api.post('/auth/logout'),
 
-  me: () =>
-    api.get<{ user: User }>('/auth/me'),
+  me: () => {
+    if (USE_MOCK) {
+      const token = localStorage.getItem('accessToken')
+      if (token === MOCK_TOKEN) return mockResponse({ user: mockUser })
+      return Promise.reject(new Error('Not authenticated'))
+    }
+    return api.get<{ user: User }>('/auth/me')
+  },
 
   refresh: () =>
     api.post('/auth/refresh'),
