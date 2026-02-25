@@ -1,7 +1,12 @@
 import { api } from './client'
 import { TournamentsData, TournamentDetail } from '../types'
+import { USE_MOCK, mockResponse, mockTournamentsData, mockTournamentDetails } from '../data/mockData'
 
 export const tournamentsApi = {
-  list: () => api.get<TournamentsData>('/tournaments/'),
-  detail: (id: number) => api.get<TournamentDetail>(`/tournaments/${id}`),
+  list: () =>
+    USE_MOCK ? mockResponse(mockTournamentsData) : api.get<TournamentsData>('/tournaments/'),
+  detail: (id: number) =>
+    USE_MOCK
+      ? mockResponse(mockTournamentDetails[id] ?? mockTournamentDetails[51])
+      : api.get<TournamentDetail>(`/tournaments/${id}`),
 }
