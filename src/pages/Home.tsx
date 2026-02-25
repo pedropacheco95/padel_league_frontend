@@ -59,7 +59,7 @@ function NewsContainer({ latestNews, allNews }: { latestNews: News | null; allNe
       </div>
       <div className="other_news_container">
         <div className="other_news_title">Outras notícias</div>
-        {allNews.map(news => (
+        {(allNews ?? []).map(news => (
           <NewsCard key={news.id} news={news} />
         ))}
       </div>
@@ -116,7 +116,7 @@ function EditionResultCard({ edition }: { edition: Edition }) {
       </div>
       <div className="edition_results_container">
         <div className="division_results_wrapper">
-          {edition.divisions.map((division, index) => (
+          {(edition.divisions ?? []).map((division, index) => (
             <div
               key={division.id}
               className="division_result_block"
@@ -132,7 +132,7 @@ function EditionResultCard({ edition }: { edition: Edition }) {
           ))}
         </div>
 
-        {edition.divisions.length > 1 && (
+        {(edition.divisions ?? []).length > 1 && (
           <div className="division_nav">
             <button type="button" className="prev_division" onClick={prev}>
               {'<'}
@@ -174,7 +174,7 @@ function TournamentsIndex({ tournaments }: { tournaments: Division[] }) {
   if (!tournaments.length) return null
   return (
     <div className="tournaments_index_container index_item">
-      {tournaments.map(t => (
+      {(tournaments ?? []).map(t => (
         <TournamentCard key={t.id} division={t} />
       ))}
     </div>
