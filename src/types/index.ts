@@ -6,14 +6,6 @@ export interface User {
   playerId: number | null
 }
 
-export interface User {
-  id: number
-  username: string
-  email: string
-  isAdmin: boolean
-  playerId: number | null
-}
-
 export interface News {
   id: number
   title: string
@@ -35,6 +27,10 @@ export interface PlayerShort {
   fullName: string
   pictureUrl: string | null
   rankingPoints: number
+}
+
+export interface PlayerRanking extends PlayerShort {
+  rankingPosition: number
 }
 
 export interface Match {
@@ -114,4 +110,42 @@ export interface TournamentDetail {
   matches: Match[]
   allMatches: Match[]
   players: PlayerShort[]
+}
+
+export interface PlayerTournamentRow {
+  divisionId: number
+  divisionName: string
+  endDate: string | null
+  won: number
+  played: number
+  place: number | string
+  rankingPoints: number
+}
+
+export interface PlayerDetail {
+  id: number
+  name: string
+  fullName: string
+  birthday: string | null
+  height: number | null
+  preferedHand: string | null
+  preferedPosition: string | null
+  pictureUrl: string | null
+  largePictureUrl: string | null
+  rankingPoints: number
+  rankingPosition: number
+  username: string | null
+  previousPlayer: PlayerRanking | null
+  nextPlayer: PlayerRanking | null
+  matchesPlayed: number
+  matchesWon: number
+  matchesLost: number
+  matchesDrawn: number
+  efficiency: number
+  tournamentsPlayed: number
+  matchweeksPlayed: number
+  matchweeksMissed: number
+  matchweeksPerTournament: number
+  attendance: number
+  tournamentHistory: PlayerTournamentRow[]
 }

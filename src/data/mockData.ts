@@ -1,4 +1,4 @@
-import { IndexData, TournamentsData, TournamentDetail, User } from '../types'
+import { IndexData, TournamentsData, TournamentDetail, PlayerRanking, PlayerDetail, User } from '../types'
 
 export const USE_MOCK = import.meta.env.VITE_USE_MOCK_DATA === 'true'
 export const MOCK_LOGGED_IN = import.meta.env.VITE_MOCK_LOGGED_IN === 'true'
@@ -344,6 +344,65 @@ const standings51 = [
   { position: 7, player: P_CARLO,    points:  6, wins: 2, draws: 0, losts: 4, appearances: 2 },
   { position: 8, player: P_MIGUELSG, points:  0, wins: 0, draws: 0, losts: 0, appearances: 0 },
 ]
+
+// ---------------------------------------------------------------------------
+// /api/v1/players/ranking
+// ---------------------------------------------------------------------------
+
+export const mockPlayersRanking: PlayerRanking[] = [
+  { ...P_FRED,     rankingPosition: 1 },
+  { ...P_MIGUELSG, rankingPosition: 2 },
+  { ...P_MALAFAYA, rankingPosition: 3 },
+  { ...P_BC,       rankingPosition: 4 },
+  { ...P_DINIS,    rankingPosition: 5 },
+  { ...P_PANCHO,   rankingPosition: 6 },
+  { ...P_CARLO,    rankingPosition: 7 },
+  { ...P_CUCA,     rankingPosition: 8 },
+]
+
+// ---------------------------------------------------------------------------
+// /api/v1/players/7  (Pancho — the admin mock user)
+// ---------------------------------------------------------------------------
+
+export const mockPlayerDetails: Record<number, PlayerDetail> = {
+  7: {
+    id: 7,
+    name: 'Pancho',
+    fullName: 'Pedro Pacheco',
+    birthday: '1996-01-01',
+    height: 1.83,
+    preferedHand: 'Direita',
+    preferedPosition: 'Lado direito',
+    pictureUrl: P_PANCHO.pictureUrl,
+    largePictureUrl: 'https://storage.googleapis.com/portopadelleague-storage/images/Player/pedropacheco_large.png',
+    rankingPoints: 2522,
+    rankingPosition: 6,
+    username: 'admin',
+    previousPlayer: { ...P_MIGUELSG, rankingPosition: 8 },
+    nextPlayer:     { ...P_MALAFAYA, rankingPosition: 2 },
+    matchesPlayed: 6,
+    matchesWon: 4,
+    matchesLost: 2,
+    matchesDrawn: 0,
+    efficiency: 66.67,
+    tournamentsPlayed: 1,
+    matchweeksPlayed: 2,
+    matchweeksMissed: 5,
+    matchweeksPerTournament: 2,
+    attendance: 28.57,
+    tournamentHistory: [
+      {
+        divisionId: 51,
+        divisionName: 'Outono 2025 - 1ª Divisão',
+        endDate: '2025-10-14',
+        won: 4,
+        played: 6,
+        place: 1,
+        rankingPoints: 120,
+      },
+    ],
+  },
+}
 
 export const mockTournamentDetails: Record<number, TournamentDetail> = {
   51: {

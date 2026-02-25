@@ -12,6 +12,8 @@ import NotFound from "./pages/NotFound";
 import Layout from "./components/layout/Layout";
 import TournamentsPage from "./pages/tournaments/TournamentsPage";
 import TournamentPage from "./pages/tournaments/TournamentPage";
+import PlayersPage from "./pages/players/PlayersPage";
+import PlayerPage from "./pages/players/PlayerPage";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +30,8 @@ const App = () => (
               <Route path="/login" element={<Layout><Login /></Layout>} />
               <Route path="/tournaments" element={<Layout><TournamentsPage /></Layout>} />
               <Route path="/tournaments/:id" element={<Layout><TournamentPage /></Layout>} />
+              <Route path="/players" element={<Layout><PlayersPage /></Layout>} />
+              <Route path="/players/:id" element={<Layout><PlayerPage /></Layout>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
