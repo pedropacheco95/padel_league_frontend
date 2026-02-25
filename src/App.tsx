@@ -15,6 +15,7 @@ import TournamentPage from "./pages/tournaments/TournamentPage";
 import PlayersPage from "./pages/players/PlayersPage";
 import PlayerPage from "./pages/players/PlayerPage";
 import ForEditPage from "./pages/matches/ForEditPage";
+import ShufflePage from "./pages/ShufflePage";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => (
               <Route path="/players" element={<Layout><PlayersPage /></Layout>} />
               <Route path="/players/:id" element={<Layout><PlayerPage /></Layout>} />
               <Route path="/matches/for_edit" element={<Layout><ForEditPage /></Layout>} />
+              <Route path="/shuffle" element={<Layout><ShufflePage /></Layout>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
