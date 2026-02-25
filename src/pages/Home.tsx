@@ -124,7 +124,7 @@ function EditionResultCard({ edition }: { edition: Edition }) {
             >
               <div className="division_name">{division.name}</div>
               <div className="match_list">
-                {division.lastPlayedMatches.map(match => (
+                {(division.lastPlayedMatches ?? []).map(match => (
                   <MatchLineCard key={match.id} match={match} />
                 ))}
               </div>
