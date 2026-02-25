@@ -192,27 +192,37 @@ html {
 .c-teams--vs {
   display: block;
   .c-teams__iandt:nth-child(1) {
-    font-size: 1.5rem;
-    display: table;
-    height: 0.6rem;
-    text-align: left;
+    text-align: right;
+    display: flex;
+    flex-direction: row;
+    align-content: center;
+    justify-content: flex-start;
+    align-items: center;
     @include size-query(small) {
       font-size: 1rem !important;
     }
   }
   .c-teams__iandt:nth-child(3) {
     text-align: right;
-    display: table;
-    height: 0.6rem;
+    display: flex;
+    flex-direction: row;
+    align-content: center;
+    justify-content: flex-end;
+    align-items: center;
+    span{
+      align-items: center;
+    }
     @include size-query(small) {
       font-size: 1rem !important;
     }
   }
   .c-teams__iandt_edit:nth-child(1) {
-    font-size: 1.5rem;
-    display: table;
-    height: 0.6rem;
-    text-align: left;
+    text-align: right;
+    display: flex;
+    flex-direction: row;
+    align-content: center;
+    justify-content: flex-start;
+    align-items: center;
     @include size-query(small) {
       font-size: 1rem !important;
     }
@@ -2265,7 +2275,6 @@ ul {
   }
   #content {
     box-shadow: none;
-    background: none;
     padding-left: 0;
     padding-top: 0;
   }

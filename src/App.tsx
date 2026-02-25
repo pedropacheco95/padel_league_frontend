@@ -10,6 +10,8 @@ import Home from "./pages/Home";
 import Login from "./pages/auth/Login";
 import NotFound from "./pages/NotFound";
 import Layout from "./components/layout/Layout";
+import TournamentsPage from "./pages/tournaments/TournamentsPage";
+import TournamentPage from "./pages/tournaments/TournamentPage";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +26,8 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Layout><Home /></Layout>} />
               <Route path="/login" element={<Layout><Login /></Layout>} />
+              <Route path="/tournaments" element={<Layout><TournamentsPage /></Layout>} />
+              <Route path="/tournaments/:id" element={<Layout><TournamentPage /></Layout>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

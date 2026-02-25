@@ -92,3 +92,26 @@ export interface IndexData {
   tournaments: Division[]
   sponsors: Sponsor[]
 }
+
+export interface StandingsRow {
+  position: number
+  player: PlayerShort
+  points: number
+  wins: number
+  draws: number
+  losts: number
+  appearances: number
+}
+
+export interface TournamentsData {
+  active: Division[]
+  ended: Division[]
+}
+
+export interface TournamentDetail {
+  division: Division & { tournamentName: string }
+  standings: StandingsRow[]
+  matches: Match[]
+  allMatches: Match[]
+  players: PlayerShort[]
+}

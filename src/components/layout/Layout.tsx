@@ -57,7 +57,7 @@ export default function Layout({ children }: Props) {
                   </Link>
                 </div>
                 <div className="c-btn-topright">
-                  <a onClick={handleLogout} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                  <a onClick={handleLogout} style={{border: 'none', cursor: 'pointer' }}>
                     Log out
                   </a>
                 </div>
