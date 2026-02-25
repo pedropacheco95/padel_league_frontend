@@ -107,6 +107,11 @@ export default function Layout({ children }: Props) {
                 Loja
               </Link>
             </li>
+            <li className="c-main-nav__item">
+              <Link className="c-main-nav__link" to="/shuffle" title="shuffle">
+                Shuffle
+              </Link>
+            </li>
             <li className="c-main-nav__item for_login_logout">
               {!user ? (
                 <>
