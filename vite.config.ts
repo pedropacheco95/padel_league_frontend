@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => ({
   css: {
     preprocessorOptions: {
       scss: {
-        api: 'modern-compiler',
+        api: 'modern',
       },
     },
   },
@@ -29,7 +29,6 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      "sass-embedded": "sass",
     },
   },
 }));
