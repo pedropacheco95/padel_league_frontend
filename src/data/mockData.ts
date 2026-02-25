@@ -1,8 +1,7 @@
 import { IndexData, TournamentsData, TournamentDetail, User } from '../types'
 
-export const USE_MOCK =
-  import.meta.env.VITE_USE_MOCK_DATA === 'true' ||
-  localStorage.getItem('useMockData') === 'true'
+export const USE_MOCK = import.meta.env.VITE_USE_MOCK_DATA === 'true'
+export const MOCK_LOGGED_IN = import.meta.env.VITE_MOCK_LOGGED_IN === 'true'
 
 // ---------------------------------------------------------------------------
 // Auth

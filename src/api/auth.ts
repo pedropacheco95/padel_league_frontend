@@ -1,6 +1,6 @@
 import { api } from "@/api/client";
 import { User } from '../types'
-import { USE_MOCK, mockResponse, mockUser, MOCK_TOKEN } from '../data/mockData'
+import { USE_MOCK, MOCK_LOGGED_IN, mockResponse, mockUser, MOCK_TOKEN } from '../data/mockData'
 
 export interface LoginPayload {
   username: string
@@ -38,10 +38,8 @@ export const authApi = {
     USE_MOCK ? mockResponse({}) : api.post('/auth/logout'),
 
   me: () => {
-    if (USE_MOCK) {
-      const token = localStorage.getItem('accessToken')
-      if (token === MOCK_TOKEN) return mockResponse({ user: mockUser })
-      return Promise.reject(new Error('Not authenticated'))
+    if (USE_MOCK && MOCK_LOGGED_IN) {
+      return mockResponse({ user: mockUser })
     }
     return api.get<{ user: User }>('/auth/me')
   },
