@@ -1,20 +1,51 @@
-import { useState, useEffect, useRef } from 'react'
-import { Match, PlayerShort } from '@/types'
+import { useState, useEffect, useRef, type CSSProperties } from 'react'
+import { Match } from '@/types'
 import { matchesApi } from '@/api/matches'
 import { Button } from '@/components/ui/button'
 import { Save } from 'lucide-react'
 
 type SlotKey = 'homeplayer0' | 'homeplayer1' | 'awayplayer0' | 'awayplayer1'
+type PlayerId = number | string
 
-interface Props {
-  match: Match
-  onSaved?: () => void
-  onDirtyChange?: (dirty: boolean) => void
-  onPlayerEliminated?: (playerId: number, matchweek: number) => void
-  externalEliminated?: number[]
+export interface EditableCardPlayer {
+  id: PlayerId | null
+  name: string
+  fullName?: string
+  pictureUrl?: string | null
+  rankingPoints?: number
 }
 
-const SUB_PLAYER: PlayerShort = {
+interface EditableCardMatch {
+  id: number | string
+  dateHour: string | null
+  gamesHomeTeam: number | null
+  gamesAwayTeam: number | null
+  field: string | null
+  matchweek: number
+  homePlayers: [EditableCardPlayer, EditableCardPlayer]
+  awayPlayers: [EditableCardPlayer, EditableCardPlayer]
+}
+
+interface Props {
+  match: Match | EditableCardMatch
+  onSaved?: () => void
+  onDirtyChange?: (dirty: boolean) => void
+  onPlayerEliminated?: (playerId: PlayerId, matchweek: number) => void
+  externalEliminated?: PlayerId[]
+  onSave?: (data: {
+    homeGames: number
+    awayGames: number
+    playersEliminated: { slot: SlotKey; playerId: PlayerId }[]
+  }) => Promise<void> | void
+  headerPrimary?: string
+  headerSecondary?: string
+  showWatchIcon?: boolean
+  showTeamRankingScore?: boolean
+  showPlayerImages?: boolean
+  canEliminatePlayers?: boolean
+}
+
+const SUB_PLAYER: EditableCardPlayer = {
   id: null,
   name: 'Substituto',
   fullName: 'Jogador substituto',
@@ -47,6 +78,13 @@ export default function EditableMatchCard({
   onDirtyChange,
   onPlayerEliminated,
   externalEliminated = [],
+  onSave,
+  headerPrimary,
+  headerSecondary,
+  showWatchIcon = true,
+  showTeamRankingScore = true,
+  showPlayerImages = true,
+  canEliminatePlayers = true,
 }: Props) {
   const [homeGames, setHomeGames] = useState(
     match.gamesHomeTeam != null ? String(match.gamesHomeTeam) : ''
@@ -63,20 +101,36 @@ export default function EditableMatchCard({
   const [inputFocused, setInputFocused] = useState(false)
   const [inputRecentlyFocused, setInputRecentlyFocused] = useState(false)
   const blurTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const onDirtyChangeRef = useRef(onDirtyChange)
+
+  useEffect(() => {
+    onDirtyChangeRef.current = onDirtyChange
+  }, [onDirtyChange])
+
+  useEffect(() => {
+    setHomeGames(match.gamesHomeTeam != null ? String(match.gamesHomeTeam) : '')
+    setAwayGames(match.gamesAwayTeam != null ? String(match.gamesAwayTeam) : '')
+    setPendingSlot(null)
+    setConfirmSlot(null)
+    setEliminated(new Set())
+    setDirty(false)
+    setSavedOnce(false)
+    onDirtyChangeRef.current?.(false)
+  }, [match.id, match.gamesHomeTeam, match.gamesAwayTeam])
 
   useEffect(() => {
     if (inputFocused) {
       if (blurTimerRef.current) clearTimeout(blurTimerRef.current)
       setInputRecentlyFocused(true)
     } else {
-      blurTimerRef.current = setTimeout(() => setInputRecentlyFocused(false), 1000)
+      blurTimerRef.current = setTimeout(() => setInputRecentlyFocused(false), 250)
     }
     return () => {
       if (blurTimerRef.current) clearTimeout(blurTimerRef.current)
     }
   }, [inputFocused])
 
-  const slotPlayers: Record<SlotKey, PlayerShort> = {
+  const slotPlayers: Record<SlotKey, EditableCardPlayer> = {
     homeplayer0: match.homePlayers[0],
     homeplayer1: match.homePlayers[1],
     awayplayer0: match.awayPlayers[0],
@@ -106,17 +160,17 @@ export default function EditableMatchCard({
   function isSlotEliminated(slot: SlotKey): boolean {
     if (eliminated.has(slot)) return true
     const pid = slotPlayers[slot].id
-    if (!pid) return false
+    if (pid === null) return false
     return externalEliminated.includes(pid)
   }
 
   function getPhoto(slot: SlotKey): string {
-    if (isSlotEliminated(slot) || !slotPlayers[slot].id) return SUB_PLAYER.pictureUrl!
+    if (isSlotEliminated(slot) || slotPlayers[slot].id === null) return SUB_PLAYER.pictureUrl!
     return slotPlayers[slot].pictureUrl ?? SUB_PLAYER.pictureUrl!
   }
 
   function handlePlayerClick(slot: SlotKey) {
-    if (isSlotEliminated(slot) || !slotPlayers[slot].id) return
+    if (!canEliminatePlayers || isSlotEliminated(slot) || slotPlayers[slot].id === null) return
     setPendingSlot(prev => (prev === slot ? null : slot))
   }
 
@@ -128,7 +182,9 @@ export default function EditableMatchCard({
 
   function handleConfirm() {
     if (!confirmSlot) return
-    const playerId = slotPlayers[confirmSlot].id!
+    const playerId = slotPlayers[confirmSlot].id
+    if (playerId === null) return
+
     setEliminated(prev => new Set([...prev, confirmSlot]))
     setConfirmSlot(null)
     markDirty()
@@ -141,17 +197,33 @@ export default function EditableMatchCard({
   }
 
   async function handleSave() {
+    const nextHomeGames = homeGames !== '' ? Number(homeGames) : (match.gamesHomeTeam ?? 0)
+    const nextAwayGames = awayGames !== '' ? Number(awayGames) : (match.gamesAwayTeam ?? 0)
+    const playersEliminated = Array.from(eliminated)
+      .map(slot => {
+        const playerId = slotPlayers[slot].id
+        if (playerId === null) return null
+        return { slot, playerId }
+      })
+      .filter((item): item is { slot: SlotKey; playerId: PlayerId } => item !== null)
+
     setSaving(true)
     try {
-      await matchesApi.editMatch(match.id, {
-        homeGames: homeGames !== '' ? Number(homeGames) : (match.gamesHomeTeam ?? 0),
-        awayGames: awayGames !== '' ? Number(awayGames) : (match.gamesAwayTeam ?? 0),
-        field: match.field ?? 'Campo 1',
-        playersEliminated: Array.from(eliminated).map(slot => ({
-          slot,
-          playerId: slotPlayers[slot].id!,
-        })),
-      })
+      if (onSave) {
+        await onSave({
+          homeGames: nextHomeGames,
+          awayGames: nextAwayGames,
+          playersEliminated,
+        })
+      } else if (typeof match.id === 'number') {
+        await matchesApi.editMatch(match.id, {
+          homeGames: nextHomeGames,
+          awayGames: nextAwayGames,
+          field: match.field ?? 'Campo 1',
+          playersEliminated: playersEliminated as { slot: string; playerId: number }[],
+        })
+      }
+
       setDirty(false)
       setSavedOnce(true)
       onDirtyChange?.(false)
@@ -164,7 +236,9 @@ export default function EditableMatchCard({
   function renderPlayerSlot(slot: SlotKey) {
     const isPending = pendingSlot === slot
     const isElim = isSlotEliminated(slot)
-    const isClickable = !isElim && !!slotPlayers[slot].id
+    const isClickable = canEliminatePlayers && !isElim && slotPlayers[slot].id !== null
+
+    if (!showPlayerImages) return null
 
     return (
       <div style={{ position: 'relative', display: 'inline-block' }}>
@@ -182,7 +256,7 @@ export default function EditableMatchCard({
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'rgba(180, 0, 0, 0.75)',
+              background: 'rgba(238, 0, 0, 0.75)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -210,11 +284,21 @@ export default function EditableMatchCard({
   const ap0 = match.awayPlayers[0]
   const ap1 = match.awayPlayers[1]
 
-  function nameStyle(slot: SlotKey): React.CSSProperties {
+  function nameStyle(slot: SlotKey): CSSProperties {
     if (isSlotEliminated(slot)) return { textDecoration: 'line-through', opacity: 0.5 }
-    if (pendingSlot === slot) return { color: '#d00000', fontWeight: 700 }
-    return {}
+    if (pendingSlot === slot) {
+      return {
+        backgroundColor: '#FF6B6B',
+        color: 'white',
+        borderRadius: '.5rem',
+        padding: '0.2rem',
+      }
+    }
+    return canEliminatePlayers ? { cursor: 'pointer' } : {}
   }
+
+  const homeScoreValue = (hp0.rankingPoints ?? 0) + (hp1.rankingPoints ?? 0)
+  const awayScoreValue = (ap0.rankingPoints ?? 0) + (ap1.rankingPoints ?? 0)
 
   return (
     <>
@@ -226,9 +310,9 @@ export default function EditableMatchCard({
             style={{ backgroundColor: showRed ? '#d00000' : undefined }}
           >
             <div className="c-teams__iandt_edit">
-              <img className="small_watch" src="/static/images/watch.png" alt="" />
-              <span className="big-date">{formatDateFull(match.dateHour)}</span>
-              <span className="small-date">{formatDateShort(match.dateHour)}</span>
+              {showWatchIcon && <img className="small_watch" src="/static/images/watch.png" alt="" />}
+              <span className="big-date">{headerPrimary ?? formatDateFull(match.dateHour)}</span>
+              <span className="small-date">{headerSecondary ?? formatDateShort(match.dateHour)}</span>
             </div>
 
             <div className="c-teams__iandt_edit">
@@ -238,7 +322,10 @@ export default function EditableMatchCard({
                 pattern="[0-9]*"
                 className="game_results"
                 value={homeGames}
-                onChange={e => { setHomeGames(e.target.value.replace(/[^0-9]/g, '')); markDirty() }}
+                onChange={e => {
+                  setHomeGames(e.target.value.replace(/[^0-9]/g, ''))
+                  markDirty()
+                }}
                 onFocus={() => setInputFocused(true)}
                 onBlur={() => setInputFocused(false)}
                 style={{ width: '3rem', textAlign: 'center' }}
@@ -250,7 +337,10 @@ export default function EditableMatchCard({
                 pattern="[0-9]*"
                 className="game_results"
                 value={awayGames}
-                onChange={e => { setAwayGames(e.target.value.replace(/[^0-9]/g, '')); markDirty() }}
+                onChange={e => {
+                  setAwayGames(e.target.value.replace(/[^0-9]/g, ''))
+                  markDirty()
+                }}
                 onFocus={() => setInputFocused(true)}
                 onBlur={() => setInputFocused(false)}
                 style={{ width: '3rem', textAlign: 'center' }}
@@ -266,7 +356,7 @@ export default function EditableMatchCard({
                   className="h-7 px-2 gap-1 bg-white text-gray-800 hover:bg-gray-100"
                 >
                   <Save className="h-3.5 w-3.5" />
-                  <span className="sm:inline text-xs">{saving ? '…' : 'Guardar'}</span>
+                  <span className="sm:inline text-xs">{saving ? '...' : 'Guardar'}</span>
                 </Button>
               )}
               {!showSave && savedOnce && (
@@ -285,24 +375,47 @@ export default function EditableMatchCard({
         </div>
 
         <div className="c-teams__box">
-          {/* Home team */}
           <div className="c-teams__column">
             <ul className="c-teams__list u-list-clean">
               <li className="c-teams__item on_match">
                 <div className="c-teams__container_for_edit">
-                  <div className="l-wrapper">{renderPlayerSlot('homeplayer0')}</div>
+                  {showPlayerImages && <div className="l-wrapper">{renderPlayerSlot('homeplayer0')}</div>}
                   <div className="c-teams__details">
                     <div className="l-wrapper">
-                      <div className="c-teams__score">{hp0.rankingPoints + hp1.rankingPoints}</div>
+                      {showTeamRankingScore && <div className="c-teams__score">{homeScoreValue}</div>}
                       <div className="c-teams__players">
-                        <div className="c-teams__name" style={nameStyle('homeplayer0')}>{hp0.fullName}</div>
-                        <div className="c-teams__name" style={nameStyle('homeplayer1')}>{hp1.fullName}</div>
-                        <div className="c-teams__name_small" style={nameStyle('homeplayer0')}>{hp0.name}</div>
-                        <div className="c-teams__name_small" style={nameStyle('homeplayer1')}>{hp1.name}</div>
+                        <div
+                          className="c-teams__name"
+                          style={nameStyle('homeplayer0')}
+                          onClick={() => handlePlayerClick('homeplayer0')}
+                        >
+                          {hp0.fullName || hp0.name}
+                        </div>
+                        <div
+                          className="c-teams__name"
+                          style={nameStyle('homeplayer1')}
+                          onClick={() => handlePlayerClick('homeplayer1')}
+                        >
+                          {hp1.fullName || hp1.name}
+                        </div>
+                        <div
+                          className="c-teams__name_small"
+                          style={nameStyle('homeplayer0')}
+                          onClick={() => handlePlayerClick('homeplayer0')}
+                        >
+                          {hp0.name}
+                        </div>
+                        <div
+                          className="c-teams__name_small"
+                          style={nameStyle('homeplayer1')}
+                          onClick={() => handlePlayerClick('homeplayer1')}
+                        >
+                          {hp1.name}
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <div className="l-wrapper">{renderPlayerSlot('homeplayer1')}</div>
+                  {showPlayerImages && <div className="l-wrapper">{renderPlayerSlot('homeplayer1')}</div>}
                 </div>
               </li>
             </ul>
@@ -310,24 +423,47 @@ export default function EditableMatchCard({
 
           <span className="c-teams__vs">VS</span>
 
-          {/* Away team */}
           <div className="c-teams__column">
             <ul className="c-teams__list u-list-clean">
               <li className="c-teams__item on_match">
                 <div className="c-teams__container_for_edit">
-                  <div className="l-wrapper">{renderPlayerSlot('awayplayer0')}</div>
+                  {showPlayerImages && <div className="l-wrapper">{renderPlayerSlot('awayplayer0')}</div>}
                   <div className="c-teams__details">
                     <div className="l-wrapper">
-                      <div className="c-teams__score">{ap0.rankingPoints + ap1.rankingPoints}</div>
+                      {showTeamRankingScore && <div className="c-teams__score">{awayScoreValue}</div>}
                       <div className="c-teams__players">
-                        <div className="c-teams__name" style={nameStyle('awayplayer0')}>{ap0.fullName}</div>
-                        <div className="c-teams__name" style={nameStyle('awayplayer1')}>{ap1.fullName}</div>
-                        <div className="c-teams__name_small" style={nameStyle('awayplayer0')}>{ap0.name}</div>
-                        <div className="c-teams__name_small" style={nameStyle('awayplayer1')}>{ap1.name}</div>
+                        <div
+                          className="c-teams__name"
+                          style={nameStyle('awayplayer0')}
+                          onClick={() => handlePlayerClick('awayplayer0')}
+                        >
+                          {ap0.fullName || ap0.name}
+                        </div>
+                        <div
+                          className="c-teams__name"
+                          style={nameStyle('awayplayer1')}
+                          onClick={() => handlePlayerClick('awayplayer1')}
+                        >
+                          {ap1.fullName || ap1.name}
+                        </div>
+                        <div
+                          className="c-teams__name_small"
+                          style={nameStyle('awayplayer0')}
+                          onClick={() => handlePlayerClick('awayplayer0')}
+                        >
+                          {ap0.name}
+                        </div>
+                        <div
+                          className="c-teams__name_small"
+                          style={nameStyle('awayplayer1')}
+                          onClick={() => handlePlayerClick('awayplayer1')}
+                        >
+                          {ap1.name}
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <div className="l-wrapper">{renderPlayerSlot('awayplayer1')}</div>
+                  {showPlayerImages && <div className="l-wrapper">{renderPlayerSlot('awayplayer1')}</div>}
                 </div>
               </li>
             </ul>
@@ -336,23 +472,17 @@ export default function EditableMatchCard({
         <br />
       </section>
 
-      {/* Flask-style confirmation modal */}
       {confirmSlot && (
         <div className="gpt_modal" style={{ display: 'flex' }}>
           <div className="modal-content">
             <p>
-              Tens a certeza que queres tirar{' '}
-              <strong>{confirmPlayerName}</strong>{' '}
-              desta jornada toda?
+              Tens a certeza que queres tirar <strong>{confirmPlayerName}</strong> desta jornada toda?
             </p>
             <div className="modal-buttons">
               <button onClick={handleCancelModal} style={{ backgroundColor: '#ccc' }}>
                 Cancelar
               </button>
-              <button
-                onClick={handleConfirm}
-                style={{ backgroundColor: '#e74c3c', color: 'white' }}
-              >
+              <button onClick={handleConfirm} style={{ backgroundColor: '#e74c3c', color: 'white' }}>
                 Sim, ele não veio
               </button>
             </div>

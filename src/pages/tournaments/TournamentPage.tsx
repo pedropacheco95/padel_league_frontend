@@ -63,8 +63,11 @@ function MatchesTab({ matches, allMatches, user, onRefresh }: MatchesTabProps) {
 
   function handleDirtyChange(matchId: number, dirty: boolean) {
     setDirtyMatches(prev => {
+      const alreadyDirty = prev.has(matchId)
+      if (dirty === alreadyDirty) return prev
       const next = new Set(prev)
-      dirty ? next.add(matchId) : next.delete(matchId)
+      if (dirty) next.add(matchId)
+      else next.delete(matchId)
       return next
     })
   }
@@ -81,30 +84,64 @@ function MatchesTab({ matches, allMatches, user, onRefresh }: MatchesTabProps) {
 
   return (
     <div className="l-grid l-grid--tor">
-      <div
-        className="select_container"
-        style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}
-      >
+      <div style={{ position: 'relative' }}>
         {user && (
-          <button
-            className={`btn btn-sm ${editMode ? 'btn-warning' : 'btn-outline-secondary'}`}
-            onClick={handleToggleEdit}
+          <div
+            style={{
+              position: 'absolute',
+              right: '-1rem',
+              top: '2rem',
+              transform: 'translateY(-115%)',
+              background: '#fff',
+              border: '1px solid #d9d9d9',
+              borderRadius: '999px',
+              padding: '6px 10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              zIndex: 2,
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+            }}
           >
-            {editMode ? 'Sair da edição' : 'Editar jornada'}
-          </button>
+            <span style={{ fontSize: '1.2rem', fontWeight: 700, lineHeight: 1 }}>Editar Jogos</span>
+            <button
+              onClick={handleToggleEdit}
+              aria-pressed={editMode}
+              style={{
+                border: 0,
+                borderRadius: '999px',
+                width: '44px',
+                height: '24px',
+                cursor: 'pointer',
+                background: editMode ? '#198754' : '#adb5bd',
+                color: '#fff',
+                fontSize: '1rem',
+                fontWeight: 700,
+                lineHeight: 1,
+              }}
+            >
+              {editMode ? 'ON' : 'OFF'}
+            </button>
+          </div>
         )}
-        {displayMatches.length > 0 && (
-          <select
-            className="form-select matchweek_select"
-            value={selectedMatchweek}
-            onChange={e => setSelectedMatchweek(e.target.value)}
-          >
-            <option value="">Jornada</option>
-            {[1, 2, 3, 4, 5, 6, 7].map(mw => (
-              <option key={mw} value={mw}>{mw}</option>
-            ))}
-          </select>
-        )}
+
+        <div
+          className="select_container"
+          style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}
+        >
+          {displayMatches.length > 0 && (
+            <select
+              className="form-select matchweek_select"
+              value={selectedMatchweek}
+              onChange={e => setSelectedMatchweek(e.target.value)}
+            >
+              <option value="">Jornada</option>
+              {[1, 2, 3, 4, 5, 6, 7].map(mw => (
+                <option key={mw} value={mw}>{mw}</option>
+              ))}
+            </select>
+          )}
+        </div>
       </div>
       <br />
       {filtered.map(match => (

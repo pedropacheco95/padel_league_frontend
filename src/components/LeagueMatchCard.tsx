@@ -1,9 +1,39 @@
 import { Link } from 'react-router-dom'
+import { type ReactNode } from 'react'
 import { Match } from '@/types'
 
-interface Props {
-  match: Match
+type PlayerId = number | string
+
+export interface LeagueCardPlayer {
+  id: PlayerId | null
+  name: string
+  fullName?: string
+  pictureUrl?: string | null
+  rankingPoints?: number
 }
+
+interface TeamData {
+  players: [LeagueCardPlayer, LeagueCardPlayer]
+}
+
+interface Props {
+  match?: Match
+  homeTeam?: TeamData
+  awayTeam?: TeamData
+  scoreHome?: number | null
+  scoreAway?: number | null
+  headerPrimary?: string
+  headerSecondary?: string
+  fieldLabel?: string | null
+  showWatchIcon?: boolean
+  showFieldInfo?: boolean
+  showTeamRankingScore?: boolean
+  showPlayerImages?: boolean
+  headerAction?: ReactNode
+  playerHrefResolver?: (playerId: PlayerId | null) => string | null
+}
+
+const DEFAULT_PLAYER_PHOTO = '/static/images/Player/default_player.jpg'
 
 function formatDateFull(dateStr: string | null): string {
   if (!dateStr) return 'Não definido'
@@ -15,12 +45,106 @@ function formatDateFull(dateStr: string | null): string {
 
 function formatDateShort(dateStr: string | null): string {
   if (!dateStr) return 'N def'
-  return new Date(dateStr).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: '2-digit' })
+  return new Date(dateStr).toLocaleDateString('pt-PT', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+  })
 }
 
-export default function LeagueMatchCard({ match }: Props) {
-  const [hp0, hp1] = match.homePlayers
-  const [ap0, ap1] = match.awayPlayers
+function DefaultLinkResolver(playerId: PlayerId | null) {
+  if (typeof playerId !== 'number' || !playerId) return null
+  return `/players/${playerId}`
+}
+
+export default function LeagueMatchCard({
+  match,
+  homeTeam,
+  awayTeam,
+  scoreHome,
+  scoreAway,
+  headerPrimary,
+  headerSecondary,
+  fieldLabel,
+  showWatchIcon = true,
+  showFieldInfo = true,
+  showTeamRankingScore = true,
+  showPlayerImages = true,
+  headerAction,
+  playerHrefResolver = DefaultLinkResolver,
+}: Props) {
+  if (!match && (!homeTeam || !awayTeam)) return null
+
+  const resolvedHomeTeam = homeTeam ?? { players: match!.homePlayers }
+  const resolvedAwayTeam = awayTeam ?? { players: match!.awayPlayers }
+
+  const [hp0, hp1] = resolvedHomeTeam.players
+  const [ap0, ap1] = resolvedAwayTeam.players
+
+  const displayScoreHome = scoreHome ?? match?.gamesHomeTeam ?? ''
+  const displayScoreAway = scoreAway ?? match?.gamesAwayTeam ?? ''
+  const displayPrimary = headerPrimary ?? formatDateFull(match?.dateHour ?? null)
+  const displaySecondary = headerSecondary ?? formatDateShort(match?.dateHour ?? null)
+  const displayField = fieldLabel ?? match?.field ?? null
+
+  const homeTeamScore = (hp0.rankingPoints ?? 0) + (hp1.rankingPoints ?? 0)
+  const awayTeamScore = (ap0.rankingPoints ?? 0) + (ap1.rankingPoints ?? 0)
+
+  function renderTeam(players: [LeagueCardPlayer, LeagueCardPlayer], teamScore: number) {
+    const [p0, p1] = players
+    const p0Href = playerHrefResolver(p0.id)
+    const p1Href = playerHrefResolver(p1.id)
+
+    return (
+      <div className="c-teams__container">
+        {showPlayerImages && (
+          <div className="l-wrapper">
+            {p0Href ? (
+              <Link className="c-trigger" to={p0Href}>
+                <div
+                  className="c-teams__img u-img-cropped u-img-cropped--team"
+                  style={{ backgroundImage: `url(${p0.pictureUrl || DEFAULT_PLAYER_PHOTO})` }}
+                />
+              </Link>
+            ) : (
+              <div
+                className="c-teams__img u-img-cropped u-img-cropped--team"
+                style={{ backgroundImage: `url(${p0.pictureUrl || DEFAULT_PLAYER_PHOTO})` }}
+              />
+            )}
+          </div>
+        )}
+        <div className="c-teams__details">
+          <div className="l-wrapper">
+            {showTeamRankingScore && <div className="c-teams__score">{teamScore}</div>}
+            <div className="c-teams__players">
+              <div className="c-teams__name">{p0.fullName || p0.name}</div>
+              <div className="c-teams__name">{p1.fullName || p1.name}</div>
+              <div className="c-teams__name_small">{p0.name}</div>
+              <div className="c-teams__name_small">{p1.name}</div>
+            </div>
+          </div>
+        </div>
+        {showPlayerImages && (
+          <div className="l-wrapper">
+            {p1Href ? (
+              <Link className="c-trigger" to={p1Href}>
+                <div
+                  className="c-teams__img u-img-cropped u-img-cropped--team"
+                  style={{ backgroundImage: `url(${p1.pictureUrl || DEFAULT_PLAYER_PHOTO})` }}
+                />
+              </Link>
+            ) : (
+              <div
+                className="c-teams__img u-img-cropped u-img-cropped--team"
+                style={{ backgroundImage: `url(${p1.pictureUrl || DEFAULT_PLAYER_PHOTO})` }}
+              />
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <section className="c-tor-box c-tor-box--m">
@@ -28,18 +152,24 @@ export default function LeagueMatchCard({ match }: Props) {
       <div className="c-teams c-teams--double c-teams--vs">
         <div className="c-teams__header c-teams__header--played">
           <div className="c-teams__iandt">
-            <img className="small_watch" src="/static/images/watch.png" alt="" />
-            <span className="big-date">{formatDateFull(match.dateHour)}</span>
-            <span className="small-date">{formatDateShort(match.dateHour)}</span>
+            {showWatchIcon && <img className="small_watch" src="/static/images/watch.png" alt="" />}
+            <span className="big-date">{displayPrimary}</span>
+            <span className="small-date">{displaySecondary}</span>
           </div>
           <div className="c-teams__iandt">
             <span>
-              {match.gamesHomeTeam ?? ''}-{match.gamesAwayTeam ?? ''}
+              {displayScoreHome}-{displayScoreAway}
             </span>
           </div>
           <div className="c-teams__iandt">
-            <img className="small_field" src="/static/images/field.png" alt="" />
-            <span>{match.field}</span>
+            {headerAction ?? (
+              showFieldInfo && (
+                <>
+                  <img className="small_field" src="/static/images/field.png" alt="" />
+                  <span>{displayField}</span>
+                </>
+              )
+            )}
           </div>
         </div>
       </div>
@@ -47,37 +177,7 @@ export default function LeagueMatchCard({ match }: Props) {
       <div className="c-teams__box">
         <div className="c-teams__column">
           <ul className="c-teams__list u-list-clean">
-            <li className="c-teams__item on_match">
-              <div className="c-teams__container">
-                <div className="l-wrapper">
-                  <Link className="c-trigger" to={hp0.id ? `/players/${hp0.id}` : '#'}>
-                    <div
-                      className="c-teams__img u-img-cropped u-img-cropped--team"
-                      style={{ backgroundImage: `url(${hp0.pictureUrl})` }}
-                    />
-                  </Link>
-                </div>
-                <div className="c-teams__details">
-                  <div className="l-wrapper">
-                    <div className="c-teams__score">{hp0.rankingPoints + hp1.rankingPoints}</div>
-                    <div className="c-teams__players">
-                      <div className="c-teams__name">{hp0.fullName}</div>
-                      <div className="c-teams__name">{hp1.fullName}</div>
-                      <div className="c-teams__name_small">{hp0.name}</div>
-                      <div className="c-teams__name_small">{hp1.name}</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="l-wrapper">
-                  <Link className="c-trigger" to={hp1.id ? `/players/${hp1.id}` : '#'}>
-                    <div
-                      className="c-teams__img u-img-cropped u-img-cropped--team"
-                      style={{ backgroundImage: `url(${hp1.pictureUrl})` }}
-                    />
-                  </Link>
-                </div>
-              </div>
-            </li>
+            <li className="c-teams__item on_match">{renderTeam(resolvedHomeTeam.players, homeTeamScore)}</li>
           </ul>
         </div>
 
@@ -85,37 +185,7 @@ export default function LeagueMatchCard({ match }: Props) {
 
         <div className="c-teams__column">
           <ul className="c-teams__list u-list-clean">
-            <li className="c-teams__item on_match">
-              <div className="c-teams__container">
-                <div className="l-wrapper">
-                  <Link className="c-trigger" to={ap0.id ? `/players/${ap0.id}` : '#'}>
-                    <div
-                      className="c-teams__img u-img-cropped u-img-cropped--team"
-                      style={{ backgroundImage: `url(${ap0.pictureUrl})` }}
-                    />
-                  </Link>
-                </div>
-                <div className="c-teams__details">
-                  <div className="l-wrapper">
-                    <div className="c-teams__score">{ap0.rankingPoints + ap1.rankingPoints}</div>
-                    <div className="c-teams__players">
-                      <div className="c-teams__name">{ap0.fullName}</div>
-                      <div className="c-teams__name">{ap1.fullName}</div>
-                      <div className="c-teams__name_small">{ap0.name}</div>
-                      <div className="c-teams__name_small">{ap1.name}</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="l-wrapper">
-                  <Link className="c-trigger" to={ap1.id ? `/players/${ap1.id}` : '#'}>
-                    <div
-                      className="c-teams__img u-img-cropped u-img-cropped--team"
-                      style={{ backgroundImage: `url(${ap1.pictureUrl})` }}
-                    />
-                  </Link>
-                </div>
-              </div>
-            </li>
+            <li className="c-teams__item on_match">{renderTeam(resolvedAwayTeam.players, awayTeamScore)}</li>
           </ul>
         </div>
       </div>

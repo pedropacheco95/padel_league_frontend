@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useTournament } from '@/context/TournamentContext'
 import { DIVISION_MULTIPLIERS, Match } from '@/types/tournament'
-import ShuffleMatchCard from '@/components/ShuffleMatchCard'
+import { useAuth } from '@/context/AuthContext'
+import LeagueMatchCard from '@/components/LeagueMatchCard'
+import EditableMatchCard, { EditableCardPlayer } from '@/components/EditableMatchCard'
 import { Shuffle, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -65,13 +67,24 @@ const TEST_NAMES = [
 ]
 
 export default function ShufflePage() {
+  const { user } = useAuth()
   const {
-    state, addPlayer, calculateDivisions, generateMatchweek, getDivisionForPlayer,
+    state,
+    addPlayer,
+    calculateDivisions,
+    generateMatchweek,
+    getDivisionForPlayer,
+    getPlayerById,
+    submitResult,
+    editResult,
+    removePlayerFromMatchweek,
   } = useTournament()
 
   const [activeTab, setActiveTab] = useState<Tab>('standings')
   const [selectedDivision, setSelectedDivision] = useState(1)
   const [matchesDivFilter, setMatchesDivFilter] = useState(0)
+  const [editMode, setEditMode] = useState(false)
+  const [dirtyMatches, setDirtyMatches] = useState<Set<string>>(new Set())
 
   // Auto-load 48 test players on mount if empty
   useEffect(() => {
@@ -103,6 +116,104 @@ export default function ShufflePage() {
   }
 
   const sortedPlayers = [...state.players].sort((a, b) => b.points - a.points)
+  const anyDirty = dirtyMatches.size > 0
+
+  function handleDirtyChange(matchId: string, dirty: boolean) {
+    setDirtyMatches(prev => {
+      const alreadyDirty = prev.has(matchId)
+      if (dirty === alreadyDirty) return prev
+      const next = new Set(prev)
+      if (dirty) next.add(matchId)
+      else next.delete(matchId)
+      return next
+    })
+  }
+
+  function handleToggleEdit() {
+    if (editMode && anyDirty) {
+      if (!window.confirm('Tens alterações não guardadas. Queres mesmo sair do modo de edição?')) {
+        return
+      }
+    }
+    setEditMode(prev => !prev)
+    setDirtyMatches(new Set())
+  }
+
+  function getMatchPlayers(match: Match) {
+    const toCardPlayer = (id: string): EditableCardPlayer => {
+      const player = getPlayerById(id)
+      return {
+        id,
+        name: player?.name || '?',
+        fullName: player?.name || '?',
+        pictureUrl: '/static/images/Player/default_player.jpg',
+        rankingPoints: 0,
+      }
+    }
+
+    return {
+      homePlayers: [toCardPlayer(match.team1[0]), toCardPlayer(match.team1[1])] as [
+        EditableCardPlayer,
+        EditableCardPlayer,
+      ],
+      awayPlayers: [toCardPlayer(match.team2[0]), toCardPlayer(match.team2[1])] as [
+        EditableCardPlayer,
+        EditableCardPlayer,
+      ],
+    }
+  }
+
+  function renderShuffleMatchCard(match: Match, gameNumber: number) {
+    const mult = DIVISION_MULTIPLIERS[match.division] || 1
+    const divLabel = `Div ${match.division} · x${mult}`
+    const headerLabel = `Jogo ${gameNumber} · ${divLabel}`
+    const players = getMatchPlayers(match)
+    const isEditing = !!user && editMode
+
+    if (!isEditing) {
+      return (
+        <LeagueMatchCard
+          homeTeam={{ players: players.homePlayers }}
+          awayTeam={{ players: players.awayPlayers }}
+          scoreHome={match.score1 ?? null}
+          scoreAway={match.score2 ?? null}
+          headerPrimary={headerLabel}
+          headerSecondary={divLabel}
+          showWatchIcon={false}
+          showFieldInfo={false}
+          playerHrefResolver={() => null}
+        />
+      )
+    }
+
+    return (
+      <EditableMatchCard
+        match={{
+          id: match.id,
+          dateHour: null,
+          gamesHomeTeam: match.score1 ?? null,
+          gamesAwayTeam: match.score2 ?? null,
+          field: null,
+          matchweek: match.matchweek,
+          homePlayers: players.homePlayers,
+          awayPlayers: players.awayPlayers,
+        }}
+        headerPrimary={headerLabel}
+        headerSecondary={divLabel}
+        showWatchIcon={false}
+        externalEliminated={match.removedPlayers || []}
+        onDirtyChange={dirty => handleDirtyChange(match.id, dirty)}
+        onSaved={() => handleDirtyChange(match.id, false)}
+        onPlayerEliminated={(playerId, matchweek) =>
+          removePlayerFromMatchweek(String(playerId), matchweek)
+        }
+        onSave={({ homeGames, awayGames }) => {
+          if (match.played) editResult(match.id, homeGames, awayGames)
+          else submitResult(match.id, homeGames, awayGames)
+        }}
+      />
+    )
+  }
 
   return (
     <>
@@ -110,7 +221,7 @@ export default function ShufflePage() {
         <div className="c-tor-header__content" style={{ width: '100%' }}>
           <div className="c-tor-header__title">Padel Shuffle</div>
           <div className="c-tor-header__iandt">
-            <span>{state.players.length}/48 jogadores · Jornada {state.currentMatchweek}</span>
+            <span>Jornada {state.currentMatchweek}</span>
           </div>
 
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', margin: '10px 0' }}>
@@ -197,20 +308,61 @@ export default function ShufflePage() {
 
         {/* ---- Matches tab ---- */}
         <div className={`c-flex-table--shuffle-games c-flex-table c-flex-table--ranking c-flex-table--tab ${tabContentClass('matches')}`} id="shuffle_matches_tab">
-          {state.divisions.length > 0 && (
-            <div className="select_container" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
-              <select
-                className="form-select matchweek_select"
-                value={matchesDivFilter}
-                onChange={e => setMatchesDivFilter(Number(e.target.value))}
+          <div style={{ position: 'relative' }}>
+            {user && (
+              <div
+                style={{
+                  position: 'absolute',
+                  right: '-1rem',
+                  top: '-2rem',
+                  background: '#fff',
+                  border: '1px solid #d9d9d9',
+                  borderRadius: '999px',
+                  padding: '6px 10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  zIndex: 2,
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                }}
               >
-                <option value={0}>Todas as divisões</option>
-                {state.divisions.map(d => (
-                  <option key={d.number} value={d.number}>Divisão {d.number}</option>
-                ))}
-              </select>
-            </div>
-          )}
+                <span style={{ fontSize: '1.2rem', fontWeight: 700, lineHeight: 1 }}>Editar Jogos</span>
+                <button
+                  onClick={handleToggleEdit}
+                  aria-pressed={editMode}
+                  style={{
+                    border: 0,
+                    borderRadius: '999px',
+                    width: '44px',
+                    height: '24px',
+                    cursor: 'pointer',
+                    background: editMode ? '#198754' : '#adb5bd',
+                    color: '#fff',
+                    fontSize: '1rem',
+                    fontWeight: 700,
+                    lineHeight: 1,
+                  }}
+                >
+                  {editMode ? 'ON' : 'OFF'}
+                </button>
+              </div>
+            )}
+
+            {state.divisions.length > 0 && (
+              <div className="select_container" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                <select
+                  className="form-select matchweek_select"
+                  value={matchesDivFilter}
+                  onChange={e => setMatchesDivFilter(Number(e.target.value))}
+                >
+                  <option value={0}>Todas as divisões</option>
+                  {state.divisions.map(d => (
+                    <option key={d.number} value={d.number}>Divisão {d.number}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
 
           {currentMatches.length === 0 ? (
             <div style={{ padding: '32px', textAlign: 'center', opacity: 0.6 }}>
@@ -221,7 +373,7 @@ export default function ShufflePage() {
               {orderMatches(
                 currentMatches.filter(m => matchesDivFilter === 0 || m.division === matchesDivFilter)
               ).map((match, idx) => (
-                <ShuffleMatchCard key={match.id} matchId={match.id} gameNumber={idx + 1} />
+                <span key={match.id}>{renderShuffleMatchCard(match, idx + 1)}</span>
               ))}
             </div>
           )}
@@ -242,7 +394,7 @@ export default function ShufflePage() {
                       </summary>
                       <div className="l-grid l-grid--tor">
                         {orderMatches(mwMatches).map((match, idx) => (
-                          <ShuffleMatchCard key={match.id} matchId={match.id} gameNumber={idx + 1} />
+                          <span key={match.id}>{renderShuffleMatchCard(match, idx + 1)}</span>
                         ))}
                       </div>
                     </details>

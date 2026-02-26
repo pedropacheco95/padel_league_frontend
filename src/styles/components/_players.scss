@@ -399,6 +399,20 @@
     }
 }
 
+.c-teams__details{
+    .l-wrapper {
+        display: flex;
+        vertical-align: middle;
+    }
+}
+
+.c-teams__container_for_edit{
+    .l-wrapper {
+        display: flex;
+        vertical-align: middle;
+    }
+}
+
 .c-player-card__score {
     display: table-cell;
     vertical-align: middle;
