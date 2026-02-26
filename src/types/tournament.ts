@@ -6,6 +6,8 @@ export interface Player {
   draws: number;
   losses: number;
   gamesPlayed: number;
+  gamesWon: number;
+  gamesLost: number;
 }
 
 export interface Match {

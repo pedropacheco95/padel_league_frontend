@@ -69,6 +69,8 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       draws: 0,
       losses: 0,
       gamesPlayed: 0,
+      gamesWon: 0,
+      gamesLost: 0,
     };
     setState((s) => ({ ...s, players: [...s.players, player] }));
   };
@@ -144,11 +146,13 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       const multiplier = DIVISION_MULTIPLIERS[match.division] || 1;
       const updatedPlayers = [...s.players];
 
-      const updatePlayer = (id: string, won: boolean, drew: boolean) => {
+      const updatePlayer = (id: string, won: boolean, drew: boolean, teamScore: number, oppScore: number) => {
         const idx = updatedPlayers.findIndex((p) => p.id === id);
         if (idx === -1) return;
         const p = { ...updatedPlayers[idx] };
         p.gamesPlayed += 1;
+        p.gamesWon += teamScore;
+        p.gamesLost += oppScore;
         if (won) {
           p.wins += 1;
           p.points += 3 * multiplier;
@@ -165,8 +169,8 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       const isDraw = score1 === score2;
       const removed = match.removedPlayers || [];
 
-      match.team1.forEach((id) => { if (!removed.includes(id)) updatePlayer(id, team1Won, isDraw); });
-      match.team2.forEach((id) => { if (!removed.includes(id)) updatePlayer(id, !team1Won && !isDraw, isDraw); });
+      match.team1.forEach((id) => { if (!removed.includes(id)) updatePlayer(id, team1Won, isDraw, score1, score2); });
+      match.team2.forEach((id) => { if (!removed.includes(id)) updatePlayer(id, !team1Won && !isDraw, isDraw, score2, score1); });
 
       const updatedMatches = [...s.matches];
       updatedMatches[matchIdx] = { ...match, score1, score2, played: true };
@@ -202,11 +206,13 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       const updatedPlayers = [...s.players];
       const removed = match.removedPlayers || [];
 
-      const revertPlayer = (id: string, wasWin: boolean, wasDraw: boolean) => {
+      const revertPlayer = (id: string, wasWin: boolean, wasDraw: boolean, teamScore: number, oppScore: number) => {
         const idx = updatedPlayers.findIndex((p) => p.id === id);
         if (idx === -1) return;
         const p = { ...updatedPlayers[idx] };
         p.gamesPlayed -= 1;
+        p.gamesWon -= teamScore;
+        p.gamesLost -= oppScore;
         if (wasWin) { p.wins -= 1; p.points -= 3 * multiplier; }
         else if (wasDraw) { p.draws -= 1; p.points -= 1 * multiplier; }
         else { p.losses -= 1; }
@@ -215,14 +221,16 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
 
       const oldT1Won = oldScore1 > oldScore2;
       const oldDraw = oldScore1 === oldScore2;
-      match.team1.forEach((id) => { if (!removed.includes(id)) revertPlayer(id, oldT1Won, oldDraw); });
-      match.team2.forEach((id) => { if (!removed.includes(id)) revertPlayer(id, !oldT1Won && !oldDraw, oldDraw); });
+      match.team1.forEach((id) => { if (!removed.includes(id)) revertPlayer(id, oldT1Won, oldDraw, oldScore1, oldScore2); });
+      match.team2.forEach((id) => { if (!removed.includes(id)) revertPlayer(id, !oldT1Won && !oldDraw, oldDraw, oldScore2, oldScore1); });
 
-      const applyPlayer = (id: string, won: boolean, drew: boolean) => {
+      const applyPlayer = (id: string, won: boolean, drew: boolean, teamScore: number, oppScore: number) => {
         const idx = updatedPlayers.findIndex((p) => p.id === id);
         if (idx === -1) return;
         const p = { ...updatedPlayers[idx] };
         p.gamesPlayed += 1;
+        p.gamesWon += teamScore;
+        p.gamesLost += oppScore;
         if (won) { p.wins += 1; p.points += 3 * multiplier; }
         else if (drew) { p.draws += 1; p.points += 1 * multiplier; }
         else { p.losses += 1; }
@@ -231,8 +239,8 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
 
       const newT1Won = newScore1 > newScore2;
       const newDraw = newScore1 === newScore2;
-      match.team1.forEach((id) => { if (!removed.includes(id)) applyPlayer(id, newT1Won, newDraw); });
-      match.team2.forEach((id) => { if (!removed.includes(id)) applyPlayer(id, !newT1Won && !newDraw, newDraw); });
+      match.team1.forEach((id) => { if (!removed.includes(id)) applyPlayer(id, newT1Won, newDraw, newScore1, newScore2); });
+      match.team2.forEach((id) => { if (!removed.includes(id)) applyPlayer(id, !newT1Won && !newDraw, newDraw, newScore2, newScore1); });
 
       const updatedMatches = [...s.matches];
       updatedMatches[matchIdx] = { ...match, score1: newScore1, score2: newScore2 };
