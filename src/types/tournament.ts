@@ -35,6 +35,16 @@ export interface TournamentState {
   matchweekGenerated: boolean;
 }
 
+export interface ShuffleTournamentDetail {
+  title: string;
+  currentMatchweek: number;
+  maxPlayers: number;
+  players: Player[];
+  matches: Match[];
+  divisions: Division[];
+  divisionMultipliers: Record<number, number>;
+}
+
 export const DIVISION_MULTIPLIERS: Record<number, number> = {
   1: 10,
   2: 8,

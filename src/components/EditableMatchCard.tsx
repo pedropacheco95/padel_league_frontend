@@ -30,12 +30,11 @@ interface Props {
   match: Match | EditableCardMatch
   onSaved?: () => void
   onDirtyChange?: (dirty: boolean) => void
-  onPlayerEliminated?: (playerId: PlayerId, matchweek: number) => void
+  onPlayerEliminated?: (playerId: PlayerId, matchweek: number) => Promise<void> | void
   externalEliminated?: PlayerId[]
   onSave?: (data: {
     homeGames: number
     awayGames: number
-    playersEliminated: { slot: SlotKey; playerId: PlayerId }[]
   }) => Promise<void> | void
   headerPrimary?: string
   headerSecondary?: string
@@ -180,15 +179,18 @@ export default function EditableMatchCard({
     setPendingSlot(null)
   }
 
-  function handleConfirm() {
+  async function handleConfirm() {
     if (!confirmSlot) return
     const playerId = slotPlayers[confirmSlot].id
     if (playerId === null) return
 
-    setEliminated(prev => new Set([...prev, confirmSlot]))
-    setConfirmSlot(null)
-    markDirty()
-    onPlayerEliminated?.(playerId, match.matchweek)
+    try {
+      await onPlayerEliminated?.(playerId, match.matchweek)
+      setEliminated(prev => new Set([...prev, confirmSlot]))
+      setConfirmSlot(null)
+    } catch {
+      window.alert('Não foi possível remover o jogador desta jornada.')
+    }
   }
 
   function handleCancelModal() {
@@ -199,13 +201,6 @@ export default function EditableMatchCard({
   async function handleSave() {
     const nextHomeGames = homeGames !== '' ? Number(homeGames) : (match.gamesHomeTeam ?? 0)
     const nextAwayGames = awayGames !== '' ? Number(awayGames) : (match.gamesAwayTeam ?? 0)
-    const playersEliminated = Array.from(eliminated)
-      .map(slot => {
-        const playerId = slotPlayers[slot].id
-        if (playerId === null) return null
-        return { slot, playerId }
-      })
-      .filter((item): item is { slot: SlotKey; playerId: PlayerId } => item !== null)
 
     setSaving(true)
     try {
@@ -213,14 +208,12 @@ export default function EditableMatchCard({
         await onSave({
           homeGames: nextHomeGames,
           awayGames: nextAwayGames,
-          playersEliminated,
         })
       } else if (typeof match.id === 'number') {
         await matchesApi.editMatch(match.id, {
           homeGames: nextHomeGames,
           awayGames: nextAwayGames,
           field: match.field ?? 'Campo 1',
-          playersEliminated: playersEliminated as { slot: string; playerId: number }[],
         })
       }
 

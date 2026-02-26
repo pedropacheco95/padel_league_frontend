@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react'
-import { useTournament } from '@/context/TournamentContext'
-import { DIVISION_MULTIPLIERS, Match } from '@/types/tournament'
 import { useAuth } from '@/context/AuthContext'
+import { shuffleTournamentApi } from '@/api/shuffleTournament'
+import { Match, Player, ShuffleTournamentDetail } from '@/types/tournament'
+import { matchesApi } from '@/api/matches'
 import LeagueMatchCard from '@/components/LeagueMatchCard'
 import EditableMatchCard, { EditableCardPlayer } from '@/components/EditableMatchCard'
-import { Shuffle, Zap } from 'lucide-react'
-import { toast } from 'sonner'
 
 type Tab = 'standings' | 'matches' | 'divisions'
 
@@ -34,7 +33,7 @@ function orderMatches(matches: Match[]): Match[] {
       if (!teamSet.has(k2)) teamSet.set(k2, m.team2)
     })
     const teams = Array.from(teamSet.entries())
-    const schedule = [[0,1],[2,3],[0,2],[1,3],[0,3],[1,2]]
+    const schedule = [[0, 1], [2, 3], [0, 2], [1, 3], [0, 3], [1, 2]]
     const ordered: Match[] = []
     for (const [a, b] of schedule) {
       const ta = teams[a]?.[0]
@@ -47,76 +46,48 @@ function orderMatches(matches: Match[]): Match[] {
       })
       if (found) ordered.push(found)
     }
-    divMatches.forEach(m => { if (!ordered.includes(m)) ordered.push(m) })
+    divMatches.forEach(m => {
+      if (!ordered.includes(m)) ordered.push(m)
+    })
     result.push(...ordered)
   })
   return result
 }
 
-const TEST_NAMES = [
-  'Carlos García','Miguel Torres','Pablo Ruiz','Alejandro López','Javier Martín',
-  'Daniel Sánchez','Fernando Díaz','Andrés Moreno','Diego Hernández','Rafael Jiménez',
-  'Sergio Romero','Álvaro Navarro','Iván Domínguez','Hugo Vázquez','Marcos Gil',
-  'Adrián Molina','Óscar Ortega','Rubén Delgado','Jorge Ramos','Luis Prieto',
-  'Manuel Blanco','Víctor Castro','Pedro Méndez','Antonio Guerrero','Roberto Peña',
-  'Tomás Medina','Eduardo Santos','Raúl Iglesias','Nicolás Crespo','Gabriel Flores',
-  'Mario Ferrer','Enrique Cabrera','David Suárez','Samuel Herrera','Martín Aguilar',
-  'Alberto Pascual','Santiago Cortés','Felipe Caballero','Ricardo Campos','Gonzalo León',
-  'Ignacio Vega','Emilio Fuentes','Bruno Reyes','Lucas Carrasco','Mateo Gallego',
-  'Jaime Nieto','Arturo Pardo','Cristian Lara',
-]
-
 export default function ShufflePage() {
   const { user } = useAuth()
-  const {
-    state,
-    addPlayer,
-    calculateDivisions,
-    generateMatchweek,
-    getDivisionForPlayer,
-    getPlayerById,
-    submitResult,
-    editResult,
-    removePlayerFromMatchweek,
-  } = useTournament()
-
+  const [data, setData] = useState<ShuffleTournamentDetail | null>(null)
   const [activeTab, setActiveTab] = useState<Tab>('standings')
   const [selectedDivision, setSelectedDivision] = useState(1)
   const [matchesDivFilter, setMatchesDivFilter] = useState(0)
   const [editMode, setEditMode] = useState(false)
   const [dirtyMatches, setDirtyMatches] = useState<Set<string>>(new Set())
 
-  // Auto-load 48 test players on mount if empty
+  function fetchData() {
+    return shuffleTournamentApi.detail().then(({ data }) => {
+      setData(data)
+      if (data.divisions.length > 0) setSelectedDivision(prev => prev || data.divisions[0].number)
+    })
+  }
+
   useEffect(() => {
-    if (state.players.length === 0) {
-      TEST_NAMES.forEach(name => addPlayer(name))
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    fetchData()
+  }, [])
 
-  const handleCalculateDivisions = () => {
-    if (state.players.length !== 48) { toast.error('Precisas de exactamente 48 jogadores'); return }
-    calculateDivisions()
-    toast.success('Divisões recalculadas!')
-  }
+  if (!data) return null
 
-  const handleGenerateMatchweek = () => {
-    if (state.divisions.length === 0) { toast.error('Calcula as divisões primeiro'); return }
-    generateMatchweek()
-    toast.success(`Jornada ${state.currentMatchweek + 1} gerada!`)
-  }
-
-  const currentMatches = state.matches.filter(m => m.matchweek === state.currentMatchweek)
-
-  function tabClass(tab: Tab) {
-    return `c-tor-header__item${activeTab === tab ? ' c-tor-header__item--active' : ''}`
-  }
-
-  function tabContentClass(tab: Tab) {
-    return `${activeTab === tab ? ' is-visible' : ''}`
-  }
-
-  const sortedPlayers = [...state.players].sort((a, b) => b.points - a.points)
   const anyDirty = dirtyMatches.size > 0
+  const currentMatches = data.matches.filter(m => m.matchweek === data.currentMatchweek)
+  const sortedPlayers = [...data.players].sort((a, b) => b.points - a.points)
+
+  function getPlayerById(id: string): Player | undefined {
+    return data.players.find(p => p.id === id)
+  }
+
+  function getDivisionForPlayer(playerId: string): number {
+    const div = data.divisions.find(d => d.playerIds.includes(playerId))
+    return div ? div.number : 0
+  }
 
   function handleDirtyChange(matchId: string, dirty: boolean) {
     setDirtyMatches(prev => {
@@ -147,7 +118,7 @@ export default function ShufflePage() {
         name: player?.name || '?',
         fullName: player?.name || '?',
         pictureUrl: '/static/images/Player/default_player.jpg',
-        rankingPoints: 0,
+        rankingPoints: player?.points || 0,
       }
     }
 
@@ -164,7 +135,7 @@ export default function ShufflePage() {
   }
 
   function renderShuffleMatchCard(match: Match, gameNumber: number) {
-    const mult = DIVISION_MULTIPLIERS[match.division] || 1
+    const mult = data.divisionMultipliers[match.division] || 1
     const divLabel = `Div ${match.division} · x${mult}`
     const headerLabel = `Jogo ${gameNumber} · ${divLabel}`
     const players = getMatchPlayers(match)
@@ -201,36 +172,41 @@ export default function ShufflePage() {
         headerPrimary={headerLabel}
         headerSecondary={divLabel}
         showWatchIcon={false}
+        showFieldInfo={false}
+        canEliminatePlayers={!match.played}
         externalEliminated={match.removedPlayers || []}
         onDirtyChange={dirty => handleDirtyChange(match.id, dirty)}
         onSaved={() => handleDirtyChange(match.id, false)}
-        onPlayerEliminated={(playerId, matchweek) =>
-          removePlayerFromMatchweek(String(playerId), matchweek)
-        }
-        onSave={({ homeGames, awayGames }) => {
-          if (match.played) editResult(match.id, homeGames, awayGames)
-          else submitResult(match.id, homeGames, awayGames)
+        onPlayerEliminated={async (playerId, matchweek) => {
+          await shuffleTournamentApi.removePlayerFromMatchweek({
+            playerId: String(playerId),
+            matchweek,
+          })
+          await fetchData()
+        }}
+        onSave={async ({ homeGames, awayGames }) => {
+          await matchesApi.editShuffleMatch(match.id, { homeGames, awayGames })
+          await fetchData()
         }}
       />
     )
+  }
+
+  function tabClass(tab: Tab) {
+    return `c-tor-header__item${activeTab === tab ? ' c-tor-header__item--active' : ''}`
+  }
+
+  function tabContentClass(tab: Tab) {
+    return `${activeTab === tab ? ' is-visible' : ''}`
   }
 
   return (
     <>
       <div className="c-tor-header c-tor-header--master">
         <div className="c-tor-header__content" style={{ width: '100%' }}>
-          <div className="c-tor-header__title">Padel Shuffle</div>
+          <div className="c-tor-header__title">{data.title}</div>
           <div className="c-tor-header__iandt">
-            <span>Jornada {state.currentMatchweek}</span>
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', margin: '10px 0' }}>
-            <button onClick={handleCalculateDivisions} className="c-btn c-btn--small" style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
-              <Shuffle className="h-4 w-4" /> Reagrupar
-            </button>
-            <button onClick={handleGenerateMatchweek} className="c-btn c-btn--small" style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
-              <Zap className="h-4 w-4" /> Gerar Jornada
-            </button>
+            <span>{data.players.length}/{data.maxPlayers} jogadores · Jornada {data.currentMatchweek}</span>
           </div>
 
           <ul className="c-tor-header__nav u-list-clean" role="tablist">
@@ -248,44 +224,39 @@ export default function ShufflePage() {
       </div>
 
       <div className="l-grid">
-        {/* ---- Standings tab ---- */}
         <div className={`c-flex-table--shuffle-games c-flex-table c-flex-table--ranking c-flex-table--tab ${tabContentClass('standings')}`} id="shuffle_standings_tab">
-          {state.players.length === 0 ? (
-            <div style={{ padding: '32px', textAlign: 'center', opacity: 0.6 }}>
-              A carregar jogadores...
-            </div>
-          ) : (
-            <table id="classification_table" className="classification_table">
-              <thead>
-                <tr>
-                  <th />
-                  <th />
-                  <th>V</th>
-                  <th>E</th>
-                  <th>D</th>
-                  <th>JG</th>
-                  <th>JP</th>
-                  <th>Pts</th>
-                  <th style={{width: '10%'}}>Div</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedPlayers.map((player, idx) => {
-                  const div = getDivisionForPlayer(player.id)
-                  const badge = DIV_BADGE[div]
-                  return (
-                    <tr key={player.id} className="player_classification_row">
-                      <td>{idx + 1}</td>
-                      <td>{player.name}</td>
-                      <td>{player.wins}</td>
-                      <td>{player.draws}</td>
-                      <td>{player.losses}</td>
-                      <td>{player.gamesWon}</td>
-                      <td>{player.gamesLost}</td>
-                      <td>{player.points}</td>
-                      <td>
-                        {div > 0 ? (
-                          <span style={{
+          <table id="classification_table" className="classification_table">
+            <thead>
+              <tr>
+                <th />
+                <th />
+                <th>V</th>
+                <th>E</th>
+                <th>D</th>
+                <th>JG</th>
+                <th>JP</th>
+                <th>Pts</th>
+                <th style={{ width: '10%' }}>Div</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedPlayers.map((player, idx) => {
+                const div = getDivisionForPlayer(player.id)
+                const badge = DIV_BADGE[div]
+                return (
+                  <tr key={player.id} className="player_classification_row">
+                    <td>{idx + 1}</td>
+                    <td>{player.name}</td>
+                    <td>{player.wins}</td>
+                    <td>{player.draws}</td>
+                    <td>{player.losses}</td>
+                    <td>{player.gamesWon}</td>
+                    <td>{player.gamesLost}</td>
+                    <td>{player.points}</td>
+                    <td>
+                      {div > 0 ? (
+                        <span
+                          style={{
                             display: 'inline-block',
                             padding: '1px 7px',
                             borderRadius: '4px',
@@ -293,28 +264,30 @@ export default function ShufflePage() {
                             fontWeight: 700,
                             color: badge?.color || '#333',
                             backgroundColor: badge?.bg || '#eee',
-                          }}>
-                            Div {div}
-                          </span>
-                        ) : '-'}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          )}
+                          }}
+                        >
+                          Div {div}
+                        </span>
+                      ) : (
+                        '-'
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
 
-        {/* ---- Matches tab ---- */}
         <div className={`c-flex-table--shuffle-games c-flex-table c-flex-table--ranking c-flex-table--tab ${tabContentClass('matches')}`} id="shuffle_matches_tab">
           <div style={{ position: 'relative' }}>
             {user && (
               <div
                 style={{
                   position: 'absolute',
-                  right: '-1rem',
-                  top: '-2rem',
+                  right: 0,
+                  top: 0,
+                  transform: 'translateY(-115%)',
                   background: '#fff',
                   border: '1px solid #d9d9d9',
                   borderRadius: '999px',
@@ -348,7 +321,7 @@ export default function ShufflePage() {
               </div>
             )}
 
-            {state.divisions.length > 0 && (
+            {data.divisions.length > 0 && (
               <div className="select_container" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
                 <select
                   className="form-select matchweek_select"
@@ -356,7 +329,7 @@ export default function ShufflePage() {
                   onChange={e => setMatchesDivFilter(Number(e.target.value))}
                 >
                   <option value={0}>Todas as divisões</option>
-                  {state.divisions.map(d => (
+                  {data.divisions.map(d => (
                     <option key={d.number} value={d.number}>Divisão {d.number}</option>
                   ))}
                 </select>
@@ -366,7 +339,7 @@ export default function ShufflePage() {
 
           {currentMatches.length === 0 ? (
             <div style={{ padding: '32px', textAlign: 'center', opacity: 0.6 }}>
-              Gera uma jornada para ver os jogos
+              Sem jogos para a jornada atual
             </div>
           ) : (
             <div className="l-grid l-grid--tor">
@@ -378,13 +351,13 @@ export default function ShufflePage() {
             </div>
           )}
 
-          {state.currentMatchweek > 1 && (
+          {data.currentMatchweek > 1 && (
             <>
               <br />
-              {Array.from({ length: state.currentMatchweek - 1 }, (_, i) => i + 1)
+              {Array.from({ length: data.currentMatchweek - 1 }, (_, i) => i + 1)
                 .reverse()
                 .map(mw => {
-                  const mwMatches = state.matches.filter(
+                  const mwMatches = data.matches.filter(
                     m => m.matchweek === mw && (matchesDivFilter === 0 || m.division === matchesDivFilter)
                   )
                   return (
@@ -404,16 +377,15 @@ export default function ShufflePage() {
           )}
         </div>
 
-        {/* ---- Divisions tab ---- */}
         <div className={`c-flex-table--tab ${tabContentClass('divisions')}`} id="shuffle_divisions_tab">
-          {state.divisions.length === 0 ? (
+          {data.divisions.length === 0 ? (
             <div style={{ padding: '32px', textAlign: 'center', opacity: 0.6 }}>
-              Calcula as divisões primeiro
+              Sem divisões disponíveis
             </div>
           ) : (
             <>
               <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', flexWrap: 'wrap' }}>
-                {state.divisions.map(d => (
+                {data.divisions.map(d => (
                   <button
                     key={d.number}
                     onClick={() => setSelectedDivision(d.number)}
@@ -430,17 +402,17 @@ export default function ShufflePage() {
               </div>
 
               {(() => {
-                const div = state.divisions.find(d => d.number === selectedDivision)
+                const div = data.divisions.find(d => d.number === selectedDivision)
                 if (!div) return null
-                const mult = DIVISION_MULTIPLIERS[selectedDivision] || 1
+                const mult = data.divisionMultipliers[selectedDivision] || 1
                 const divPlayers = div.playerIds
-                  .map(id => state.players.find(p => p.id === id))
+                  .map(id => data.players.find(p => p.id === id))
                   .filter(Boolean)
                   .sort((a, b) => b!.points - a!.points)
 
                 return (
                   <>
-                    <div className='c-flex-table--shuffle-games c-flex-table c-flex-table--ranking'>
+                    <div className="c-flex-table--shuffle-games c-flex-table c-flex-table--ranking">
                       <table className="classification_table">
                         <thead>
                           <tr>

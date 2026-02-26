@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams, Navigate } from 'react-router-dom'
 import { matchesApi } from '@/api/matches'
+import { tournamentsApi } from '@/api/tournaments'
 import { ForEditData } from '@/types'
 import { useAuth } from '@/context/AuthContext'
 import EditableMatchCard from '@/components/EditableMatchCard'
@@ -24,8 +25,6 @@ export default function ForEditPage() {
     fetchData(selectedDivision || undefined)
   }, [fetchData, selectedDivision])
 
-  if (!user) return <Navigate to="/login" replace />
-
   function handleDivisionChange(divisionId: string) {
     setSelectedDivision(divisionId)
     setEliminatedByMatchweek(new Map())
@@ -36,13 +35,19 @@ export default function ForEditPage() {
     }
   }
 
-  function handlePlayerEliminated(playerId: number, matchweek: number) {
+  async function handlePlayerEliminated(
+    playerId: number,
+    matchweek: number,
+    divisionId: number
+  ) {
+    await tournamentsApi.removePlayerFromMatchweek(divisionId, { playerId, matchweek })
     setEliminatedByMatchweek(prev => {
       const next = new Map(prev)
       const week = next.get(matchweek) ?? new Set<number>()
       next.set(matchweek, new Set([...week, playerId]))
       return next
     })
+    fetchData(selectedDivision || undefined)
   }
 
   function handleSaved(divisionId: string) {
@@ -53,7 +58,7 @@ export default function ForEditPage() {
   return (
     <div className="l-grid">
       <div className="flex items-center justify-between mb-4 mt-4">
-        {data && (
+        {data && user && (
           <select
             className="form-select"
             value={selectedDivision}
@@ -67,23 +72,28 @@ export default function ForEditPage() {
         )}
       </div>
 
-      {data?.matches.length === 0 && (
+      {data?.matches.length === 0 || !user && (
         <p className="text-muted-foreground py-4">
           Não há jogos para editar{selectedDivision ? ' nesta divisão' : ''}.
         </p>
       )}
 
-      <div className="flex flex-col gap-3">
-        {data?.matches.map(match => (
+      {user && (
+        <div className="flex flex-col gap-3">
+          {data?.matches.map(match => (
           <EditableMatchCard
             key={match.id}
             match={match}
             onSaved={() => handleSaved(selectedDivision)}
-            onPlayerEliminated={handlePlayerEliminated}
+            onPlayerEliminated={(playerId, matchweek) =>
+              handlePlayerEliminated(Number(playerId), matchweek, match.divisionId)
+            }
             externalEliminated={[...(eliminatedByMatchweek.get(match.matchweek) ?? [])]}
           />
         ))}
       </div>
+      )}
+
     </div>
   )
 }

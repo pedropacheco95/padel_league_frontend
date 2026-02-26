@@ -121,7 +121,6 @@ export interface EditMatchPayload {
   homeGames: number
   awayGames: number
   field: string
-  playersEliminated: { slot: string; playerId: number }[]
 }
 
 export interface PlayerTournamentRow {

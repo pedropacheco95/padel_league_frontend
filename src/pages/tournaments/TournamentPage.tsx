@@ -31,25 +31,28 @@ function formatDateTime(dateStr: string | null): string {
 // MatchesTab — played matches in view mode; all matches + inline edit for users
 // ---------------------------------------------------------------------------
 interface MatchesTabProps {
+  tournamentId: number
   matches: Match[]
   allMatches: Match[]
   user: User | null
   onRefresh: () => void
 }
 
-function MatchesTab({ matches, allMatches, user, onRefresh }: MatchesTabProps) {
+function MatchesTab({ tournamentId, matches, allMatches, user, onRefresh }: MatchesTabProps) {
   const [editMode, setEditMode] = useState(false)
   const [dirtyMatches, setDirtyMatches] = useState<Set<number>>(new Set())
   const [selectedMatchweek, setSelectedMatchweek] = useState<string>('')
   const [eliminatedByMatchweek, setEliminatedByMatchweek] = useState<Map<number, Set<number>>>(new Map())
 
-  function handlePlayerEliminated(playerId: number, matchweek: number) {
+  async function handlePlayerEliminated(playerId: number, matchweek: number) {
+    await tournamentsApi.removePlayerFromMatchweek(tournamentId, { playerId, matchweek })
     setEliminatedByMatchweek(prev => {
       const next = new Map(prev)
       const week = next.get(matchweek) ?? new Set<number>()
       next.set(matchweek, new Set([...week, playerId]))
       return next
     })
+    onRefresh()
   }
 
   // In edit mode show all matches so unplayed ones can get results entered too
@@ -308,6 +311,7 @@ export default function TournamentPage() {
         {/* Matches tab */}
         <div className={tabContentClass('matches')} id="matches_information_tab">
           <MatchesTab
+            tournamentId={division.id}
             matches={matches}
             allMatches={allMatches}
             user={user}

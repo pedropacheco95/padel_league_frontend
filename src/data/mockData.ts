@@ -1,4 +1,5 @@
 import { IndexData, TournamentsData, TournamentDetail, PlayerRanking, PlayerDetail, ForEditData, User } from '../types'
+import { ShuffleTournamentDetail } from '@/types/tournament'
 
 export const USE_MOCK = import.meta.env.VITE_USE_MOCK_DATA === 'true'
 export const MOCK_LOGGED_IN = import.meta.env.VITE_MOCK_LOGGED_IN === 'true'
@@ -438,4 +439,63 @@ export const mockTournamentDetails: Record<number, TournamentDetail> = {
 export const mockForEditData: ForEditData = {
   matches: allMatches51.filter(m => !m.played) as ForEditData['matches'],
   divisions: mockIndexData.tournaments,
+}
+
+// ---------------------------------------------------------------------------
+// /api/v1/shuffle_tournament
+// ---------------------------------------------------------------------------
+
+export const mockShuffleTournamentDetail: ShuffleTournamentDetail = {
+  title: 'Padel Shuffle',
+  currentMatchweek: 3,
+  maxPlayers: 48,
+  divisionMultipliers: { 1: 10, 2: 8, 3: 6, 4: 4, 5: 2, 6: 1 },
+  players: [
+    { id: 'p1', name: 'Carlos García', points: 52, wins: 5, draws: 1, losses: 0, gamesPlayed: 6, gamesWon: 53, gamesLost: 34 },
+    { id: 'p2', name: 'Miguel Torres', points: 45, wins: 4, draws: 1, losses: 1, gamesPlayed: 6, gamesWon: 48, gamesLost: 39 },
+    { id: 'p3', name: 'Pablo Ruiz', points: 42, wins: 4, draws: 0, losses: 2, gamesPlayed: 6, gamesWon: 47, gamesLost: 41 },
+    { id: 'p4', name: 'Alejandro López', points: 36, wins: 3, draws: 0, losses: 3, gamesPlayed: 6, gamesWon: 45, gamesLost: 43 },
+    { id: 'p5', name: 'Javier Martín', points: 33, wins: 3, draws: 0, losses: 3, gamesPlayed: 6, gamesWon: 43, gamesLost: 45 },
+    { id: 'p6', name: 'Daniel Sánchez', points: 29, wins: 2, draws: 1, losses: 3, gamesPlayed: 6, gamesWon: 39, gamesLost: 47 },
+    { id: 'p7', name: 'Fernando Díaz', points: 24, wins: 2, draws: 0, losses: 4, gamesPlayed: 6, gamesWon: 36, gamesLost: 49 },
+    { id: 'p8', name: 'Andrés Moreno', points: 21, wins: 2, draws: 0, losses: 4, gamesPlayed: 6, gamesWon: 35, gamesLost: 50 },
+    { id: 'p9', name: 'Diego Hernández', points: 41, wins: 4, draws: 1, losses: 1, gamesPlayed: 6, gamesWon: 50, gamesLost: 40 },
+    { id: 'p10', name: 'Rafael Jiménez', points: 38, wins: 4, draws: 0, losses: 2, gamesPlayed: 6, gamesWon: 47, gamesLost: 42 },
+    { id: 'p11', name: 'Sergio Romero', points: 34, wins: 3, draws: 1, losses: 2, gamesPlayed: 6, gamesWon: 44, gamesLost: 43 },
+    { id: 'p12', name: 'Álvaro Navarro', points: 32, wins: 3, draws: 1, losses: 2, gamesPlayed: 6, gamesWon: 42, gamesLost: 44 },
+    { id: 'p13', name: 'Iván Domínguez', points: 27, wins: 2, draws: 1, losses: 3, gamesPlayed: 6, gamesWon: 40, gamesLost: 46 },
+    { id: 'p14', name: 'Hugo Vázquez', points: 25, wins: 2, draws: 1, losses: 3, gamesPlayed: 6, gamesWon: 39, gamesLost: 47 },
+    { id: 'p15', name: 'Marcos Gil', points: 20, wins: 2, draws: 0, losses: 4, gamesPlayed: 6, gamesWon: 36, gamesLost: 50 },
+    { id: 'p16', name: 'Adrián Molina', points: 18, wins: 1, draws: 1, losses: 4, gamesPlayed: 6, gamesWon: 34, gamesLost: 52 },
+  ],
+  divisions: [
+    { number: 1, playerIds: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8'] },
+    { number: 2, playerIds: ['p9', 'p10', 'p11', 'p12', 'p13', 'p14', 'p15', 'p16'] },
+  ],
+  matches: [
+    { id: 'd1w2m1', matchweek: 2, division: 1, team1: ['p1', 'p8'], team2: ['p2', 'p7'], played: true, score1: 9, score2: 6 },
+    { id: 'd1w2m2', matchweek: 2, division: 1, team1: ['p3', 'p6'], team2: ['p4', 'p5'], played: true, score1: 7, score2: 8 },
+    { id: 'd1w2m3', matchweek: 2, division: 1, team1: ['p1', 'p8'], team2: ['p3', 'p6'], played: true, score1: 8, score2: 6 },
+    { id: 'd1w2m4', matchweek: 2, division: 1, team1: ['p2', 'p7'], team2: ['p4', 'p5'], played: true, score1: 7, score2: 7 },
+    { id: 'd1w2m5', matchweek: 2, division: 1, team1: ['p1', 'p8'], team2: ['p4', 'p5'], played: true, score1: 9, score2: 7 },
+    { id: 'd1w2m6', matchweek: 2, division: 1, team1: ['p2', 'p7'], team2: ['p3', 'p6'], played: true, score1: 5, score2: 8 },
+    { id: 'd2w2m1', matchweek: 2, division: 2, team1: ['p9', 'p16'], team2: ['p10', 'p15'], played: true, score1: 8, score2: 6 },
+    { id: 'd2w2m2', matchweek: 2, division: 2, team1: ['p11', 'p14'], team2: ['p12', 'p13'], played: true, score1: 7, score2: 9 },
+    { id: 'd2w2m3', matchweek: 2, division: 2, team1: ['p9', 'p16'], team2: ['p11', 'p14'], played: true, score1: 8, score2: 7 },
+    { id: 'd2w2m4', matchweek: 2, division: 2, team1: ['p10', 'p15'], team2: ['p12', 'p13'], played: true, score1: 6, score2: 8 },
+    { id: 'd2w2m5', matchweek: 2, division: 2, team1: ['p9', 'p16'], team2: ['p12', 'p13'], played: true, score1: 9, score2: 8 },
+    { id: 'd2w2m6', matchweek: 2, division: 2, team1: ['p10', 'p15'], team2: ['p11', 'p14'], played: true, score1: 7, score2: 6 },
+    { id: 'd1w3m1', matchweek: 3, division: 1, team1: ['p1', 'p8'], team2: ['p2', 'p7'], played: false },
+    { id: 'd1w3m2', matchweek: 3, division: 1, team1: ['p3', 'p6'], team2: ['p4', 'p5'], played: false },
+    { id: 'd1w3m3', matchweek: 3, division: 1, team1: ['p1', 'p8'], team2: ['p3', 'p6'], played: false },
+    { id: 'd1w3m4', matchweek: 3, division: 1, team1: ['p2', 'p7'], team2: ['p4', 'p5'], played: false },
+    { id: 'd1w3m5', matchweek: 3, division: 1, team1: ['p1', 'p8'], team2: ['p4', 'p5'], played: false },
+    { id: 'd1w3m6', matchweek: 3, division: 1, team1: ['p2', 'p7'], team2: ['p3', 'p6'], played: false },
+    { id: 'd2w3m1', matchweek: 3, division: 2, team1: ['p9', 'p16'], team2: ['p10', 'p15'], played: false },
+    { id: 'd2w3m2', matchweek: 3, division: 2, team1: ['p11', 'p14'], team2: ['p12', 'p13'], played: false },
+    { id: 'd2w3m3', matchweek: 3, division: 2, team1: ['p9', 'p16'], team2: ['p11', 'p14'], played: false },
+    { id: 'd2w3m4', matchweek: 3, division: 2, team1: ['p10', 'p15'], team2: ['p12', 'p13'], played: false },
+    { id: 'd2w3m5', matchweek: 3, division: 2, team1: ['p9', 'p16'], team2: ['p12', 'p13'], played: false },
+    { id: 'd2w3m6', matchweek: 3, division: 2, team1: ['p10', 'p15'], team2: ['p11', 'p14'], played: false },
+  ],
 }
