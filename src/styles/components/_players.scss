@@ -488,6 +488,11 @@
     width: 100%;
 }
 
+.player_classification_row{
+    height: 4rem;
+    border-bottom: 1px solid $color-light;
+}
+
 .player_classification_row:hover {
     background-color: rgba(217, 226, 228, 0.6);
 }

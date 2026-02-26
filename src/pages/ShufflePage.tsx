@@ -7,6 +7,15 @@ import { toast } from 'sonner'
 
 type Tab = 'standings' | 'matches' | 'divisions'
 
+const DIV_BADGE: Record<number, { color: string; bg: string; headerBg: string }> = {
+  1: { color: '#7a5800', bg: '#fff0b0', headerBg: '#c8960a' },
+  2: { color: '#2d3748', bg: '#e8edf2', headerBg: '#718096' },
+  3: { color: '#7a3100', bg: '#ffebd8', headerBg: '#c06020' },
+  4: { color: '#003380', bg: '#dbeafe', headerBg: '#2563eb' },
+  5: { color: '#145a32', bg: '#d1fae5', headerBg: '#16a34a' },
+  6: { color: '#581c87', bg: '#ede9fe', headerBg: '#7c3aed' },
+}
+
 function orderMatches(matches: Match[]): Match[] {
   const byDiv = new Map<number, Match[]>()
   matches.forEach(m => {
@@ -90,7 +99,7 @@ export default function ShufflePage() {
   }
 
   function tabContentClass(tab: Tab) {
-    return `c-flex-table c-flex-table--ranking${activeTab === tab ? ' is-visible' : ''}`
+    return `${activeTab === tab ? ' is-visible' : ''}`
   }
 
   const sortedPlayers = [...state.players].sort((a, b) => b.points - a.points)
@@ -129,7 +138,7 @@ export default function ShufflePage() {
 
       <div className="l-grid">
         {/* ---- Standings tab ---- */}
-        <div className={tabContentClass('standings')} id="shuffle_standings_tab">
+        <div className={`c-flex-table--shuffle-games c-flex-table c-flex-table--ranking c-flex-table--tab ${tabContentClass('standings')}`} id="shuffle_standings_tab">
           {state.players.length === 0 ? (
             <div style={{ padding: '32px', textAlign: 'center', opacity: 0.6 }}>
               A carregar jogadores...
@@ -140,29 +149,44 @@ export default function ShufflePage() {
                 <tr>
                   <th />
                   <th />
-                  <th className="optional_table_columns">V</th>
-                  <th className="optional_table_columns">E</th>
-                  <th className="optional_table_columns">D</th>
-                  <th className="optional_table_columns">JG</th>
-                  <th className="optional_table_columns">JP</th>
+                  <th>V</th>
+                  <th>E</th>
+                  <th>D</th>
+                  <th>JG</th>
+                  <th>JP</th>
                   <th>Pts</th>
-                  <th>Div</th>
+                  <th style={{width: '10%'}}>Div</th>
                 </tr>
               </thead>
               <tbody>
                 {sortedPlayers.map((player, idx) => {
                   const div = getDivisionForPlayer(player.id)
+                  const badge = DIV_BADGE[div]
                   return (
                     <tr key={player.id} className="player_classification_row">
                       <td>{idx + 1}</td>
                       <td>{player.name}</td>
-                      <td className="optional_table_columns">{player.wins}</td>
-                      <td className="optional_table_columns">{player.draws}</td>
-                      <td className="optional_table_columns">{player.losses}</td>
-                      <td className="optional_table_columns">{player.gamesWon}</td>
-                      <td className="optional_table_columns">{player.gamesLost}</td>
+                      <td>{player.wins}</td>
+                      <td>{player.draws}</td>
+                      <td>{player.losses}</td>
+                      <td>{player.gamesWon}</td>
+                      <td>{player.gamesLost}</td>
                       <td>{player.points}</td>
-                      <td>{div > 0 ? div : '-'}</td>
+                      <td>
+                        {div > 0 ? (
+                          <span style={{
+                            display: 'inline-block',
+                            padding: '1px 7px',
+                            borderRadius: '4px',
+                            fontSize: '1.4rem',
+                            fontWeight: 700,
+                            color: badge?.color || '#333',
+                            backgroundColor: badge?.bg || '#eee',
+                          }}>
+                            Div {div}
+                          </span>
+                        ) : '-'}
+                      </td>
                     </tr>
                   )
                 })}
@@ -172,7 +196,7 @@ export default function ShufflePage() {
         </div>
 
         {/* ---- Matches tab ---- */}
-        <div className={tabContentClass('matches')} id="shuffle_matches_tab">
+        <div className={`c-flex-table--shuffle-games c-flex-table c-flex-table--ranking c-flex-table--tab ${tabContentClass('matches')}`} id="shuffle_matches_tab">
           {state.divisions.length > 0 && (
             <div className="select_container" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
               <select
@@ -229,7 +253,7 @@ export default function ShufflePage() {
         </div>
 
         {/* ---- Divisions tab ---- */}
-        <div className={tabContentClass('divisions')} id="shuffle_divisions_tab">
+        <div className={`c-flex-table--tab ${tabContentClass('divisions')}`} id="shuffle_divisions_tab">
           {state.divisions.length === 0 ? (
             <div style={{ padding: '32px', textAlign: 'center', opacity: 0.6 }}>
               Calcula as divisões primeiro
@@ -264,37 +288,39 @@ export default function ShufflePage() {
 
                 return (
                   <>
-                    <div style={{ marginBottom: '12px', fontSize: '0.85rem', opacity: 0.8 }}>
-                      Vitória: <strong>{3 * mult} pts</strong> · Empate: <strong>{1 * mult} pts</strong> · Multiplicador: ×{mult}
-                    </div>
-                    <table className="classification_table">
-                      <thead>
-                        <tr>
-                          <th />
-                          <th />
-                          <th className="optional_table_columns">V</th>
-                          <th className="optional_table_columns">E</th>
-                          <th className="optional_table_columns">D</th>
-                          <th className="optional_table_columns">JG</th>
-                          <th className="optional_table_columns">JP</th>
-                          <th>Pts</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {divPlayers.map((player, idx) => (
-                          <tr key={player!.id} className="player_classification_row">
-                            <td>{idx + 1}</td>
-                            <td>{player!.name}</td>
-                            <td className="optional_table_columns">{player!.wins}</td>
-                            <td className="optional_table_columns">{player!.draws}</td>
-                            <td className="optional_table_columns">{player!.losses}</td>
-                            <td className="optional_table_columns">{player!.gamesWon}</td>
-                            <td className="optional_table_columns">{player!.gamesLost}</td>
-                            <td>{player!.points}</td>
+                    <div className='c-flex-table--shuffle-games c-flex-table c-flex-table--ranking'>
+                      <table className="classification_table">
+                        <thead>
+                          <tr>
+                            <th />
+                            <th />
+                            <th>V</th>
+                            <th>E</th>
+                            <th>D</th>
+                            <th>JG</th>
+                            <th>JP</th>
+                            <th>Pts</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {divPlayers.map((player, idx) => (
+                            <tr key={player!.id} className="player_classification_row">
+                              <td>{idx + 1}</td>
+                              <td>{player!.name}</td>
+                              <td>{player!.wins}</td>
+                              <td>{player!.draws}</td>
+                              <td>{player!.losses}</td>
+                              <td>{player!.gamesWon}</td>
+                              <td>{player!.gamesLost}</td>
+                              <td>{player!.points}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <div style={{ margin: '1rem', fontSize: '1.5rem', opacity: 0.8 }}>
+                        Vitória: <strong>{3 * mult} pts</strong> · Empate: <strong>{1 * mult} pts</strong> · Multiplicador: ×{mult}
+                      </div>
+                    </div>
                   </>
                 )
               })()}

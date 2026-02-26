@@ -1290,6 +1290,7 @@ body:not(.t-tournaments) {
   border-top: 0.8rem solid $color-primary;
   @include size-query(mediumUp) {
     display: flex;
+    flex-direction: column;
   }
   .c-flex-table__column:first-child {
     @include size-query(mediumUp) {
@@ -2022,7 +2023,7 @@ li {
   overflow: hidden;
   margin: 0 1rem;
 }
-.c-flex-table--ranking:not(.is-visible) {
+.c-flex-table--tab:not(.is-visible) {
   display: none;
 }
 .c-flex-table__heading {
@@ -2125,6 +2126,7 @@ ul {
   background-color: rgba(255, 255, 255, 1);
   text-align: center;
   color: $color-primary;
+  font-size: 1.8rem;
 }
 .u-img-cropped--classification {
   width: 4.9rem;

@@ -45,6 +45,9 @@ export default function ShuffleMatchCard({ matchId, gameNumber }: Props) {
   const showSave = isEditing && dirty && bothFilled
   const showRed = showSave && !inputRecentlyFocused
 
+  const divLabel = `Div ${match.division} · ×${mult}`
+  const headerLabel = gameNumber ? `Jogo ${gameNumber} · ${divLabel}` : divLabel
+
   function markDirty() {
     setDirty(true)
     setSavedOnce(false)
@@ -92,9 +95,75 @@ export default function ShuffleMatchCard({ matchId, gameNumber }: Props) {
     markDirty()
   }
 
-  const divLabel = `Div ${match.division} · ×${mult}`
-  const headerLabel = gameNumber ? `Jogo ${gameNumber} · ${divLabel}` : divLabel
+  // ── View mode (played, not editing) — same structure as LeagueMatchCard ──
+  if (match.played && !editing) {
+    return (
+      <section className="c-tor-box c-tor-box--m">
+        <br />
+        <div className="c-teams c-teams--double c-teams--vs">
+          <div className="c-teams__header c-teams__header--played">
+            <div className="c-teams__iandt">
+              <span className="big-date">{headerLabel}</span>
+              <span className="small-date">{divLabel}</span>
+            </div>
+            <div className="c-teams__iandt">
+              <span>{match.score1}-{match.score2}</span>
+            </div>
+            <div className="c-teams__iandt">
+              <Button
+                size="sm"
+                onClick={handleEdit}
+                className="h-7 px-2 gap-1 bg-white/20 text-white hover:bg-white/30"
+              >
+                <span className="text-xs">Editar</span>
+              </Button>
+            </div>
+          </div>
+        </div>
 
+        <div className="c-teams__box">
+          <div className="c-teams__column">
+            <ul className="c-teams__list u-list-clean">
+              <li className="c-teams__item on_match">
+                <div className="c-teams__container">
+                  <div className="c-teams__details">
+                    <div className="l-wrapper">
+                      <div className="c-teams__players">
+                        <div className="c-teams__name">{t1[0]?.name || '?'}</div>
+                        <div className="c-teams__name">{t1[1]?.name || '?'}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <span className="c-teams__vs">VS</span>
+
+          <div className="c-teams__column">
+            <ul className="c-teams__list u-list-clean">
+              <li className="c-teams__item on_match">
+                <div className="c-teams__container">
+                  <div className="c-teams__details">
+                    <div className="l-wrapper">
+                      <div className="c-teams__players">
+                        <div className="c-teams__name">{t2[0]?.name || '?'}</div>
+                        <div className="c-teams__name">{t2[1]?.name || '?'}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <br />
+      </section>
+    )
+  }
+
+  // ── Edit mode (not yet played, or editing a played match) ──
   return (
     <>
       <section className="c-tor-box c-tor-box--m">
@@ -110,39 +179,29 @@ export default function ShuffleMatchCard({ matchId, gameNumber }: Props) {
             </div>
 
             <div className="c-teams__iandt_edit">
-              {isEditing ? (
-                <>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    className="game_results"
-                    value={s1}
-                    onChange={e => { setS1(e.target.value.replace(/[^0-9]/g, '')); markDirty() }}
-                    onFocus={() => setInputFocused(true)}
-                    onBlur={() => setInputFocused(false)}
-                    style={{ width: '3rem', textAlign: 'center' }}
-                  />
-                  <span>-</span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    className="game_results"
-                    value={s2}
-                    onChange={e => { setS2(e.target.value.replace(/[^0-9]/g, '')); markDirty() }}
-                    onFocus={() => setInputFocused(true)}
-                    onBlur={() => setInputFocused(false)}
-                    style={{ width: '3rem', textAlign: 'center' }}
-                  />
-                </>
-              ) : (
-                <>
-                  <span style={{ fontSize: '1.2rem', fontWeight: 700 }}>{match.score1}</span>
-                  <span>-</span>
-                  <span style={{ fontSize: '1.2rem', fontWeight: 700 }}>{match.score2}</span>
-                </>
-              )}
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                className="game_results"
+                value={s1}
+                onChange={e => { setS1(e.target.value.replace(/[^0-9]/g, '')); markDirty() }}
+                onFocus={() => setInputFocused(true)}
+                onBlur={() => setInputFocused(false)}
+                style={{ width: '3rem', textAlign: 'center' }}
+              />
+              <span>-</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                className="game_results"
+                value={s2}
+                onChange={e => { setS2(e.target.value.replace(/[^0-9]/g, '')); markDirty() }}
+                onFocus={() => setInputFocused(true)}
+                onBlur={() => setInputFocused(false)}
+                style={{ width: '3rem', textAlign: 'center' }}
+              />
             </div>
 
             <div className="c-teams__iandt_submit">
@@ -161,19 +220,10 @@ export default function ShuffleMatchCard({ matchId, gameNumber }: Props) {
                   size="sm"
                   disabled
                   className="h-7 px-2 gap-1 text-white"
-                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}
+                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.3019607843)' }}
                 >
                   <Save className="h-3.5 w-3.5" />
                   <span className="text-xs">Guardado</span>
-                </Button>
-              )}
-              {match.played && !editing && (
-                <Button
-                  size="sm"
-                  onClick={handleEdit}
-                  className="h-7 px-2 gap-1 bg-white/20 text-white hover:bg-white/30"
-                >
-                  <span className="text-xs">Editar</span>
                 </Button>
               )}
             </div>
@@ -181,7 +231,7 @@ export default function ShuffleMatchCard({ matchId, gameNumber }: Props) {
         </div>
 
         <div className="c-teams__box">
-          {/* Home team */}
+          {/* Team 1 */}
           <div className="c-teams__column">
             <ul className="c-teams__list u-list-clean">
               <li className="c-teams__item on_match">
@@ -191,15 +241,15 @@ export default function ShuffleMatchCard({ matchId, gameNumber }: Props) {
                       <div className="c-teams__players">
                         <div
                           className="c-teams__name"
-                          style={{ ...nameStyle(match.team1[0]), cursor: isEditing ? 'pointer' : 'default' }}
-                          onClick={() => isEditing && handlePlayerClick(match.team1[0])}
+                          style={{ ...nameStyle(match.team1[0]), cursor: 'pointer' }}
+                          onClick={() => handlePlayerClick(match.team1[0])}
                         >
                           {t1[0]?.name || '?'}
                         </div>
                         <div
                           className="c-teams__name"
-                          style={{ ...nameStyle(match.team1[1]), cursor: isEditing ? 'pointer' : 'default' }}
-                          onClick={() => isEditing && handlePlayerClick(match.team1[1])}
+                          style={{ ...nameStyle(match.team1[1]), cursor: 'pointer' }}
+                          onClick={() => handlePlayerClick(match.team1[1])}
                         >
                           {t1[1]?.name || '?'}
                         </div>
@@ -213,7 +263,7 @@ export default function ShuffleMatchCard({ matchId, gameNumber }: Props) {
 
           <span className="c-teams__vs">VS</span>
 
-          {/* Away team */}
+          {/* Team 2 */}
           <div className="c-teams__column">
             <ul className="c-teams__list u-list-clean">
               <li className="c-teams__item on_match">
@@ -223,15 +273,15 @@ export default function ShuffleMatchCard({ matchId, gameNumber }: Props) {
                       <div className="c-teams__players">
                         <div
                           className="c-teams__name"
-                          style={{ ...nameStyle(match.team2[0]), cursor: isEditing ? 'pointer' : 'default' }}
-                          onClick={() => isEditing && handlePlayerClick(match.team2[0])}
+                          style={{ ...nameStyle(match.team2[0]), cursor: 'pointer' }}
+                          onClick={() => handlePlayerClick(match.team2[0])}
                         >
                           {t2[0]?.name || '?'}
                         </div>
                         <div
                           className="c-teams__name"
-                          style={{ ...nameStyle(match.team2[1]), cursor: isEditing ? 'pointer' : 'default' }}
-                          onClick={() => isEditing && handlePlayerClick(match.team2[1])}
+                          style={{ ...nameStyle(match.team2[1]), cursor: 'pointer' }}
+                          onClick={() => handlePlayerClick(match.team2[1])}
                         >
                           {t2[1]?.name || '?'}
                         </div>

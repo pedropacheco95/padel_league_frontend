@@ -31,8 +31,6 @@ const PlayerPage = () => {
       <div className="l-grid">
         <div className="c-player">
           <div className="c-player__content">
-            <img className="c-player__img" src={player.largePictureUrl ?? undefined} alt={player.fullName} />
-
             {previousPlayer && (
               <div className="c-player__prev">
                 <Link to={`/players/${previousPlayer.id}`}>
@@ -211,7 +209,7 @@ const PlayerPage = () => {
 
       {/* Tournament history flex table */}
       <div className="l-grid player_tables_container">
-        <div className="c-flex-table c-flex-table--ranking c-flex-table--blue is-visible">
+        <div className="c-flex-table c-flex-table--ranking c-flex-table--tab c-flex-table--blue is-visible">
           <div className="c-flex-table__column">
             <div className="c-flex-table__heading"><h3>Torneio</h3></div>
             <ul className="c-flex-table__list u-list-clean">

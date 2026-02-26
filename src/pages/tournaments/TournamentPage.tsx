@@ -180,7 +180,7 @@ export default function TournamentPage() {
   }
 
   function tabContentClass(tab: Tab) {
-    return `c-flex-table c-flex-table--ranking${activeTab === tab ? ' is-visible' : ''}`
+    return `c-flex-table c-flex-table--ranking c-flex-table--tab${activeTab === tab ? ' is-visible' : ''}`
   }
 
   return (
