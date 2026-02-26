@@ -1,10 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTournament } from '@/context/TournamentContext'
 import { DIVISION_MULTIPLIERS, Match } from '@/types/tournament'
-import { StandingsTable } from '@/components/StandingsTable'
-import { DivisionView } from '@/components/DivisionView'
 import ShuffleMatchCard from '@/components/ShuffleMatchCard'
-import { UserPlus, RotateCcw, Shuffle, Zap, Users } from 'lucide-react'
+import { Shuffle, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 
 type Tab = 'standings' | 'matches' | 'divisions'
@@ -59,22 +57,19 @@ const TEST_NAMES = [
 
 export default function ShufflePage() {
   const {
-    state, addPlayer, removePlayer, calculateDivisions, generateMatchweek, resetTournament,
+    state, addPlayer, calculateDivisions, generateMatchweek, getDivisionForPlayer,
   } = useTournament()
 
   const [activeTab, setActiveTab] = useState<Tab>('standings')
-  const [newPlayerName, setNewPlayerName] = useState('')
   const [selectedDivision, setSelectedDivision] = useState(1)
   const [matchesDivFilter, setMatchesDivFilter] = useState(0)
 
-  const handleAddPlayer = () => {
-    const name = newPlayerName.trim()
-    if (!name) return
-    if (state.players.length >= 48) { toast.error('Máximo 48 jogadores'); return }
-    addPlayer(name)
-    setNewPlayerName('')
-    toast.success(`${name} adicionado`)
-  }
+  // Auto-load 48 test players on mount if empty
+  useEffect(() => {
+    if (state.players.length === 0) {
+      TEST_NAMES.forEach(name => addPlayer(name))
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCalculateDivisions = () => {
     if (state.players.length !== 48) { toast.error('Precisas de exactamente 48 jogadores'); return }
@@ -88,19 +83,6 @@ export default function ShufflePage() {
     toast.success(`Jornada ${state.currentMatchweek + 1} gerada!`)
   }
 
-  const handleLoadTestPlayers = () => {
-    if (state.players.length > 0) { toast.error('Reset primeiro'); return }
-    TEST_NAMES.forEach(name => addPlayer(name))
-    toast.success('48 jogadores de teste carregados!')
-  }
-
-  const handleReset = () => {
-    if (confirm('Tens a certeza? Isto apaga tudo.')) {
-      resetTournament()
-      toast.success('Torneio reiniciado')
-    }
-  }
-
   const currentMatches = state.matches.filter(m => m.matchweek === state.currentMatchweek)
 
   function tabClass(tab: Tab) {
@@ -111,9 +93,10 @@ export default function ShufflePage() {
     return `c-flex-table c-flex-table--ranking${activeTab === tab ? ' is-visible' : ''}`
   }
 
+  const sortedPlayers = [...state.players].sort((a, b) => b.points - a.points)
+
   return (
     <>
-      {/* ---- Tournament-style master header ---- */}
       <div className="c-tor-header c-tor-header--master">
         <div className="c-tor-header__content" style={{ width: '100%' }}>
           <div className="c-tor-header__title">Padel Shuffle</div>
@@ -121,37 +104,15 @@ export default function ShufflePage() {
             <span>{state.players.length}/48 jogadores · Jornada {state.currentMatchweek}</span>
           </div>
 
-          {/* Controls row */}
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', margin: '10px 0' }}>
-            <input
-              type="text"
-              placeholder="Nome do jogador..."
-              value={newPlayerName}
-              onChange={e => setNewPlayerName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleAddPlayer()}
-              className="game_results"
-              style={{ flex: '1', minWidth: '140px', padding: '6px 10px', fontSize: '0.85rem' }}
-            />
-            <button onClick={handleAddPlayer} className="c-btn c-btn--small" style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
-              <UserPlus className="h-4 w-4" /> Adicionar
-            </button>
-            {state.players.length === 0 && (
-              <button onClick={handleLoadTestPlayers} className="c-btn c-btn--small" style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
-                <Users className="h-4 w-4" /> Carregar 48
-              </button>
-            )}
             <button onClick={handleCalculateDivisions} className="c-btn c-btn--small" style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
               <Shuffle className="h-4 w-4" /> Reagrupar
             </button>
             <button onClick={handleGenerateMatchweek} className="c-btn c-btn--small" style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
               <Zap className="h-4 w-4" /> Gerar Jornada
             </button>
-            <button onClick={handleReset} className="c-btn c-btn--small" style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
-              <RotateCcw className="h-4 w-4" /> Reset
-            </button>
           </div>
 
-          {/* Tabs */}
           <ul className="c-tor-header__nav u-list-clean" role="tablist">
             <li className={tabClass('standings')} role="presentation">
               <a onClick={() => setActiveTab('standings')}>Classificação</a>
@@ -171,7 +132,7 @@ export default function ShufflePage() {
         <div className={tabContentClass('standings')} id="shuffle_standings_tab">
           {state.players.length === 0 ? (
             <div style={{ padding: '32px', textAlign: 'center', opacity: 0.6 }}>
-              Adiciona 48 jogadores para começar
+              A carregar jogadores...
             </div>
           ) : (
             <table id="classification_table" className="classification_table">
@@ -179,27 +140,32 @@ export default function ShufflePage() {
                 <tr>
                   <th />
                   <th />
-                  <th className="optional_table_columns">Jogos</th>
                   <th className="optional_table_columns">V</th>
                   <th className="optional_table_columns">E</th>
                   <th className="optional_table_columns">D</th>
-                  <th>Pontos</th>
+                  <th className="optional_table_columns">JG</th>
+                  <th className="optional_table_columns">JP</th>
+                  <th>Pts</th>
+                  <th>Div</th>
                 </tr>
               </thead>
               <tbody>
-                {[...state.players]
-                  .sort((a, b) => b.points - a.points)
-                  .map((player, idx) => (
+                {sortedPlayers.map((player, idx) => {
+                  const div = getDivisionForPlayer(player.id)
+                  return (
                     <tr key={player.id} className="player_classification_row">
                       <td>{idx + 1}</td>
                       <td>{player.name}</td>
-                      <td className="optional_table_columns">{player.gamesPlayed}</td>
                       <td className="optional_table_columns">{player.wins}</td>
                       <td className="optional_table_columns">{player.draws}</td>
                       <td className="optional_table_columns">{player.losses}</td>
+                      <td className="optional_table_columns">{player.gamesWon}</td>
+                      <td className="optional_table_columns">{player.gamesLost}</td>
                       <td>{player.points}</td>
+                      <td>{div > 0 ? div : '-'}</td>
                     </tr>
-                  ))}
+                  )
+                })}
               </tbody>
             </table>
           )}
@@ -207,7 +173,6 @@ export default function ShufflePage() {
 
         {/* ---- Matches tab ---- */}
         <div className={tabContentClass('matches')} id="shuffle_matches_tab">
-          {/* Division filter */}
           {state.divisions.length > 0 && (
             <div className="select_container" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
               <select
@@ -237,7 +202,6 @@ export default function ShufflePage() {
             </div>
           )}
 
-          {/* Previous matchweeks */}
           {state.currentMatchweek > 1 && (
             <>
               <br />
@@ -272,7 +236,7 @@ export default function ShufflePage() {
             </div>
           ) : (
             <>
-              <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', flexWrap: 'wrap' }}>
                 {state.divisions.map(d => (
                   <button
                     key={d.number}
@@ -288,7 +252,52 @@ export default function ShufflePage() {
                   </button>
                 ))}
               </div>
-              <DivisionView divisionNumber={selectedDivision} />
+
+              {(() => {
+                const div = state.divisions.find(d => d.number === selectedDivision)
+                if (!div) return null
+                const mult = DIVISION_MULTIPLIERS[selectedDivision] || 1
+                const divPlayers = div.playerIds
+                  .map(id => state.players.find(p => p.id === id))
+                  .filter(Boolean)
+                  .sort((a, b) => b!.points - a!.points)
+
+                return (
+                  <>
+                    <div style={{ marginBottom: '12px', fontSize: '0.85rem', opacity: 0.8 }}>
+                      Vitória: <strong>{3 * mult} pts</strong> · Empate: <strong>{1 * mult} pts</strong> · Multiplicador: ×{mult}
+                    </div>
+                    <table className="classification_table">
+                      <thead>
+                        <tr>
+                          <th />
+                          <th />
+                          <th className="optional_table_columns">V</th>
+                          <th className="optional_table_columns">E</th>
+                          <th className="optional_table_columns">D</th>
+                          <th className="optional_table_columns">JG</th>
+                          <th className="optional_table_columns">JP</th>
+                          <th>Pts</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {divPlayers.map((player, idx) => (
+                          <tr key={player!.id} className="player_classification_row">
+                            <td>{idx + 1}</td>
+                            <td>{player!.name}</td>
+                            <td className="optional_table_columns">{player!.wins}</td>
+                            <td className="optional_table_columns">{player!.draws}</td>
+                            <td className="optional_table_columns">{player!.losses}</td>
+                            <td className="optional_table_columns">{player!.gamesWon}</td>
+                            <td className="optional_table_columns">{player!.gamesLost}</td>
+                            <td>{player!.points}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </>
+                )
+              })()}
             </>
           )}
         </div>
