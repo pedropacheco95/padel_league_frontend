@@ -277,7 +277,7 @@ export default function ShufflePage() {
           <div className="c-tor-header__iandt">
             <span>{data.players.length}/{data.maxPlayers} jogadores · Jornada {data.currentMatchweek}</span>
           </div>
-          {user && (
+          {user?.superAdmin && (
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
               <button
                 className="c-btn c-btn--small"

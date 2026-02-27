@@ -7,8 +7,10 @@ import { shuffleTournamentApi } from "@/api/shuffleTournament";
 import { playersApi } from "@/api/players";
 import { useShuffleForm } from "@/hooks/useShuffleForm";
 import { PlayerShort } from "@/types";
+import { useAuth } from "@/context/AuthContext";
 
 export default function CreateShuffleTournamentPage() {
+  const { user } = useAuth();
   const {
     form, updateField, selectedPlayers, addPlayer, removePlayer,
     reorderPlayers, clearPlayers, sortPlayersAZ, reversePlayers,
@@ -53,6 +55,28 @@ export default function CreateShuffleTournamentPage() {
     setIsSuccess(false);
     setSubmitError(null);
   }, [reset]);
+
+  if (!user?.superAdmin) {
+    return (
+      <div className="min-h-screen" style={{ background: "#f5f7fb", color: "#0f172a" }}>
+        <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+          <div
+            className="rounded-xl p-6"
+            style={{
+              background: "#ffffff",
+              border: "1px solid #dbe3ee",
+              boxShadow: "0 2px 8px rgba(15, 23, 42, 0.05)",
+            }}
+          >
+            <h2 style={{ margin: 0, fontSize: "2rem" }}>Sem permissao</h2>
+            <p style={{ marginTop: "8px", opacity: 0.8 }}>
+              Apenas super administradores podem criar shuffle tournaments.
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div

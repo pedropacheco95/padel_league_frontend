@@ -15,6 +15,7 @@ export const mockUser: User = {
   username: 'admin',
   email: 'admin@padelleague.pt',
   isAdmin: true,
+  superAdmin: true,
   playerId: 7,
 }
 
