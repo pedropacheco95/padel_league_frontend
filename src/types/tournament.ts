@@ -1,6 +1,9 @@
 export interface Player {
   id: string;
   name: string;
+  fullName?: string;
+  pictureUrl?: string | null;
+  position?: number;
   points: number;
   wins: number;
   draws: number;
@@ -36,6 +39,7 @@ export interface TournamentState {
 }
 
 export interface ShuffleTournamentDetail {
+  id: number;
   title: string;
   currentMatchweek: number;
   maxPlayers: number;

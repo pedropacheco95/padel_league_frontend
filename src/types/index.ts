@@ -160,3 +160,13 @@ export interface PlayerDetail {
   attendance: number
   tournamentHistory: PlayerTournamentRow[]
 }
+
+export interface ShufflePayload {
+  title: string;
+  current_matchweek: number;
+  max_players: number;
+  number_of_divisions: number;
+  has_ended: boolean;
+  division_multipliers: Record<string, number>;
+  players: { player_id: number; order_index: number }[];
+}

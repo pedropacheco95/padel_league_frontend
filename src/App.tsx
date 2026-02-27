@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { TournamentProvider } from "@/context/TournamentContext";
 import { AuthProvider } from "./context/AuthContext";
-import Index from "./pages/ShufflePage";
+import Index from "./pages/Shuffle/ShufflePage";
 import Home from "./pages/Home";
 import Login from "./pages/auth/Login";
 import NotFound from "./pages/NotFound";
@@ -15,7 +15,9 @@ import TournamentPage from "./pages/tournaments/TournamentPage";
 import PlayersPage from "./pages/players/PlayersPage";
 import PlayerPage from "./pages/players/PlayerPage";
 import ForEditPage from "./pages/matches/ForEditPage";
-import ShufflePage from "./pages/ShufflePage";
+import ShufflePage from "./pages/Shuffle/ShufflePage";
+import CreateShufflePage from "./pages/Shuffle/CreateShufflePage";
+import CalendarPage from "./pages/CalendarPage";
 
 const queryClient = new QueryClient();
 
@@ -35,7 +37,9 @@ const App = () => (
               <Route path="/players" element={<Layout><PlayersPage /></Layout>} />
               <Route path="/players/:id" element={<Layout><PlayerPage /></Layout>} />
               <Route path="/matches/for_edit" element={<Layout><ForEditPage /></Layout>} />
+              <Route path="/calendar" element={<Layout><CalendarPage /></Layout>} />
               <Route path="/shuffle" element={<Layout><ShufflePage /></Layout>} />
+              <Route path="/shuffle/create" element={<Layout><CreateShufflePage /></Layout>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

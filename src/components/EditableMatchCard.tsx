@@ -46,7 +46,7 @@ interface Props {
 
 const SUB_PLAYER: EditableCardPlayer = {
   id: null,
-  name: 'Substituto',
+  name: 'Jogador substituto',
   fullName: 'Jogador substituto',
   pictureUrl: '/static/images/Player/default_player.jpg',
   rankingPoints: 0,
@@ -278,7 +278,7 @@ export default function EditableMatchCard({
   const ap1 = match.awayPlayers[1]
 
   function nameStyle(slot: SlotKey): CSSProperties {
-    if (isSlotEliminated(slot)) return { textDecoration: 'line-through', opacity: 0.5 }
+    if (isSlotEliminated(slot)) return { opacity: 0.85, fontStyle: 'italic' }
     if (pendingSlot === slot) {
       return {
         backgroundColor: '#FF6B6B',
@@ -288,6 +288,14 @@ export default function EditableMatchCard({
       }
     }
     return canEliminatePlayers ? { cursor: 'pointer' } : {}
+  }
+
+  function displayName(slot: SlotKey, short = false): string {
+    if (isSlotEliminated(slot) || slotPlayers[slot].id === null) {
+      return short ? SUB_PLAYER.name : (SUB_PLAYER.fullName || SUB_PLAYER.name)
+    }
+    if (short) return slotPlayers[slot].name
+    return slotPlayers[slot].fullName || slotPlayers[slot].name
   }
 
   const homeScoreValue = (hp0.rankingPoints ?? 0) + (hp1.rankingPoints ?? 0)
@@ -382,28 +390,28 @@ export default function EditableMatchCard({
                           style={nameStyle('homeplayer0')}
                           onClick={() => handlePlayerClick('homeplayer0')}
                         >
-                          {hp0.fullName || hp0.name}
+                          {displayName('homeplayer0')}
                         </div>
                         <div
                           className="c-teams__name"
                           style={nameStyle('homeplayer1')}
                           onClick={() => handlePlayerClick('homeplayer1')}
                         >
-                          {hp1.fullName || hp1.name}
+                          {displayName('homeplayer1')}
                         </div>
                         <div
                           className="c-teams__name_small"
                           style={nameStyle('homeplayer0')}
                           onClick={() => handlePlayerClick('homeplayer0')}
                         >
-                          {hp0.name}
+                          {displayName('homeplayer0', true)}
                         </div>
                         <div
                           className="c-teams__name_small"
                           style={nameStyle('homeplayer1')}
                           onClick={() => handlePlayerClick('homeplayer1')}
                         >
-                          {hp1.name}
+                          {displayName('homeplayer1', true)}
                         </div>
                       </div>
                     </div>
@@ -430,28 +438,28 @@ export default function EditableMatchCard({
                           style={nameStyle('awayplayer0')}
                           onClick={() => handlePlayerClick('awayplayer0')}
                         >
-                          {ap0.fullName || ap0.name}
+                          {displayName('awayplayer0')}
                         </div>
                         <div
                           className="c-teams__name"
                           style={nameStyle('awayplayer1')}
                           onClick={() => handlePlayerClick('awayplayer1')}
                         >
-                          {ap1.fullName || ap1.name}
+                          {displayName('awayplayer1')}
                         </div>
                         <div
                           className="c-teams__name_small"
                           style={nameStyle('awayplayer0')}
                           onClick={() => handlePlayerClick('awayplayer0')}
                         >
-                          {ap0.name}
+                          {displayName('awayplayer0', true)}
                         </div>
                         <div
                           className="c-teams__name_small"
                           style={nameStyle('awayplayer1')}
                           onClick={() => handlePlayerClick('awayplayer1')}
                         >
-                          {ap1.name}
+                          {displayName('awayplayer1', true)}
                         </div>
                       </div>
                     </div>

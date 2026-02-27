@@ -397,11 +397,22 @@ html {
   align-items: center;
   button{
     height: 3rem;
+    display: flex;
+    flex-direction: row;
+    align-content: center;
+    align-items: center;
+    background-color: #ffffff5c !important;
+
+    svg{
+      width: 1.8rem;
+      height: 1.8rem;
+    }
     span{
       font-size: 1.5rem;
     }
   }
 }
+
 .c-teams__iandt_edit:last-child {
   width: 10%;
   @include size-query(small) {
@@ -2270,6 +2281,14 @@ ul {
     font-weight: bold;
     letter-spacing: 0.05rem;
   }
+}
+
+.c-btn-create{
+  height: 5rem;
+  border-radius: 0.3rem;
+  margin-left: 2rem;
+  background-color: $color-primary!important;
+  color: white;
 }
 .login_container {
   display: flex;

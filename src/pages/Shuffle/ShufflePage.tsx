@@ -6,7 +6,7 @@ import { matchesApi } from '@/api/matches'
 import LeagueMatchCard from '@/components/LeagueMatchCard'
 import EditableMatchCard, { EditableCardPlayer } from '@/components/EditableMatchCard'
 
-type Tab = 'standings' | 'matches' | 'divisions'
+type Tab = 'standings' | 'matches' | 'edit_matches' | 'divisions'
 
 const DIV_BADGE: Record<number, { color: string; bg: string; headerBg: string }> = {
   1: { color: '#7a5800', bg: '#fff0b0', headerBg: '#c8960a' },
@@ -60,13 +60,19 @@ export default function ShufflePage() {
   const [activeTab, setActiveTab] = useState<Tab>('standings')
   const [selectedDivision, setSelectedDivision] = useState(1)
   const [matchesDivFilter, setMatchesDivFilter] = useState(0)
+  const [editMatchesDivFilter, setEditMatchesDivFilter] = useState(0)
   const [editMode, setEditMode] = useState(false)
-  const [dirtyMatches, setDirtyMatches] = useState<Set<string>>(new Set())
+  const [isCalculatingDivisions, setIsCalculatingDivisions] = useState(false)
+  const [isGeneratingMatchweek, setIsGeneratingMatchweek] = useState(false)
+  const [actionsError, setActionsError] = useState<string | null>(null)
+  const [shareMessage, setShareMessage] = useState<string>('')
+  const [copiedShare, setCopiedShare] = useState(false)
 
   function fetchData() {
     return shuffleTournamentApi.detail().then(({ data }) => {
       setData(data)
       if (data.divisions.length > 0) setSelectedDivision(prev => prev || data.divisions[0].number)
+      return data
     })
   }
 
@@ -76,9 +82,9 @@ export default function ShufflePage() {
 
   if (!data) return null
 
-  const anyDirty = dirtyMatches.size > 0
   const currentMatches = data.matches.filter(m => m.matchweek === data.currentMatchweek)
-  const sortedPlayers = [...data.players].sort((a, b) => b.points - a.points)
+  const uneditedMatches = data.matches.filter(m => !m.played || m.score1 == null || m.score2 == null)
+  const orderedPlayers = data.players
 
   function getPlayerById(id: string): Player | undefined {
     return data.players.find(p => p.id === id)
@@ -89,36 +95,101 @@ export default function ShufflePage() {
     return div ? div.number : 0
   }
 
-  function handleDirtyChange(matchId: string, dirty: boolean) {
-    setDirtyMatches(prev => {
-      const alreadyDirty = prev.has(matchId)
-      if (dirty === alreadyDirty) return prev
-      const next = new Set(prev)
-      if (dirty) next.add(matchId)
-      else next.delete(matchId)
-      return next
-    })
+  async function handleCalculateDivisions() {
+    setActionsError(null)
+    setIsCalculatingDivisions(true)
+    try {
+      await shuffleTournamentApi.calculateDivisions(data.id)
+      await fetchData()
+    } catch (error) {
+      setActionsError('Não foi possível calcular divisões.')
+    } finally {
+      setIsCalculatingDivisions(false)
+    }
   }
 
-  function handleToggleEdit() {
-    if (editMode && anyDirty) {
-      if (!window.confirm('Tens alterações não guardadas. Queres mesmo sair do modo de edição?')) {
-        return
+  async function handleGenerateMatchweek() {
+    setActionsError(null)
+    setCopiedShare(false)
+    setIsGeneratingMatchweek(true)
+    try {
+      await shuffleTournamentApi.generateMatchweek(data.id)
+      const refreshed = await fetchData()
+      if (refreshed) {
+        setShareMessage(buildShuffleShareMessage(refreshed))
       }
+    } catch (error) {
+      setActionsError('Não foi possível gerar nova jornada.')
+    } finally {
+      setIsGeneratingMatchweek(false)
     }
-    setEditMode(prev => !prev)
-    setDirtyMatches(new Set())
+  }
+
+  function buildShuffleShareMessage(tournament: ShuffleTournamentDetail): string {
+    const emojis = ['🟡', '🔴', '🟢', '🔵']
+    const now = new Date()
+    const day = String(now.getDate()).padStart(2, '0')
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const dateLabel = `${day}/${month}`
+
+    const lines: string[] = [
+      `🚨*${tournament.title} 💥 | ${tournament.currentMatchweek}ª Jornada - ${dateLabel} às 21h30 | PAC*🚨`,
+      '',
+    ]
+
+    const playersById = new Map(tournament.players.map(p => [p.id, p]))
+
+    tournament.divisions
+      .sort((a, b) => a.number - b.number)
+      .forEach(division => {
+        lines.push(`*${division.number}.ª Divisão*`)
+        const ids = division.playerIds.slice(0, 8)
+        const pairs: [string | undefined, string | undefined][] = [
+          [ids[0], ids[7]],
+          [ids[1], ids[6]],
+          [ids[2], ids[5]],
+          [ids[3], ids[4]],
+        ]
+
+        pairs.forEach((pair, pairIdx) => {
+          const emoji = emojis[pairIdx % emojis.length]
+          pair.forEach(playerId => {
+            if (!playerId) return
+            const name = playersById.get(playerId)?.name
+            if (name) lines.push(`${emoji} ${name}`)
+          })
+        })
+
+        lines.push('')
+      })
+
+    return lines.join('\n').trim()
+  }
+
+  async function handleCopyShareMessage() {
+    if (!shareMessage) return
+    await navigator.clipboard.writeText(shareMessage)
+    setCopiedShare(true)
   }
 
   function getMatchPlayers(match: Match) {
     const toCardPlayer = (id: string): EditableCardPlayer => {
       const player = getPlayerById(id)
+      if (id === 'sub' || !player) {
+        return {
+          id: null,
+          name: 'Jogador substituto',
+          fullName: 'Jogador substituto',
+          pictureUrl: '/static/images/Player/default_player.jpg',
+          rankingPoints: 0,
+        }
+      }
       return {
         id,
-        name: player?.name || '?',
-        fullName: player?.name || '?',
-        pictureUrl: '/static/images/Player/default_player.jpg',
-        rankingPoints: player?.points || 0,
+        name: player.name,
+        fullName: player.fullName || player.name,
+        pictureUrl: player.pictureUrl || '/static/images/Player/default_player.jpg',
+        rankingPoints: player.points || 0,
       }
     }
 
@@ -134,12 +205,12 @@ export default function ShufflePage() {
     }
   }
 
-  function renderShuffleMatchCard(match: Match, gameNumber: number) {
+  function renderShuffleMatchCard(match: Match, gameNumber: number, editing = false) {
     const mult = data.divisionMultipliers[match.division] || 1
     const divLabel = `Div ${match.division} · x${mult}`
     const headerLabel = `Jogo ${gameNumber} · ${divLabel}`
     const players = getMatchPlayers(match)
-    const isEditing = !!user && editMode
+    const isEditing = !!user && editing
 
     if (!isEditing) {
       return (
@@ -172,13 +243,11 @@ export default function ShufflePage() {
         headerPrimary={headerLabel}
         headerSecondary={divLabel}
         showWatchIcon={false}
-        showFieldInfo={false}
         canEliminatePlayers={!match.played}
         externalEliminated={match.removedPlayers || []}
-        onDirtyChange={dirty => handleDirtyChange(match.id, dirty)}
-        onSaved={() => handleDirtyChange(match.id, false)}
         onPlayerEliminated={async (playerId, matchweek) => {
           await shuffleTournamentApi.removePlayerFromMatchweek({
+            tournamentId: data.id,
             playerId: String(playerId),
             matchweek,
           })
@@ -208,7 +277,31 @@ export default function ShufflePage() {
           <div className="c-tor-header__iandt">
             <span>{data.players.length}/{data.maxPlayers} jogadores · Jornada {data.currentMatchweek}</span>
           </div>
-
+          {user && (
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
+              <button
+                className="c-btn c-btn--small"
+                disabled={isCalculatingDivisions || isGeneratingMatchweek}
+                onClick={handleCalculateDivisions}
+                style={{ cursor: isCalculatingDivisions || isGeneratingMatchweek ? 'not-allowed' : 'pointer', opacity: isCalculatingDivisions || isGeneratingMatchweek ? 0.6 : 1 }}
+              >
+                {isCalculatingDivisions ? 'A calcular...' : 'Calcular Divisões'}
+              </button>
+              <button
+                className="c-btn c-btn--small"
+                disabled={isGeneratingMatchweek || isCalculatingDivisions}
+                onClick={handleGenerateMatchweek}
+                style={{ cursor: isGeneratingMatchweek || isCalculatingDivisions ? 'not-allowed' : 'pointer', opacity: isGeneratingMatchweek || isCalculatingDivisions ? 0.6 : 1 }}
+              >
+                {isGeneratingMatchweek ? 'A gerar...' : 'Gerar Jornada'}
+              </button>
+            </div>
+          )}
+          {actionsError && (
+            <div style={{ color: '#b91c1c', fontSize: '1.4rem', marginTop: '8px' }}>
+              {actionsError}
+            </div>
+          )}
           <ul className="c-tor-header__nav u-list-clean" role="tablist">
             <li className={tabClass('standings')} role="presentation">
               <a onClick={() => setActiveTab('standings')}>Classificação</a>
@@ -216,6 +309,11 @@ export default function ShufflePage() {
             <li className={tabClass('matches')} role="presentation">
               <a onClick={() => setActiveTab('matches')}>Jogos</a>
             </li>
+            {user && (
+              <li className={tabClass('edit_matches')} role="presentation">
+                <a onClick={() => setActiveTab('edit_matches')}>Editar jogos</a>
+              </li>
+            )}
             <li className={tabClass('divisions')} role="presentation">
               <a onClick={() => setActiveTab('divisions')}>Divisões</a>
             </li>
@@ -240,12 +338,12 @@ export default function ShufflePage() {
               </tr>
             </thead>
             <tbody>
-              {sortedPlayers.map((player, idx) => {
+              {orderedPlayers.map(player => {
                 const div = getDivisionForPlayer(player.id)
                 const badge = DIV_BADGE[div]
                 return (
                   <tr key={player.id} className="player_classification_row">
-                    <td>{idx + 1}</td>
+                    <td>{player.position ?? '-'}</td>
                     <td>{player.name}</td>
                     <td>{player.wins}</td>
                     <td>{player.draws}</td>
@@ -301,7 +399,7 @@ export default function ShufflePage() {
               >
                 <span style={{ fontSize: '1.2rem', fontWeight: 700, lineHeight: 1 }}>Editar Jogos</span>
                 <button
-                  onClick={handleToggleEdit}
+                  onClick={() => setEditMode(prev => !prev)}
                   aria-pressed={editMode}
                   style={{
                     border: 0,
@@ -320,7 +418,6 @@ export default function ShufflePage() {
                 </button>
               </div>
             )}
-
             {data.divisions.length > 0 && (
               <div className="select_container" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
                 <select
@@ -346,7 +443,7 @@ export default function ShufflePage() {
               {orderMatches(
                 currentMatches.filter(m => matchesDivFilter === 0 || m.division === matchesDivFilter)
               ).map((match, idx) => (
-                <span key={match.id}>{renderShuffleMatchCard(match, idx + 1)}</span>
+                <span key={match.id}>{renderShuffleMatchCard(match, idx + 1, !!user && editMode)}</span>
               ))}
             </div>
           )}
@@ -367,7 +464,7 @@ export default function ShufflePage() {
                       </summary>
                       <div className="l-grid l-grid--tor">
                         {orderMatches(mwMatches).map((match, idx) => (
-                          <span key={match.id}>{renderShuffleMatchCard(match, idx + 1)}</span>
+                          <span key={match.id}>{renderShuffleMatchCard(match, idx + 1, !!user && editMode)}</span>
                         ))}
                       </div>
                     </details>
@@ -376,6 +473,39 @@ export default function ShufflePage() {
             </>
           )}
         </div>
+
+        {user && (
+          <div className={`c-flex-table--shuffle-games c-flex-table c-flex-table--ranking c-flex-table--tab ${tabContentClass('edit_matches')}`} id="shuffle_edit_matches_tab">
+            {data.divisions.length > 0 && (
+              <div className="select_container" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                <select
+                  className="form-select matchweek_select"
+                  value={editMatchesDivFilter}
+                  onChange={e => setEditMatchesDivFilter(Number(e.target.value))}
+                >
+                  <option value={0}>Todas as divisões</option>
+                  {data.divisions.map(d => (
+                    <option key={d.number} value={d.number}>Divisão {d.number}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {uneditedMatches.length === 0 ? (
+              <div style={{ padding: '32px', textAlign: 'center', opacity: 0.6 }}>
+                Não há jogos por editar
+              </div>
+            ) : (
+              <div className="l-grid l-grid--tor">
+                {orderMatches(
+                  uneditedMatches.filter(m => editMatchesDivFilter === 0 || m.division === editMatchesDivFilter)
+                ).map((match, idx) => (
+                  <span key={match.id}>{renderShuffleMatchCard(match, idx + 1, true)}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className={`c-flex-table--tab ${tabContentClass('divisions')}`} id="shuffle_divisions_tab">
           {data.divisions.length === 0 ? (
@@ -408,7 +538,6 @@ export default function ShufflePage() {
                 const divPlayers = div.playerIds
                   .map(id => data.players.find(p => p.id === id))
                   .filter(Boolean)
-                  .sort((a, b) => b!.points - a!.points)
 
                 return (
                   <>
@@ -452,6 +581,44 @@ export default function ShufflePage() {
           )}
         </div>
       </div>
+
+      {shareMessage && (
+        <div
+          style={{
+            marginTop: '16px',
+            background: '#ffffff',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '10px',
+            maxWidth: '780px',
+            position: 'absolute', 
+            top: 0, 
+            right: '3rem'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <strong style={{ color: '#111', fontSize: '1.3rem' }}>Mensagem da jornada</strong>
+            <button className="c-btn c-btn--small" onClick={handleCopyShareMessage}>
+              {copiedShare ? 'Copiado' : 'Copiar'}
+            </button>
+          </div>
+          <textarea
+            readOnly
+            value={shareMessage}
+            style={{
+              width: '100%',
+              minHeight: '240px',
+              border: '1px solid #d9d9d9',
+              borderRadius: '6px',
+              padding: '8px',
+              fontSize: '1.25rem',
+              lineHeight: 1.35,
+              background: '#fff',
+              color: '#111',
+            }}
+          />
+        </div>
+      )}
     </>
   )
 }

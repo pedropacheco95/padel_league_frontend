@@ -5,8 +5,9 @@ import { TournamentDetail, Match, User } from '@/types'
 import { useAuth } from '@/context/AuthContext'
 import LeagueMatchCard from '@/components/LeagueMatchCard'
 import EditableMatchCard from '@/components/EditableMatchCard'
+import MonthlyMatchesCalendar from '@/components/MonthlyMatchesCalendar'
 
-type Tab = 'general' | 'matches' | 'calendar' | 'add_game'
+type Tab = 'general' | 'matches' | 'edit_matches' | 'calendar' | 'add_game'
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return 'Não definido'
@@ -36,11 +37,19 @@ interface MatchesTabProps {
   allMatches: Match[]
   user: User | null
   onRefresh: () => void
+  forceEdit?: boolean
+  showOnlyUnedited?: boolean
 }
 
-function MatchesTab({ tournamentId, matches, allMatches, user, onRefresh }: MatchesTabProps) {
-  const [editMode, setEditMode] = useState(false)
-  const [dirtyMatches, setDirtyMatches] = useState<Set<number>>(new Set())
+function MatchesTab({
+  tournamentId,
+  matches,
+  allMatches,
+  user,
+  onRefresh,
+  forceEdit = false,
+  showOnlyUnedited = false,
+}: MatchesTabProps) {
   const [selectedMatchweek, setSelectedMatchweek] = useState<string>('')
   const [eliminatedByMatchweek, setEliminatedByMatchweek] = useState<Map<number, Set<number>>>(new Map())
 
@@ -55,79 +64,18 @@ function MatchesTab({ tournamentId, matches, allMatches, user, onRefresh }: Matc
     onRefresh()
   }
 
-  // In edit mode show all matches so unplayed ones can get results entered too
-  const displayMatches = editMode ? allMatches : matches
+  const isEditing = forceEdit && !!user
+  const baseMatches = isEditing ? allMatches : matches
+  const uneditedFilter = (m: Match) => !m.played || m.gamesHomeTeam == null || m.gamesAwayTeam == null
+  const displayMatches = showOnlyUnedited ? baseMatches.filter(uneditedFilter) : baseMatches
 
   const filtered = selectedMatchweek
     ? displayMatches.filter(m => String(m.matchweek) === selectedMatchweek)
     : displayMatches
 
-  const anyDirty = dirtyMatches.size > 0
-
-  function handleDirtyChange(matchId: number, dirty: boolean) {
-    setDirtyMatches(prev => {
-      const alreadyDirty = prev.has(matchId)
-      if (dirty === alreadyDirty) return prev
-      const next = new Set(prev)
-      if (dirty) next.add(matchId)
-      else next.delete(matchId)
-      return next
-    })
-  }
-
-  function handleToggleEdit() {
-    if (editMode && anyDirty) {
-      if (!window.confirm('Tens alterações não guardadas. Queres mesmo sair do modo de edição?')) {
-        return
-      }
-    }
-    setEditMode(prev => !prev)
-    setDirtyMatches(new Set())
-  }
-
   return (
     <div className="l-grid l-grid--tor">
       <div style={{ position: 'relative' }}>
-        {user && (
-          <div
-            style={{
-              position: 'absolute',
-              right: '-1rem',
-              top: '2rem',
-              transform: 'translateY(-115%)',
-              background: '#fff',
-              border: '1px solid #d9d9d9',
-              borderRadius: '999px',
-              padding: '6px 10px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              zIndex: 2,
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-            }}
-          >
-            <span style={{ fontSize: '1.2rem', fontWeight: 700, lineHeight: 1 }}>Editar Jogos</span>
-            <button
-              onClick={handleToggleEdit}
-              aria-pressed={editMode}
-              style={{
-                border: 0,
-                borderRadius: '999px',
-                width: '44px',
-                height: '24px',
-                cursor: 'pointer',
-                background: editMode ? '#198754' : '#adb5bd',
-                color: '#fff',
-                fontSize: '1rem',
-                fontWeight: 700,
-                lineHeight: 1,
-              }}
-            >
-              {editMode ? 'ON' : 'OFF'}
-            </button>
-          </div>
-        )}
-
         <div
           className="select_container"
           style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}
@@ -149,11 +97,10 @@ function MatchesTab({ tournamentId, matches, allMatches, user, onRefresh }: Matc
       <br />
       {filtered.map(match => (
         <span key={match.id}>
-          {editMode ? (
+          {isEditing ? (
             <EditableMatchCard
               match={match}
               onSaved={onRefresh}
-              onDirtyChange={dirty => handleDirtyChange(match.id, dirty)}
               onPlayerEliminated={handlePlayerEliminated}
               externalEliminated={[...(eliminatedByMatchweek.get(match.matchweek) ?? [])]}
             />
@@ -170,24 +117,11 @@ function MatchesTab({ tournamentId, matches, allMatches, user, onRefresh }: Matc
 // ---------------------------------------------------------------------------
 // CalendarTab — plain list of all matches
 // ---------------------------------------------------------------------------
-function CalendarTab({ allMatches }: { allMatches: Match[] }) {
+function CalendarTab({ divisionId }: { divisionId: number }) {
   return (
     <>
       <br />
-      <div id="calendar" className="calendar_in_tournament">
-        {allMatches.map(match => (
-          <div key={match.id} className="calendar_match_item">
-            <span>{formatDateTime(match.dateHour)}</span>
-            {' — '}
-            <span>{match.homePlayers.map(p => p.name).join(' / ')}</span>
-            {' vs '}
-            <span>{match.awayPlayers.map(p => p.name).join(' / ')}</span>
-            {match.played && (
-              <span> ({match.gamesHomeTeam}-{match.gamesAwayTeam})</span>
-            )}
-          </div>
-        ))}
-      </div>
+      <MonthlyMatchesCalendar divisionId={divisionId} />
       <br />
     </>
   )
@@ -249,6 +183,11 @@ export default function TournamentPage() {
             <li className={tabClass('matches')} role="presentation">
               <a onClick={() => setActiveTab('matches')}>Resultados</a>
             </li>
+            {user && (
+              <li className={tabClass('edit_matches')} role="presentation">
+                <a onClick={() => setActiveTab('edit_matches')}>Editar jogos</a>
+              </li>
+            )}
             <li className={tabClass('calendar')} role="presentation">
               <a onClick={() => setActiveTab('calendar')}>Calendário</a>
             </li>
@@ -319,9 +258,23 @@ export default function TournamentPage() {
           />
         </div>
 
+        {user && (
+          <div className={tabContentClass('edit_matches')} id="edit_matches_tab">
+            <MatchesTab
+              tournamentId={division.id}
+              matches={matches}
+              allMatches={allMatches}
+              user={user}
+              onRefresh={fetchData}
+              forceEdit
+              showOnlyUnedited
+            />
+          </div>
+        )}
+
         {/* Calendar tab */}
         <div className={tabContentClass('calendar')} id="calendar_tab">
-          <CalendarTab allMatches={allMatches} />
+          <CalendarTab divisionId={division.id} />
         </div>
 
         {/* Add game tab */}
