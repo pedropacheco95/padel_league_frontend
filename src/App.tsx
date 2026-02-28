@@ -18,6 +18,7 @@ import ForEditPage from "./pages/matches/ForEditPage";
 import ShufflePage from "./pages/Shuffle/ShufflePage";
 import CreateShufflePage from "./pages/Shuffle/CreateShufflePage";
 import CalendarPage from "./pages/CalendarPage";
+import CreateDivisionsPage from "./pages/editions/CreateDivisionsPage";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = () => (
               <Route path="/calendar" element={<Layout><CalendarPage /></Layout>} />
               <Route path="/shuffle" element={<Layout><ShufflePage /></Layout>} />
               <Route path="/shuffle/create" element={<Layout><CreateShufflePage /></Layout>} />
+              <Route path="/edition/create_divisions" element={<Layout><CreateDivisionsPage /></Layout>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
