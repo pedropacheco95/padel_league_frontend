@@ -189,7 +189,7 @@ export default function ShufflePage() {
         name: player.name,
         fullName: player.fullName || player.name,
         pictureUrl: player.pictureUrl || '/static/images/Player/default_player.jpg',
-        rankingPoints: player.points || 0,
+        rankingPoints: player.rankingPoints || 0,
       }
     }
 
@@ -333,6 +333,7 @@ export default function ShufflePage() {
                 <th>D</th>
                 <th>JG</th>
                 <th>JP</th>
+                <th>RP</th>
                 <th>Pts</th>
                 <th style={{ width: '10%' }}>Div</th>
               </tr>
@@ -350,6 +351,7 @@ export default function ShufflePage() {
                     <td>{player.losses}</td>
                     <td>{player.gamesWon}</td>
                     <td>{player.gamesLost}</td>
+                    <td>{player.rankingPoints ?? 0}</td>
                     <td>{player.points}</td>
                     <td>
                       {div > 0 ? (
@@ -552,6 +554,7 @@ export default function ShufflePage() {
                             <th>D</th>
                             <th>JG</th>
                             <th>JP</th>
+                            <th>RP</th>
                             <th>Pts</th>
                           </tr>
                         </thead>
@@ -565,6 +568,7 @@ export default function ShufflePage() {
                               <td>{player!.losses}</td>
                               <td>{player!.gamesWon}</td>
                               <td>{player!.gamesLost}</td>
+                              <td>{player!.rankingPoints ?? 0}</td>
                               <td>{player!.points}</td>
                             </tr>
                           ))}

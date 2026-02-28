@@ -3,6 +3,7 @@ export interface Player {
   name: string;
   fullName?: string;
   pictureUrl?: string | null;
+  rankingPoints?: number;
   position?: number;
   points: number;
   wins: number;
