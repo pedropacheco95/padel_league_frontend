@@ -3,7 +3,7 @@ import { playersApi } from '@/api/players'
 import { divisionsApi, type CreateDivisionPayload, type ImportedDivision } from '@/api/divisions'
 import { mainApi } from '@/api/main'
 import { PlayerShort, Edition } from '@/types'
-import { useAuth } from '@/context/AuthContext'
+
 import { Search, X, Save, ArrowDownUp, Download, Plus, Minus, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -271,7 +271,7 @@ function DivisionCard({
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function CreateDivisionsPage() {
-  const { user } = useAuth()
+  
 
   // Global state
   const [editions, setEditions] = useState<{ id: number; name: string }[]>([])
@@ -533,18 +533,6 @@ export default function CreateDivisionsPage() {
     }
   }
 
-  // ── Permission check ────────────────────────────────────────────────────────
-
-  if (!user?.superAdmin) {
-    return (
-      <div className="l-grid">
-        <div className="c-tor-box" style={{ padding: '2rem', textAlign: 'center' }}>
-          <h2>Sem permissão</h2>
-          <p>Apenas super administradores podem criar divisões.</p>
-        </div>
-      </div>
-    )
-  }
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
