@@ -7,7 +7,7 @@ html {
     color: $color-dark;
 }
 
-#loading-screen{
+.c-api-loading-screen{
   position: fixed;
   top: 0;
   left: 0;
@@ -1171,6 +1171,46 @@ html {
   @include size-query(large) {
     display: none;
   }
+}
+.desktop_table_columns {
+  @include size-query(small) {
+    display: none;
+  }
+}
+.shuffle-ranking-points-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.6rem;
+  padding: 0.1rem 0.6rem;
+  margin-left: 0.8rem;
+  border-radius: 999px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.5;
+  color: #0b5b5f;
+  background: #d8f0f1;
+}
+.shuffle-player-name-cell {
+  text-align: center;
+}
+.shuffle-player-name {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+.shuffle-div-column {
+  width: 14%;
+  white-space: nowrap;
+  @include size-query(small) {
+    width: 20%;
+  }
+}
+.shuffle-columns-legend {
+  font-size: 1.2rem;
+  opacity: 0.75;
+  margin: 0.8rem 0.2rem 0;
+  text-align: left;
 }
 .c-ranking__heading {
   font-weight: 600;

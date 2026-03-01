@@ -14,12 +14,6 @@ export default function Layout({ children }: Props) {
   const navigate = useNavigate()
   const [sponsors, setSponsors] = useState<Sponsor[]>([])
 
-  // Hide loading screen on mount — replaces window 'load' event from main.js
-  useEffect(() => {
-    const loadingScreen = document.getElementById('loading-screen')
-    if (loadingScreen) loadingScreen.style.display = 'none'
-  }, [])
-
   useEffect(() => {
     mainApi.index()
       .then(res => setSponsors(res.data.sponsors))
@@ -33,10 +27,6 @@ export default function Layout({ children }: Props) {
 
   return (
     <>
-      <div id="loading-screen">
-        <div className="loader"></div>
-      </div>
-
       <header className="c-global-header" id="global-header">
         <div className="l-container">
           <div className="c-btn-container for_login_button_bigger">

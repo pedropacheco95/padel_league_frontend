@@ -19,6 +19,7 @@ import ShufflePage from "./pages/Shuffle/ShufflePage";
 import CreateShufflePage from "./pages/Shuffle/CreateShufflePage";
 import CalendarPage from "./pages/CalendarPage";
 import CreateDivisionsPage from "./pages/editions/CreateDivisionsPage";
+import GlobalApiLoader from "./components/GlobalApiLoader";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ const App = () => (
     <AuthProvider>
       <TooltipProvider>
         <TournamentProvider>
+          <GlobalApiLoader />
           <Toaster />
           <Sonner />
           <BrowserRouter>
