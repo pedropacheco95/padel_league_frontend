@@ -86,6 +86,14 @@ export default function ShufflePage() {
   const uneditedMatches = data.matches.filter(m => !m.played || m.score1 == null || m.score2 == null)
   const orderedPlayers = data.players
 
+  function getGamesDiff(player: Player): number {
+    return (player.gamesWon || 0) - (player.gamesLost || 0)
+  }
+
+  function getPresencas(player: Player): number {
+    return Math.floor(((player.wins || 0) + (player.draws || 0) + (player.losses || 0)) / 3)
+  }
+
   function getPlayerById(id: string): Player | undefined {
     return data.players.find(p => p.id === id)
   }
@@ -306,6 +314,9 @@ export default function ShufflePage() {
             <li className={tabClass('standings')} role="presentation">
               <a onClick={() => setActiveTab('standings')}>Classificação</a>
             </li>
+            <li className={tabClass('divisions')} role="presentation">
+              <a onClick={() => setActiveTab('divisions')}>Divisões</a>
+            </li>
             <li className={tabClass('matches')} role="presentation">
               <a onClick={() => setActiveTab('matches')}>Jogos</a>
             </li>
@@ -314,9 +325,6 @@ export default function ShufflePage() {
                 <a onClick={() => setActiveTab('edit_matches')}>Editar jogos</a>
               </li>
             )}
-            <li className={tabClass('divisions')} role="presentation">
-              <a onClick={() => setActiveTab('divisions')}>Divisões</a>
-            </li>
           </ul>
         </div>
       </div>
@@ -328,14 +336,15 @@ export default function ShufflePage() {
               <tr>
                 <th />
                 <th />
-                <th>V</th>
-                <th>E</th>
-                <th>D</th>
-                <th>JG</th>
-                <th>JP</th>
-                <th>RP</th>
+                <th className="desktop_table_columns">V</th>
+                <th className="desktop_table_columns">E</th>
+                <th className="desktop_table_columns">D</th>
+                <th className="desktop_table_columns">JG</th>
+                <th className="desktop_table_columns">JP</th>
+                <th className="optional_table_columns">DJ</th>
+                <th className="optional_table_columns">P</th>
                 <th>Pts</th>
-                <th style={{ width: '10%' }}>Div</th>
+                <th className="shuffle-div-column">Div</th>
               </tr>
             </thead>
             <tbody>
@@ -345,25 +354,32 @@ export default function ShufflePage() {
                 return (
                   <tr key={player.id} className="player_classification_row">
                     <td>{player.position ?? '-'}</td>
-                    <td>{player.name}</td>
-                    <td>{player.wins}</td>
-                    <td>{player.draws}</td>
-                    <td>{player.losses}</td>
-                    <td>{player.gamesWon}</td>
-                    <td>{player.gamesLost}</td>
-                    <td>{player.rankingPoints ?? 0}</td>
+                    <td className="shuffle-player-name-cell">
+                      <span className="shuffle-player-name">
+                        <span>{player.name}</span>
+                        <span className="shuffle-ranking-points-badge">{player.rankingPoints ?? 0}</span>
+                      </span>
+                    </td>
+                    <td className="desktop_table_columns">{player.wins}</td>
+                    <td className="desktop_table_columns">{player.draws}</td>
+                    <td className="desktop_table_columns">{player.losses}</td>
+                    <td className="desktop_table_columns">{player.gamesWon}</td>
+                    <td className="desktop_table_columns">{player.gamesLost}</td>
+                    <td className="optional_table_columns">{getGamesDiff(player)}</td>
+                    <td className="optional_table_columns">{getPresencas(player)}</td>
                     <td>{player.points}</td>
-                    <td>
+                    <td className="shuffle-div-column">
                       {div > 0 ? (
                         <span
                           style={{
                             display: 'inline-block',
                             padding: '1px 7px',
                             borderRadius: '4px',
-                            fontSize: '1.4rem',
+                            fontSize: '1.2rem',
                             fontWeight: 700,
                             color: badge?.color || '#333',
                             backgroundColor: badge?.bg || '#eee',
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           Div {div}
@@ -377,6 +393,14 @@ export default function ShufflePage() {
               })}
             </tbody>
           </table>
+          <div className="shuffle-columns-legend">
+            <span className="optional_table_columns">
+              DJ: Diferença de jogos (JG - JP) · P: Presenças ((V+E+D)/3) · Badge ao lado do nome: Ranking points
+            </span>
+            <span className="desktop_table_columns">
+              V: Vitórias · E: Empates · D: Derrotas · JG: Jogos ganhos · JP: Jogos perdidos · Badge ao lado do nome: Ranking points
+            </span>
+          </div>
         </div>
 
         <div className={`c-flex-table--shuffle-games c-flex-table c-flex-table--ranking c-flex-table--tab ${tabContentClass('matches')}`} id="shuffle_matches_tab">
@@ -549,12 +573,13 @@ export default function ShufflePage() {
                           <tr>
                             <th />
                             <th />
-                            <th>V</th>
-                            <th>E</th>
-                            <th>D</th>
-                            <th>JG</th>
-                            <th>JP</th>
-                            <th>RP</th>
+                            <th className="desktop_table_columns">V</th>
+                            <th className="desktop_table_columns">E</th>
+                            <th className="desktop_table_columns">D</th>
+                            <th className="desktop_table_columns">JG</th>
+                            <th className="desktop_table_columns">JP</th>
+                            <th className="optional_table_columns">DJ</th>
+                            <th className="optional_table_columns">P</th>
                             <th>Pts</th>
                           </tr>
                         </thead>
@@ -562,18 +587,32 @@ export default function ShufflePage() {
                           {divPlayers.map((player, idx) => (
                             <tr key={player!.id} className="player_classification_row">
                               <td>{idx + 1}</td>
-                              <td>{player!.name}</td>
-                              <td>{player!.wins}</td>
-                              <td>{player!.draws}</td>
-                              <td>{player!.losses}</td>
-                              <td>{player!.gamesWon}</td>
-                              <td>{player!.gamesLost}</td>
-                              <td>{player!.rankingPoints ?? 0}</td>
+                              <td className="shuffle-player-name-cell">
+                                <span className="shuffle-player-name">
+                                  <span>{player!.name}</span>
+                                  <span className="shuffle-ranking-points-badge">{player!.rankingPoints ?? 0}</span>
+                                </span>
+                              </td>
+                              <td className="desktop_table_columns">{player!.wins}</td>
+                              <td className="desktop_table_columns">{player!.draws}</td>
+                              <td className="desktop_table_columns">{player!.losses}</td>
+                              <td className="desktop_table_columns">{player!.gamesWon}</td>
+                              <td className="desktop_table_columns">{player!.gamesLost}</td>
+                              <td className="optional_table_columns">{getGamesDiff(player!)}</td>
+                              <td className="optional_table_columns">{getPresencas(player!)}</td>
                               <td>{player!.points}</td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
+                      <div className="shuffle-columns-legend">
+                        <span className="optional_table_columns">
+                          DJ: Diferença de jogos (JG - JP) · P: Presenças ((V+E+D)/3) · Badge ao lado do nome: Ranking points
+                        </span>
+                        <span className="desktop_table_columns">
+                          V: Vitórias · E: Empates · D: Derrotas · JG: Jogos ganhos · JP: Jogos perdidos · Badge ao lado do nome: Ranking points
+                        </span>
+                      </div>
                       <div style={{ margin: '1rem', fontSize: '1.5rem', opacity: 0.8 }}>
                         Vitória: <strong>{3 * mult} pts</strong> · Empate: <strong>{1 * mult} pts</strong> · Multiplicador: ×{mult}
                       </div>
