@@ -5,8 +5,9 @@ import { Match, Player, ShuffleTournamentDetail } from '@/types/tournament'
 import { matchesApi } from '@/api/matches'
 import LeagueMatchCard from '@/components/LeagueMatchCard'
 import EditableMatchCard, { EditableCardPlayer } from '@/components/EditableMatchCard'
+import { PlayerStatsView } from '@/components/PlayerStatsView'
 
-type Tab = 'standings' | 'matches' | 'edit_matches' | 'divisions'
+type Tab = 'standings' | 'matches' | 'edit_matches' | 'divisions' | 'stats'
 
 const DIV_BADGE: Record<number, { color: string; bg: string; headerBg: string }> = {
   1: { color: '#7a5800', bg: '#fff0b0', headerBg: '#c8960a' },
@@ -325,6 +326,9 @@ export default function ShufflePage() {
                 <a onClick={() => setActiveTab('edit_matches')}>Editar jogos</a>
               </li>
             )}
+            <li className={tabClass('stats')} role="presentation">
+              <a onClick={() => setActiveTab('stats')}>Estatísticas</a>
+            </li>
           </ul>
         </div>
       </div>
@@ -660,6 +664,12 @@ export default function ShufflePage() {
               color: '#111',
             }}
           />
+        </div>
+      )}
+
+      {activeTab === 'stats' && (
+        <div className="l-grid">
+          <PlayerStatsView />
         </div>
       )}
     </>
