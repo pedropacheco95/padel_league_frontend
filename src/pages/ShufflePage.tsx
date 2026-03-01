@@ -5,10 +5,11 @@ import { RotateCcw, Shuffle, Zap } from "lucide-react";
 import { StandingsTable } from "@/components/StandingsTable";
 import { MatchCard } from "@/components/MatchCard";
 import { DivisionView } from "@/components/DivisionView";
+import { PlayerStatsView } from "@/components/PlayerStatsView";
 import { Match } from "@/types/tournament";
 import { toast } from "sonner";
 
-type Tab = "standings" | "divisions" | "matches";
+type Tab = "standings" | "divisions" | "matches" | "stats";
 
 // Order matches so that pair 1 (1st+8th) plays games 1, 3, 5
 // Round-robin of 4 teams: T0vT1, T2vT3, T0vT2, T1vT3, T0vT3, T1vT2
@@ -136,6 +137,7 @@ const Index = () => {
     { key: "standings", label: "Standings" },
     { key: "divisions", label: "Divisions" },
     { key: "matches", label: "Matches" },
+    { key: "stats", label: "Estatísticas" },
   ];
 
   return (
@@ -334,6 +336,8 @@ const Index = () => {
             )}
           </div>
         )}
+
+        {activeTab === "stats" && <PlayerStatsView />}
       </main>
     </div>
   );
