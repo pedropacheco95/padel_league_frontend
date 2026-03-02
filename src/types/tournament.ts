@@ -50,6 +50,50 @@ export interface ShuffleTournamentDetail {
   divisionMultipliers: Record<number, number>;
 }
 
+export interface PlayerComparisonMatchResult {
+  matchweek: number;
+  division: number;
+  partnerId: string;
+  opponentIds: [string, string];
+  teamScore: number;
+  oppScore: number;
+  won: boolean;
+  drew: boolean;
+}
+
+export interface PlayerComparisonSnapshot {
+  matchweek: number;
+  points: number;
+  position: number;
+}
+
+export interface PlayerComparisonStats {
+  player: Player;
+  wins: number;
+  draws: number;
+  losses: number;
+  winRate: number;
+  totalGames: number;
+  points: number;
+  bestWinDiff: number;
+  worstLossDiff: number;
+  currentStreak: { type: "W" | "D" | "L"; count: number };
+  divisionsPlayed: number[];
+  highestDivision: number;
+  lowestDivision: number;
+  biggestWins: PlayerComparisonMatchResult[];
+  worstLosses: PlayerComparisonMatchResult[];
+  avgPointsPerMatchweek: number;
+  snapshots: PlayerComparisonSnapshot[];
+}
+
+export interface PlayerComparisonResponse {
+  tournamentId: number;
+  totalPlayers: number;
+  player1: PlayerComparisonStats;
+  player2: PlayerComparisonStats;
+}
+
 export const DIVISION_MULTIPLIERS: Record<number, number> = {
   1: 10,
   2: 8,

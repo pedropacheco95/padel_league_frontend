@@ -1,7 +1,12 @@
 import { api } from './client'
-import { ShuffleTournamentDetail } from '@/types/tournament'
+import { PlayerComparisonResponse, ShuffleTournamentDetail } from '@/types/tournament'
 import { ShufflePayload } from '@/types'
-import { USE_MOCK, mockResponse, mockShuffleTournamentDetail } from '../data/mockData'
+import {
+  USE_MOCK,
+  mockPlayerComparisonResponse,
+  mockResponse,
+  mockShuffleTournamentDetail,
+} from '../data/mockData'
 
 export const shuffleTournamentApi = {
   detail: () =>
@@ -28,4 +33,11 @@ export const shuffleTournamentApi = {
     USE_MOCK
       ? mockResponse(payload as unknown as ShufflePayload)
       : api.post<ShufflePayload>(`/shuffle_tournament/create`, payload),
+
+  playerComparison: (payload: { tournamentId: number; player1Id: string; player2Id: string }) =>
+    USE_MOCK
+      ? mockResponse(mockPlayerComparisonResponse(payload) as PlayerComparisonResponse)
+      : api.get<PlayerComparisonResponse>('/shuffle_tournament/player_comparison', {
+          params: payload,
+        }),
 }

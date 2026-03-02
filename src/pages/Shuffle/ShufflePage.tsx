@@ -8,7 +8,7 @@ import EditableMatchCard, { EditableCardPlayer } from '@/components/EditableMatc
 import { PlayerStatsView } from '@/components/PlayerStatsView'
 import PlayerComparisonModal from '@/components/PlayerComparisonModal'
 
-type Tab = 'standings' | 'matches' | 'edit_matches' | 'divisions'
+type Tab = 'standings' | 'matches' | 'edit_matches' | 'divisions' | 'stats'
 const DEFAULT_PLAYER_PICTURE = '/static/images/Player/default_player.jpg'
 
 const DIV_BADGE: Record<number, { color: string; bg: string; headerBg: string }> = {
@@ -340,9 +340,6 @@ export default function ShufflePage() {
                 <a onClick={() => setActiveTab('edit_matches')}>Editar jogos</a>
               </li>
             )}
-            <li className={tabClass('stats')} role="presentation">
-              <a onClick={() => setActiveTab('stats')}>Estatísticas</a>
-            </li>
           </ul>
         </div>
       </div>
@@ -740,12 +737,10 @@ export default function ShufflePage() {
 
       {showComparison && selectedPlayer1 && selectedPlayer2 && (
         <PlayerComparisonModal
+          tournamentId={data.id}
           player1Id={selectedPlayer1}
           player2Id={selectedPlayer2}
-          players={data.players}
-          matches={data.matches}
-          getDivisionForPlayer={getDivisionForPlayer}
-          divisionMultipliers={data.divisionMultipliers}
+          playersCount={data.players.length}
           getPlayerById={getPlayerById}
           onClose={() => {
             setShowComparison(false)

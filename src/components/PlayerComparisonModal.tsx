@@ -1,5 +1,6 @@
-import { useMemo } from 'react'
-import { Player, Match, DIVISION_MULTIPLIERS } from '@/types/tournament'
+import { useEffect, useMemo, useState } from 'react'
+import { Player } from '@/types/tournament'
+import { shuffleTournamentApi } from '@/api/shuffleTournament'
 import { X } from 'lucide-react'
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -38,110 +39,11 @@ interface PlayerStats {
   snapshots: { matchweek: number; points: number; position: number }[]
 }
 
-function computeStats(
-  playerId: string,
-  players: Player[],
-  matches: Match[],
-  getDivisionForPlayer: (id: string) => number,
-  divisionMultipliers: Record<number, number>,
-): PlayerStats {
-  const player = players.find(p => p.id === playerId)!
-  const results: MatchResult[] = []
-  const divSet = new Set<number>()
-
-  matches.filter(m => m.played).forEach(m => {
-    if ((m.removedPlayers || []).includes(playerId)) return
-    const inT1 = m.team1.includes(playerId)
-    const inT2 = m.team2.includes(playerId)
-    if (!inT1 && !inT2) return
-    divSet.add(m.division)
-    const partnerId = inT1
-      ? m.team1.find(id => id !== playerId)!
-      : m.team2.find(id => id !== playerId)!
-    const opponentIds = (inT1 ? m.team2 : m.team1) as [string, string]
-    const teamScore = inT1 ? m.score1! : m.score2!
-    const oppScore = inT1 ? m.score2! : m.score1!
-    results.push({ matchweek: m.matchweek, division: m.division, partnerId, opponentIds, teamScore, oppScore, won: teamScore > oppScore, drew: teamScore === oppScore })
-  })
-
-  const wins = results.filter(r => r.won).length
-  const draws = results.filter(r => r.drew).length
-  const losses = results.length - wins - draws
-  const winRate = results.length > 0 ? Math.round((wins / results.length) * 100) : 0
-  const divisionsPlayed = Array.from(divSet).sort((a, b) => a - b)
-
-  // Streaks
-  let currentStreak: { type: 'W' | 'D' | 'L'; count: number } = { type: 'W', count: 0 }
-  const sorted = [...results].sort((a, b) => b.matchweek - a.matchweek || b.teamScore - a.teamScore)
-  if (sorted.length > 0) {
-    const first = sorted[0]
-    const type = first.won ? 'W' : first.drew ? 'D' : 'L'
-    let count = 1
-    for (let i = 1; i < sorted.length; i++) {
-      const r = sorted[i]
-      const t = r.won ? 'W' : r.drew ? 'D' : 'L'
-      if (t === type) count++
-      else break
-    }
-    currentStreak = { type, count }
-  }
-
-  // Score diffs
-  const bestWinDiff = results.filter(r => r.won).reduce((max, r) => Math.max(max, r.teamScore - r.oppScore), 0)
-  const worstLossDiff = results.filter(r => !r.won && !r.drew).reduce((max, r) => Math.max(max, r.oppScore - r.teamScore), 0)
-
-  // Biggest wins / worst losses by opponent rank
-  const getAvgOppRank = (r: MatchResult) => {
-    const s = [...players].sort((a, b) => b.points - a.points)
-    return (s.findIndex(p => p.id === r.opponentIds[0]) + s.findIndex(p => p.id === r.opponentIds[1])) / 2
-  }
-  const biggestWins = [...results].filter(r => r.won).sort((a, b) => getAvgOppRank(a) - getAvgOppRank(b)).slice(0, 3)
-  const worstLosses = [...results].filter(r => !r.won && !r.drew).sort((a, b) => getAvgOppRank(b) - getAvgOppRank(a)).slice(0, 3)
-
-  // Snapshots
-  const maxMw = Math.max(...matches.map(m => m.matchweek), 0)
-  const allPlayerPoints = new Map<string, Map<number, number>>()
-  players.forEach(p => {
-    const pPoints = new Map<number, number>()
-    let cum = 0
-    for (let mw = 1; mw <= maxMw; mw++) {
-      matches.filter(m => m.played && m.matchweek === mw).forEach(m => {
-        if ((m.removedPlayers || []).includes(p.id)) return
-        const inT1 = m.team1.includes(p.id)
-        const inT2 = m.team2.includes(p.id)
-        if (!inT1 && !inT2) return
-        const ts = inT1 ? m.score1! : m.score2!
-        const os = inT1 ? m.score2! : m.score1!
-        const mult = divisionMultipliers[m.division] || DIVISION_MULTIPLIERS[m.division] || 1
-        if (ts > os) cum += 3 * mult
-        else if (ts === os) cum += 1 * mult
-      })
-      pPoints.set(mw, cum)
-    }
-    allPlayerPoints.set(p.id, pPoints)
-  })
-
-  const snapshots: { matchweek: number; points: number; position: number }[] = []
-  const myPoints = allPlayerPoints.get(playerId)!
-  for (let mw = 1; mw <= maxMw; mw++) {
-    const rankings = players.map(p => ({ id: p.id, pts: allPlayerPoints.get(p.id)?.get(mw) || 0 })).sort((a, b) => b.pts - a.pts)
-    snapshots.push({
-      matchweek: mw,
-      points: myPoints.get(mw) || 0,
-      position: rankings.findIndex(r => r.id === playerId) + 1,
-    })
-  }
-
-  const matchweeksPlayed = new Set(results.map(r => r.matchweek)).size
-  const avgPointsPerMatchweek = matchweeksPlayed > 0 ? Math.round(player.points / matchweeksPlayed * 10) / 10 : 0
-
-  return {
-    player, wins, draws, losses, winRate, totalGames: results.length, points: player.points,
-    bestWinDiff, worstLossDiff, currentStreak, divisionsPlayed,
-    highestDivision: divisionsPlayed.length > 0 ? Math.min(...divisionsPlayed) : 0,
-    lowestDivision: divisionsPlayed.length > 0 ? Math.max(...divisionsPlayed) : 0,
-    biggestWins, worstLosses, avgPointsPerMatchweek, snapshots,
-  }
+interface PlayerComparisonResponse {
+  tournamentId: number
+  totalPlayers: number
+  player1: PlayerStats
+  player2: PlayerStats
 }
 
 const COLORS = {
@@ -151,8 +53,8 @@ const COLORS = {
 
 function StatItem({ label, value, color, align }: { label: string; value: string | number; color?: string; align: 'left' | 'right' }) {
   return (
-    <div style={{ display: 'flex', flexDirection: align === 'right' ? 'row-reverse' : 'row', alignItems: 'baseline', gap: '6px', padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-      <span style={{ fontWeight: 700, fontSize: '1.4rem', color: color || '#e2e8f0', minWidth: '28px', textAlign: align }}>{value}</span>
+    <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: '6px', padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+      <span style={{ fontWeight: 700, fontSize: '1.4rem', color: color || '#e2e8f0', minWidth: '28px', textAlign: 'left' }}>{value}</span>
       <span style={{ fontSize: '1.05rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.3px', fontWeight: 600 }}>{label}</span>
     </div>
   )
@@ -164,7 +66,7 @@ function PlayerCard({ stats, color, align, getPlayerById }: { stats: PlayerStats
 
   return (
     <div style={{ flex: 1, minWidth: 0 }}>
-      <h3 style={{ fontWeight: 700, fontSize: '1.5rem', color, marginBottom: '10px', textAlign: align }}>{stats.player.name}</h3>
+      <h3 style={{ fontWeight: 700, fontSize: '1.5rem', color, marginBottom: '10px', textAlign: 'left' }}>{stats.player.name}</h3>
 
       <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '10px', marginBottom: '10px' }}>
         <StatItem label="Vitórias" value={stats.wins} color="#22c55e" align={align} />
@@ -217,24 +119,47 @@ function MatchResultBadge({ result, getPlayerById }: { result: MatchResult; getP
 }
 
 interface Props {
+  tournamentId: number
   player1Id: string
   player2Id: string
-  players: Player[]
-  matches: Match[]
-  getDivisionForPlayer: (id: string) => number
-  divisionMultipliers: Record<number, number>
+  playersCount: number
   onClose: () => void
   getPlayerById: (id: string) => Player | undefined
 }
 
 export default function PlayerComparisonModal({
-  player1Id, player2Id, players, matches, getDivisionForPlayer, divisionMultipliers, onClose, getPlayerById,
+  tournamentId, player1Id, player2Id, playersCount, onClose, getPlayerById,
 }: Props) {
-  const s1 = useMemo(() => computeStats(player1Id, players, matches, getDivisionForPlayer, divisionMultipliers), [player1Id, players, matches, getDivisionForPlayer, divisionMultipliers])
-  const s2 = useMemo(() => computeStats(player2Id, players, matches, getDivisionForPlayer, divisionMultipliers), [player2Id, players, matches, getDivisionForPlayer, divisionMultipliers])
+  const [data, setData] = useState<PlayerComparisonResponse | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let isActive = true
+    setLoadError(null)
+    setData(null)
+
+    shuffleTournamentApi
+      .playerComparison({ tournamentId, player1Id, player2Id })
+      .then(({ data }) => {
+        if (isActive) setData(data)
+      })
+      .catch(() => {
+        if (isActive) setLoadError('Não foi possível carregar a comparação dos jogadores.')
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [tournamentId, player1Id, player2Id])
+
+  console.log(data)
+
+  const s1 = data?.player1
+  const s2 = data?.player2
 
   // Radar data – normalize to 0-100
   const radarData = useMemo(() => {
+    if (!s1 || !s2) return []
     const maxPts = Math.max(s1.points, s2.points, 1)
     const maxGames = Math.max(s1.totalGames, s2.totalGames, 1)
     return [
@@ -249,6 +174,7 @@ export default function PlayerComparisonModal({
 
   // Chart data
   const chartData = useMemo(() => {
+    if (!s1 || !s2) return []
     const maxMw = Math.max(
       ...s1.snapshots.map(s => s.matchweek),
       ...s2.snapshots.map(s => s.matchweek),
@@ -268,6 +194,40 @@ export default function PlayerComparisonModal({
     }
     return data
   }, [s1, s2])
+
+  if (!s1 || !s2 || !data) {
+    return (
+      <div
+        style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+          overflowY: 'auto', padding: '20px 10px',
+        }}
+        onClick={e => { if (e.target === e.currentTarget) onClose() }}
+      >
+        <div
+          style={{
+            background: 'hsl(220, 18%, 12%)', border: '1px solid hsl(220, 15%, 22%)',
+            borderRadius: '12px', width: '100%', maxWidth: '700px',
+            color: 'hsl(210, 20%, 95%)', position: 'relative',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+            padding: '20px',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <strong style={{ fontSize: '1.4rem' }}>Comparação de Jogadores</strong>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '4px' }}>
+              <X size={20} />
+            </button>
+          </div>
+          <div style={{ color: '#94a3b8', fontSize: '1.2rem' }}>
+            {loadError ?? 'A carregar comparação...'}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div
@@ -350,7 +310,7 @@ export default function PlayerComparisonModal({
                   <LineChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 22%)" />
                     <XAxis dataKey="mw" tick={{ fill: '#64748b', fontSize: 11 }} />
-                    <YAxis reversed domain={[1, players.length || 48]} tick={{ fill: '#64748b', fontSize: 11 }} />
+                    <YAxis reversed domain={[1, data.totalPlayers || playersCount || 48]} tick={{ fill: '#64748b', fontSize: 11 }} />
                     <Tooltip contentStyle={{ backgroundColor: 'hsl(220, 18%, 14%)', border: '1px solid hsl(220, 15%, 22%)', borderRadius: '6px', color: '#e2e8f0' }} />
                     <Legend wrapperStyle={{ fontSize: '11px' }} />
                     <Line type="monotone" dataKey={`${s1.player.name} Pos`} stroke={COLORS.p1} strokeWidth={2} dot={{ fill: COLORS.p1, r: 3 }} />
