@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Player } from '@/types/tournament'
 import { shuffleTournamentApi } from '@/api/shuffleTournament'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { X } from 'lucide-react'
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -86,7 +87,7 @@ function PlayerCard({ stats, color, align, getPlayerById }: { stats: PlayerStats
       {/* Biggest wins */}
       {stats.biggestWins.length > 0 && (
         <div style={{ marginBottom: '8px' }}>
-          <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#22c55e', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: align }}>Maiores Vitórias</div>
+          <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#22c55e', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'left' }}>Maiores Vitórias</div>
           {stats.biggestWins.map((r, i) => <MatchResultBadge key={i} result={r} getPlayerById={getPlayerById} />)}
         </div>
       )}
@@ -94,7 +95,7 @@ function PlayerCard({ stats, color, align, getPlayerById }: { stats: PlayerStats
       {/* Worst losses */}
       {stats.worstLosses.length > 0 && (
         <div>
-          <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#ef4444', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: align }}>Piores Derrotas</div>
+          <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#ef4444', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'left' }}>Piores Derrotas</div>
           {stats.worstLosses.map((r, i) => <MatchResultBadge key={i} result={r} getPlayerById={getPlayerById} />)}
         </div>
       )}
@@ -130,6 +131,7 @@ interface Props {
 export default function PlayerComparisonModal({
   tournamentId, player1Id, player2Id, playersCount, onClose, getPlayerById,
 }: Props) {
+  const isMobile = useIsMobile()
   const [data, setData] = useState<PlayerComparisonResponse | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
 
@@ -151,8 +153,6 @@ export default function PlayerComparisonModal({
       isActive = false
     }
   }, [tournamentId, player1Id, player2Id])
-
-  console.log(data)
 
   const s1 = data?.player1
   const s2 = data?.player2
@@ -263,13 +263,39 @@ export default function PlayerComparisonModal({
         </div>
 
         <div style={{ padding: '16px 20px' }}>
-          {/* 3-column layout: Player1 stats | Radar | Player2 stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '16px', alignItems: 'start', marginBottom: '20px' }}>
-            {/* Left – Player 1 */}
+          {/* Stats row */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr auto 1fr',
+              gap: '16px',
+              alignItems: 'start',
+              marginBottom: '20px',
+            }}
+          >
             <PlayerCard stats={s1} color={COLORS.p1} align="right" getPlayerById={getPlayerById} />
 
-            {/* Center – Radar */}
-            <div style={{ width: '320px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '12px', alignSelf: 'center' }}>
+            {!isMobile && (
+              <div style={{ width: '320px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '12px', alignSelf: 'center' }}>
+                <ResponsiveContainer width="100%" height={300}>
+                  <RadarChart data={radarData}>
+                    <PolarGrid stroke="hsl(220, 15%, 22%)" />
+                    <PolarAngleAxis dataKey="stat" tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                    <PolarRadiusAxis tick={false} axisLine={false} domain={[0, 100]} />
+                    <Radar name={s1.player.name} dataKey="p1" stroke={COLORS.p1} fill={COLORS.p1} fillOpacity={0.2} strokeWidth={2} />
+                    <Radar name={s2.player.name} dataKey="p2" stroke={COLORS.p2} fill={COLORS.p2} fillOpacity={0.2} strokeWidth={2} />
+                    <Legend wrapperStyle={{ fontSize: '11px' }} />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
+            <PlayerCard stats={s2} color={COLORS.p2} align="left" getPlayerById={getPlayerById} />
+          </div>
+
+          {/* Radar below stats on mobile */}
+          {isMobile && (
+            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '12px', marginBottom: '20px' }}>
               <ResponsiveContainer width="100%" height={300}>
                 <RadarChart data={radarData}>
                   <PolarGrid stroke="hsl(220, 15%, 22%)" />
@@ -281,14 +307,11 @@ export default function PlayerComparisonModal({
                 </RadarChart>
               </ResponsiveContainer>
             </div>
-
-            {/* Right – Player 2 */}
-            <PlayerCard stats={s2} color={COLORS.p2} align="left" getPlayerById={getPlayerById} />
-          </div>
+          )}
 
           {/* Charts below */}
           {chartData.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px' }}>
               <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '12px' }}>
                 <h4 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '8px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Evolução de Pontos</h4>
                 <ResponsiveContainer width="100%" height={220}>

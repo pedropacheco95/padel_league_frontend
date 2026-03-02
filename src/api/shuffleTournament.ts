@@ -9,10 +9,10 @@ import {
 } from '../data/mockData'
 
 export const shuffleTournamentApi = {
-  detail: () =>
+  detail: (options?: { skipGlobalLoader?: boolean; trackGlobalLoader?: boolean }) =>
     USE_MOCK
       ? mockResponse(mockShuffleTournamentDetail)
-      : api.get<ShuffleTournamentDetail>('/shuffle_tournament'),
+      : api.get<ShuffleTournamentDetail>('/shuffle_tournament', options),
 
   calculateDivisions: (tournamentId: number) =>
     USE_MOCK

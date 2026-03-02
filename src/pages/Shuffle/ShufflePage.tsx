@@ -74,8 +74,10 @@ export default function ShufflePage() {
   const [selectedPlayer2, setSelectedPlayer2] = useState<string | null>(null)
   const [showComparison, setShowComparison] = useState(false)
 
-  function fetchData() {
-    return shuffleTournamentApi.detail().then(({ data }) => {
+  function fetchData(silent = false) {
+    return shuffleTournamentApi
+      .detail(silent ? { skipGlobalLoader: true } : undefined)
+      .then(({ data }) => {
       setData(data)
       if (data.divisions.length > 0) setSelectedDivision(prev => prev || data.divisions[0].number)
       return data
@@ -274,11 +276,11 @@ export default function ShufflePage() {
             playerId: String(playerId),
             matchweek,
           })
-          await fetchData()
+          await fetchData(true)
         }}
         onSave={async ({ homeGames, awayGames }) => {
           await matchesApi.editShuffleMatch(match.id, { homeGames, awayGames })
-          await fetchData()
+          await fetchData(true)
         }}
       />
     )
