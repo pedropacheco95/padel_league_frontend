@@ -349,26 +349,11 @@ export default function ShufflePage() {
       <div className="l-grid">
         {/* Selection banner */}
         {selectedPlayer1 && !showComparison && (
-          <div
-            style={{
-              background: 'linear-gradient(135deg, rgba(6,182,212,0.15), rgba(6,182,212,0.05))',
-              border: '1px solid rgba(6,182,212,0.3)',
-              borderRadius: '8px',
-              padding: '10px 16px',
-              marginBottom: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              animation: 'fadeIn 0.3s ease',
-            }}
-          >
-            <span style={{ fontSize: '1.3rem', color: '#06b6d4' }}>
+          <div className="c-shuffle-selection-banner">
+            <span className="c-shuffle-selection-banner__text">
               <strong>{getPlayerById(selectedPlayer1)?.name}</strong> selecionado — clica noutro jogador para comparar
             </span>
-            <button
-              onClick={() => setSelectedPlayer1(null)}
-              style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '1.3rem', fontWeight: 700 }}
-            >
+            <button onClick={() => setSelectedPlayer1(null)} className="c-shuffle-selection-banner__close">
               ✕
             </button>
           </div>
