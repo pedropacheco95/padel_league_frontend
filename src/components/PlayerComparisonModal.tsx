@@ -1,0 +1,364 @@
+import { useMemo } from 'react'
+import { Player, Match, DIVISION_MULTIPLIERS } from '@/types/tournament'
+import { X } from 'lucide-react'
+import {
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend,
+} from 'recharts'
+
+interface MatchResult {
+  matchweek: number
+  division: number
+  partnerId: string
+  opponentIds: [string, string]
+  teamScore: number
+  oppScore: number
+  won: boolean
+  drew: boolean
+}
+
+interface PlayerStats {
+  player: Player
+  wins: number
+  draws: number
+  losses: number
+  winRate: number
+  totalGames: number
+  points: number
+  bestWinDiff: number
+  worstLossDiff: number
+  currentStreak: { type: 'W' | 'D' | 'L'; count: number }
+  divisionsPlayed: number[]
+  highestDivision: number
+  lowestDivision: number
+  biggestWins: MatchResult[]
+  worstLosses: MatchResult[]
+  avgPointsPerMatchweek: number
+  snapshots: { matchweek: number; points: number; position: number }[]
+}
+
+function computeStats(
+  playerId: string,
+  players: Player[],
+  matches: Match[],
+  getDivisionForPlayer: (id: string) => number,
+  divisionMultipliers: Record<number, number>,
+): PlayerStats {
+  const player = players.find(p => p.id === playerId)!
+  const results: MatchResult[] = []
+  const divSet = new Set<number>()
+
+  matches.filter(m => m.played).forEach(m => {
+    if ((m.removedPlayers || []).includes(playerId)) return
+    const inT1 = m.team1.includes(playerId)
+    const inT2 = m.team2.includes(playerId)
+    if (!inT1 && !inT2) return
+    divSet.add(m.division)
+    const partnerId = inT1
+      ? m.team1.find(id => id !== playerId)!
+      : m.team2.find(id => id !== playerId)!
+    const opponentIds = (inT1 ? m.team2 : m.team1) as [string, string]
+    const teamScore = inT1 ? m.score1! : m.score2!
+    const oppScore = inT1 ? m.score2! : m.score1!
+    results.push({ matchweek: m.matchweek, division: m.division, partnerId, opponentIds, teamScore, oppScore, won: teamScore > oppScore, drew: teamScore === oppScore })
+  })
+
+  const wins = results.filter(r => r.won).length
+  const draws = results.filter(r => r.drew).length
+  const losses = results.length - wins - draws
+  const winRate = results.length > 0 ? Math.round((wins / results.length) * 100) : 0
+  const divisionsPlayed = Array.from(divSet).sort((a, b) => a - b)
+
+  // Streaks
+  let currentStreak: { type: 'W' | 'D' | 'L'; count: number } = { type: 'W', count: 0 }
+  const sorted = [...results].sort((a, b) => b.matchweek - a.matchweek || b.teamScore - a.teamScore)
+  if (sorted.length > 0) {
+    const first = sorted[0]
+    const type = first.won ? 'W' : first.drew ? 'D' : 'L'
+    let count = 1
+    for (let i = 1; i < sorted.length; i++) {
+      const r = sorted[i]
+      const t = r.won ? 'W' : r.drew ? 'D' : 'L'
+      if (t === type) count++
+      else break
+    }
+    currentStreak = { type, count }
+  }
+
+  // Score diffs
+  const bestWinDiff = results.filter(r => r.won).reduce((max, r) => Math.max(max, r.teamScore - r.oppScore), 0)
+  const worstLossDiff = results.filter(r => !r.won && !r.drew).reduce((max, r) => Math.max(max, r.oppScore - r.teamScore), 0)
+
+  // Biggest wins / worst losses by opponent rank
+  const getAvgOppRank = (r: MatchResult) => {
+    const s = [...players].sort((a, b) => b.points - a.points)
+    return (s.findIndex(p => p.id === r.opponentIds[0]) + s.findIndex(p => p.id === r.opponentIds[1])) / 2
+  }
+  const biggestWins = [...results].filter(r => r.won).sort((a, b) => getAvgOppRank(a) - getAvgOppRank(b)).slice(0, 3)
+  const worstLosses = [...results].filter(r => !r.won && !r.drew).sort((a, b) => getAvgOppRank(b) - getAvgOppRank(a)).slice(0, 3)
+
+  // Snapshots
+  const maxMw = Math.max(...matches.map(m => m.matchweek), 0)
+  const allPlayerPoints = new Map<string, Map<number, number>>()
+  players.forEach(p => {
+    const pPoints = new Map<number, number>()
+    let cum = 0
+    for (let mw = 1; mw <= maxMw; mw++) {
+      matches.filter(m => m.played && m.matchweek === mw).forEach(m => {
+        if ((m.removedPlayers || []).includes(p.id)) return
+        const inT1 = m.team1.includes(p.id)
+        const inT2 = m.team2.includes(p.id)
+        if (!inT1 && !inT2) return
+        const ts = inT1 ? m.score1! : m.score2!
+        const os = inT1 ? m.score2! : m.score1!
+        const mult = divisionMultipliers[m.division] || DIVISION_MULTIPLIERS[m.division] || 1
+        if (ts > os) cum += 3 * mult
+        else if (ts === os) cum += 1 * mult
+      })
+      pPoints.set(mw, cum)
+    }
+    allPlayerPoints.set(p.id, pPoints)
+  })
+
+  const snapshots: { matchweek: number; points: number; position: number }[] = []
+  const myPoints = allPlayerPoints.get(playerId)!
+  for (let mw = 1; mw <= maxMw; mw++) {
+    const rankings = players.map(p => ({ id: p.id, pts: allPlayerPoints.get(p.id)?.get(mw) || 0 })).sort((a, b) => b.pts - a.pts)
+    snapshots.push({
+      matchweek: mw,
+      points: myPoints.get(mw) || 0,
+      position: rankings.findIndex(r => r.id === playerId) + 1,
+    })
+  }
+
+  const matchweeksPlayed = new Set(results.map(r => r.matchweek)).size
+  const avgPointsPerMatchweek = matchweeksPlayed > 0 ? Math.round(player.points / matchweeksPlayed * 10) / 10 : 0
+
+  return {
+    player, wins, draws, losses, winRate, totalGames: results.length, points: player.points,
+    bestWinDiff, worstLossDiff, currentStreak, divisionsPlayed,
+    highestDivision: divisionsPlayed.length > 0 ? Math.min(...divisionsPlayed) : 0,
+    lowestDivision: divisionsPlayed.length > 0 ? Math.max(...divisionsPlayed) : 0,
+    biggestWins, worstLosses, avgPointsPerMatchweek, snapshots,
+  }
+}
+
+const COLORS = {
+  p1: '#06b6d4', // cyan primary
+  p2: '#eab308', // yellow accent
+}
+
+function StatRow({ label, v1, v2, highlight }: { label: string; v1: string | number; v2: string | number; highlight?: 'higher' | 'lower' }) {
+  const n1 = typeof v1 === 'number' ? v1 : parseFloat(v1)
+  const n2 = typeof v2 === 'number' ? v2 : parseFloat(v2)
+  const better1 = highlight === 'lower' ? n1 < n2 : n1 > n2
+  const better2 = highlight === 'lower' ? n2 < n1 : n2 > n1
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <span style={{ flex: 1, textAlign: 'right', fontWeight: better1 && n1 !== n2 ? 700 : 400, color: better1 && n1 !== n2 ? COLORS.p1 : '#94a3b8', fontSize: '1.4rem' }}>{v1}</span>
+      <span style={{ width: '120px', textAlign: 'center', fontSize: '1.1rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</span>
+      <span style={{ flex: 1, textAlign: 'left', fontWeight: better2 && n1 !== n2 ? 700 : 400, color: better2 && n1 !== n2 ? COLORS.p2 : '#94a3b8', fontSize: '1.4rem' }}>{v2}</span>
+    </div>
+  )
+}
+
+function MatchResultBadge({ result, getPlayerById }: { result: MatchResult; getPlayerById: (id: string) => Player | undefined }) {
+  const opp1 = getPlayerById(result.opponentIds[0])
+  const opp2 = getPlayerById(result.opponentIds[1])
+  return (
+    <div style={{ fontSize: '1.1rem', padding: '3px 6px', borderRadius: '4px', background: 'rgba(255,255,255,0.04)', marginBottom: '3px' }}>
+      <span style={{ color: result.won ? '#22c55e' : result.drew ? '#eab308' : '#ef4444', fontWeight: 700 }}>
+        {result.teamScore}-{result.oppScore}
+      </span>
+      <span style={{ color: '#64748b', marginLeft: '6px' }}>
+        vs {opp1?.name || '?'} & {opp2?.name || '?'}
+      </span>
+      <span style={{ color: '#475569', marginLeft: '4px', fontSize: '1rem' }}>JW{result.matchweek}</span>
+    </div>
+  )
+}
+
+interface Props {
+  player1Id: string
+  player2Id: string
+  players: Player[]
+  matches: Match[]
+  getDivisionForPlayer: (id: string) => number
+  divisionMultipliers: Record<number, number>
+  onClose: () => void
+  getPlayerById: (id: string) => Player | undefined
+}
+
+export default function PlayerComparisonModal({
+  player1Id, player2Id, players, matches, getDivisionForPlayer, divisionMultipliers, onClose, getPlayerById,
+}: Props) {
+  const s1 = useMemo(() => computeStats(player1Id, players, matches, getDivisionForPlayer, divisionMultipliers), [player1Id, players, matches, getDivisionForPlayer, divisionMultipliers])
+  const s2 = useMemo(() => computeStats(player2Id, players, matches, getDivisionForPlayer, divisionMultipliers), [player2Id, players, matches, getDivisionForPlayer, divisionMultipliers])
+
+  // Radar data – normalize to 0-100
+  const radarData = useMemo(() => {
+    const maxPts = Math.max(s1.points, s2.points, 1)
+    const maxGames = Math.max(s1.totalGames, s2.totalGames, 1)
+    return [
+      { stat: 'Win Rate', p1: s1.winRate, p2: s2.winRate },
+      { stat: 'Vitórias', p1: Math.round(s1.wins / maxGames * 100), p2: Math.round(s2.wins / maxGames * 100) },
+      { stat: 'Pontos', p1: Math.round(s1.points / maxPts * 100), p2: Math.round(s2.points / maxPts * 100) },
+      { stat: 'Pts/Jornada', p1: Math.min(100, Math.round(s1.avgPointsPerMatchweek / Math.max(s1.avgPointsPerMatchweek, s2.avgPointsPerMatchweek, 1) * 100)), p2: Math.min(100, Math.round(s2.avgPointsPerMatchweek / Math.max(s1.avgPointsPerMatchweek, s2.avgPointsPerMatchweek, 1) * 100)) },
+      { stat: 'Consistência', p1: s1.totalGames > 0 ? Math.round(((s1.wins + s1.draws) / s1.totalGames) * 100) : 0, p2: s2.totalGames > 0 ? Math.round(((s2.wins + s2.draws) / s2.totalGames) * 100) : 0 },
+      { stat: 'Melhor Div', p1: s1.highestDivision > 0 ? Math.round((1 - (s1.highestDivision - 1) / 5) * 100) : 0, p2: s2.highestDivision > 0 ? Math.round((1 - (s2.highestDivision - 1) / 5) * 100) : 0 },
+    ]
+  }, [s1, s2])
+
+  // Chart data
+  const chartData = useMemo(() => {
+    const maxMw = Math.max(
+      ...s1.snapshots.map(s => s.matchweek),
+      ...s2.snapshots.map(s => s.matchweek),
+      0
+    )
+    const data = []
+    for (let mw = 1; mw <= maxMw; mw++) {
+      const snap1 = s1.snapshots.find(s => s.matchweek === mw)
+      const snap2 = s2.snapshots.find(s => s.matchweek === mw)
+      data.push({
+        mw: `JW${mw}`,
+        [`${s1.player.name} Pts`]: snap1?.points || 0,
+        [`${s2.player.name} Pts`]: snap2?.points || 0,
+        [`${s1.player.name} Pos`]: snap1?.position || null,
+        [`${s2.player.name} Pos`]: snap2?.position || null,
+      })
+    }
+    return data
+  }, [s1, s2])
+
+  const streakLabel = (s: PlayerStats) => {
+    const emoji = s.currentStreak.type === 'W' ? '🔥' : s.currentStreak.type === 'D' ? '➖' : '❄️'
+    const label = s.currentStreak.type === 'W' ? 'V' : s.currentStreak.type === 'D' ? 'E' : 'D'
+    return `${emoji} ${s.currentStreak.count}${label}`
+  }
+
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)',
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+        overflowY: 'auto', padding: '20px 10px',
+      }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div
+        style={{
+          background: 'hsl(220, 18%, 12%)', border: '1px solid hsl(220, 15%, 22%)',
+          borderRadius: '12px', width: '100%', maxWidth: '700px',
+          color: 'hsl(210, 20%, 95%)', position: 'relative',
+          boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+        }}
+      >
+        {/* Header */}
+        <div style={{
+          padding: '16px 20px', borderBottom: '1px solid hsl(220, 15%, 22%)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+            <span style={{ fontWeight: 700, fontSize: '1.5rem', color: COLORS.p1 }}>{s1.player.name}</span>
+            <span style={{ fontSize: '1.2rem', color: '#475569', fontWeight: 600 }}>VS</span>
+            <span style={{ fontWeight: 700, fontSize: '1.5rem', color: COLORS.p2 }}>{s2.player.name}</span>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '4px' }}>
+            <X size={20} />
+          </button>
+        </div>
+
+        <div style={{ padding: '16px 20px' }}>
+          {/* Stats comparison */}
+          <div style={{ marginBottom: '20px' }}>
+            <StatRow label="Vitórias" v1={s1.wins} v2={s2.wins} />
+            <StatRow label="Empates" v1={s1.draws} v2={s2.draws} />
+            <StatRow label="Derrotas" v1={s1.losses} v2={s2.losses} highlight="lower" />
+            <StatRow label="Win Rate" v1={`${s1.winRate}%`} v2={`${s2.winRate}%`} />
+            <StatRow label="Pontos" v1={s1.points} v2={s2.points} />
+            <StatRow label="Pts/Jornada" v1={s1.avgPointsPerMatchweek} v2={s2.avgPointsPerMatchweek} />
+            <StatRow label="Streak" v1={streakLabel(s1)} v2={streakLabel(s2)} />
+            <StatRow label="Rating" v1={s1.player.rankingPoints ?? 0} v2={s2.player.rankingPoints ?? 0} />
+            <StatRow label="Melhor Div" v1={s1.highestDivision || '-'} v2={s2.highestDivision || '-'} highlight="lower" />
+            <StatRow label="Pior Div" v1={s1.lowestDivision || '-'} v2={s2.lowestDivision || '-'} highlight="lower" />
+            <StatRow label="Melhor Res." v1={s1.bestWinDiff > 0 ? `+${s1.bestWinDiff}` : '-'} v2={s2.bestWinDiff > 0 ? `+${s2.bestWinDiff}` : '-'} />
+            <StatRow label="Pior Res." v1={s1.worstLossDiff > 0 ? `-${s1.worstLossDiff}` : '-'} v2={s2.worstLossDiff > 0 ? `-${s2.worstLossDiff}` : '-'} highlight="lower" />
+          </div>
+
+          {/* Biggest wins / worst losses */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+            <div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#22c55e', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Maiores Vitórias</div>
+              {s1.biggestWins.length > 0 ? s1.biggestWins.map((r, i) => <MatchResultBadge key={i} result={r} getPlayerById={getPlayerById} />) : <span style={{ fontSize: '1.1rem', color: '#475569' }}>—</span>}
+            </div>
+            <div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#22c55e', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Maiores Vitórias</div>
+              {s2.biggestWins.length > 0 ? s2.biggestWins.map((r, i) => <MatchResultBadge key={i} result={r} getPlayerById={getPlayerById} />) : <span style={{ fontSize: '1.1rem', color: '#475569' }}>—</span>}
+            </div>
+            <div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ef4444', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Piores Derrotas</div>
+              {s1.worstLosses.length > 0 ? s1.worstLosses.map((r, i) => <MatchResultBadge key={i} result={r} getPlayerById={getPlayerById} />) : <span style={{ fontSize: '1.1rem', color: '#475569' }}>—</span>}
+            </div>
+            <div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ef4444', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Piores Derrotas</div>
+              {s2.worstLosses.length > 0 ? s2.worstLosses.map((r, i) => <MatchResultBadge key={i} result={r} getPlayerById={getPlayerById} />) : <span style={{ fontSize: '1.1rem', color: '#475569' }}>—</span>}
+            </div>
+          </div>
+
+          {/* Radar chart */}
+          <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '12px', marginBottom: '20px' }}>
+            <h4 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '8px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Comparação Radar</h4>
+            <ResponsiveContainer width="100%" height={280}>
+              <RadarChart data={radarData}>
+                <PolarGrid stroke="hsl(220, 15%, 22%)" />
+                <PolarAngleAxis dataKey="stat" tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                <PolarRadiusAxis tick={false} axisLine={false} domain={[0, 100]} />
+                <Radar name={s1.player.name} dataKey="p1" stroke={COLORS.p1} fill={COLORS.p1} fillOpacity={0.2} strokeWidth={2} />
+                <Radar name={s2.player.name} dataKey="p2" stroke={COLORS.p2} fill={COLORS.p2} fillOpacity={0.2} strokeWidth={2} />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Points evolution */}
+          {chartData.length > 0 && (
+            <>
+              <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '12px', marginBottom: '12px' }}>
+                <h4 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '8px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Evolução de Pontos</h4>
+                <ResponsiveContainer width="100%" height={220}>
+                  <LineChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 22%)" />
+                    <XAxis dataKey="mw" tick={{ fill: '#64748b', fontSize: 11 }} />
+                    <YAxis tick={{ fill: '#64748b', fontSize: 11 }} />
+                    <Tooltip contentStyle={{ backgroundColor: 'hsl(220, 18%, 14%)', border: '1px solid hsl(220, 15%, 22%)', borderRadius: '6px', color: '#e2e8f0' }} />
+                    <Legend wrapperStyle={{ fontSize: '12px' }} />
+                    <Line type="monotone" dataKey={`${s1.player.name} Pts`} stroke={COLORS.p1} strokeWidth={2} dot={{ fill: COLORS.p1, r: 3 }} />
+                    <Line type="monotone" dataKey={`${s2.player.name} Pts`} stroke={COLORS.p2} strokeWidth={2} dot={{ fill: COLORS.p2, r: 3 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '12px' }}>
+                <h4 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '8px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Evolução da Posição</h4>
+                <ResponsiveContainer width="100%" height={220}>
+                  <LineChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 22%)" />
+                    <XAxis dataKey="mw" tick={{ fill: '#64748b', fontSize: 11 }} />
+                    <YAxis reversed domain={[1, players.length || 48]} tick={{ fill: '#64748b', fontSize: 11 }} />
+                    <Tooltip contentStyle={{ backgroundColor: 'hsl(220, 18%, 14%)', border: '1px solid hsl(220, 15%, 22%)', borderRadius: '6px', color: '#e2e8f0' }} />
+                    <Legend wrapperStyle={{ fontSize: '12px' }} />
+                    <Line type="monotone" dataKey={`${s1.player.name} Pos`} stroke={COLORS.p1} strokeWidth={2} dot={{ fill: COLORS.p1, r: 3 }} />
+                    <Line type="monotone" dataKey={`${s2.player.name} Pos`} stroke={COLORS.p2} strokeWidth={2} dot={{ fill: COLORS.p2, r: 3 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}

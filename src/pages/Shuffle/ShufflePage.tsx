@@ -6,6 +6,7 @@ import { matchesApi } from '@/api/matches'
 import LeagueMatchCard from '@/components/LeagueMatchCard'
 import EditableMatchCard, { EditableCardPlayer } from '@/components/EditableMatchCard'
 import { PlayerStatsView } from '@/components/PlayerStatsView'
+import PlayerComparisonModal from '@/components/PlayerComparisonModal'
 
 type Tab = 'standings' | 'matches' | 'edit_matches' | 'divisions' | 'stats'
 
@@ -68,6 +69,9 @@ export default function ShufflePage() {
   const [actionsError, setActionsError] = useState<string | null>(null)
   const [shareMessage, setShareMessage] = useState<string>('')
   const [copiedShare, setCopiedShare] = useState(false)
+  const [selectedPlayer1, setSelectedPlayer1] = useState<string | null>(null)
+  const [selectedPlayer2, setSelectedPlayer2] = useState<string | null>(null)
+  const [showComparison, setShowComparison] = useState(false)
 
   function fetchData() {
     return shuffleTournamentApi.detail().then(({ data }) => {
@@ -334,6 +338,33 @@ export default function ShufflePage() {
       </div>
 
       <div className="l-grid">
+        {/* Selection banner */}
+        {selectedPlayer1 && !showComparison && (
+          <div
+            style={{
+              background: 'linear-gradient(135deg, rgba(6,182,212,0.15), rgba(6,182,212,0.05))',
+              border: '1px solid rgba(6,182,212,0.3)',
+              borderRadius: '8px',
+              padding: '10px 16px',
+              marginBottom: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              animation: 'fadeIn 0.3s ease',
+            }}
+          >
+            <span style={{ fontSize: '1.3rem', color: '#06b6d4' }}>
+              <strong>{getPlayerById(selectedPlayer1)?.name}</strong> selecionado — clica noutro jogador para comparar
+            </span>
+            <button
+              onClick={() => setSelectedPlayer1(null)}
+              style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '1.3rem', fontWeight: 700 }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         <div className={`c-flex-table--shuffle-games c-flex-table c-flex-table--ranking c-flex-table--tab ${tabContentClass('standings')}`} id="shuffle_standings_tab">
           <table id="classification_table" className="classification_table">
             <thead>
@@ -355,8 +386,28 @@ export default function ShufflePage() {
               {orderedPlayers.map(player => {
                 const div = getDivisionForPlayer(player.id)
                 const badge = DIV_BADGE[div]
+                const isSelected = player.id === selectedPlayer1
                 return (
-                  <tr key={player.id} className="player_classification_row">
+                  <tr
+                    key={player.id}
+                    className="player_classification_row"
+                    onClick={() => {
+                      if (selectedPlayer1 && selectedPlayer1 !== player.id) {
+                        setSelectedPlayer2(player.id)
+                        setShowComparison(true)
+                      } else if (selectedPlayer1 === player.id) {
+                        setSelectedPlayer1(null)
+                      } else {
+                        setSelectedPlayer1(player.id)
+                      }
+                    }}
+                    style={{
+                      cursor: 'pointer',
+                      background: isSelected ? 'rgba(6,182,212,0.12)' : undefined,
+                      boxShadow: isSelected ? 'inset 3px 0 0 #06b6d4' : undefined,
+                      transition: 'background 0.2s, box-shadow 0.2s',
+                    }}
+                  >
                     <td>{player.position ?? '-'}</td>
                     <td className="shuffle-player-name-cell">
                       <span className="shuffle-player-name">
@@ -671,6 +722,23 @@ export default function ShufflePage() {
         <div className="l-grid">
           <PlayerStatsView />
         </div>
+      )}
+
+      {showComparison && selectedPlayer1 && selectedPlayer2 && (
+        <PlayerComparisonModal
+          player1Id={selectedPlayer1}
+          player2Id={selectedPlayer2}
+          players={data.players}
+          matches={data.matches}
+          getDivisionForPlayer={getDivisionForPlayer}
+          divisionMultipliers={data.divisionMultipliers}
+          getPlayerById={getPlayerById}
+          onClose={() => {
+            setShowComparison(false)
+            setSelectedPlayer1(null)
+            setSelectedPlayer2(null)
+          }}
+        />
       )}
     </>
   )
