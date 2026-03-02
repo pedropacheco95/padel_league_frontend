@@ -149,16 +149,53 @@ const COLORS = {
   p2: '#eab308', // yellow accent
 }
 
-function StatRow({ label, v1, v2, highlight }: { label: string; v1: string | number; v2: string | number; highlight?: 'higher' | 'lower' }) {
-  const n1 = typeof v1 === 'number' ? v1 : parseFloat(v1)
-  const n2 = typeof v2 === 'number' ? v2 : parseFloat(v2)
-  const better1 = highlight === 'lower' ? n1 < n2 : n1 > n2
-  const better2 = highlight === 'lower' ? n2 < n1 : n2 > n1
+function StatItem({ label, value, color, align }: { label: string; value: string | number; color?: string; align: 'left' | 'right' }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-      <span style={{ flex: 1, textAlign: 'right', fontWeight: better1 && n1 !== n2 ? 700 : 400, color: better1 && n1 !== n2 ? COLORS.p1 : '#94a3b8', fontSize: '1.4rem' }}>{v1}</span>
-      <span style={{ width: '120px', textAlign: 'center', fontSize: '1.1rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</span>
-      <span style={{ flex: 1, textAlign: 'left', fontWeight: better2 && n1 !== n2 ? 700 : 400, color: better2 && n1 !== n2 ? COLORS.p2 : '#94a3b8', fontSize: '1.4rem' }}>{v2}</span>
+    <div style={{ display: 'flex', flexDirection: align === 'right' ? 'row-reverse' : 'row', alignItems: 'baseline', gap: '6px', padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+      <span style={{ fontWeight: 700, fontSize: '1.4rem', color: color || '#e2e8f0', minWidth: '28px', textAlign: align }}>{value}</span>
+      <span style={{ fontSize: '1.05rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.3px', fontWeight: 600 }}>{label}</span>
+    </div>
+  )
+}
+
+function PlayerCard({ stats, color, align, getPlayerById }: { stats: PlayerStats; color: string; align: 'left' | 'right'; getPlayerById: (id: string) => Player | undefined }) {
+  const streakEmoji = stats.currentStreak.type === 'W' ? '🔥' : stats.currentStreak.type === 'D' ? '➖' : '❄️'
+  const streakLbl = stats.currentStreak.type === 'W' ? 'V' : stats.currentStreak.type === 'D' ? 'E' : 'D'
+
+  return (
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <h3 style={{ fontWeight: 700, fontSize: '1.5rem', color, marginBottom: '10px', textAlign: align }}>{stats.player.name}</h3>
+
+      <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '10px', marginBottom: '10px' }}>
+        <StatItem label="Vitórias" value={stats.wins} color="#22c55e" align={align} />
+        <StatItem label="Empates" value={stats.draws} color="#eab308" align={align} />
+        <StatItem label="Derrotas" value={stats.losses} color="#ef4444" align={align} />
+        <StatItem label="Win Rate" value={`${stats.winRate}%`} align={align} />
+        <StatItem label="Pontos" value={stats.points} color={color} align={align} />
+        <StatItem label="Pts/Jornada" value={stats.avgPointsPerMatchweek} align={align} />
+        <StatItem label="Streak" value={`${streakEmoji} ${stats.currentStreak.count}${streakLbl}`} align={align} />
+        <StatItem label="Rating" value={stats.player.rankingPoints ?? 0} align={align} />
+        <StatItem label="Melhor Div" value={stats.highestDivision || '-'} align={align} />
+        <StatItem label="Pior Div" value={stats.lowestDivision || '-'} align={align} />
+        <StatItem label="Melhor Res." value={stats.bestWinDiff > 0 ? `+${stats.bestWinDiff}` : '-'} color="#22c55e" align={align} />
+        <StatItem label="Pior Res." value={stats.worstLossDiff > 0 ? `-${stats.worstLossDiff}` : '-'} color="#ef4444" align={align} />
+      </div>
+
+      {/* Biggest wins */}
+      {stats.biggestWins.length > 0 && (
+        <div style={{ marginBottom: '8px' }}>
+          <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#22c55e', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: align }}>Maiores Vitórias</div>
+          {stats.biggestWins.map((r, i) => <MatchResultBadge key={i} result={r} getPlayerById={getPlayerById} />)}
+        </div>
+      )}
+
+      {/* Worst losses */}
+      {stats.worstLosses.length > 0 && (
+        <div>
+          <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#ef4444', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: align }}>Piores Derrotas</div>
+          {stats.worstLosses.map((r, i) => <MatchResultBadge key={i} result={r} getPlayerById={getPlayerById} />)}
+        </div>
+      )}
     </div>
   )
 }
@@ -232,12 +269,6 @@ export default function PlayerComparisonModal({
     return data
   }, [s1, s2])
 
-  const streakLabel = (s: PlayerStats) => {
-    const emoji = s.currentStreak.type === 'W' ? '🔥' : s.currentStreak.type === 'D' ? '➖' : '❄️'
-    const label = s.currentStreak.type === 'W' ? 'V' : s.currentStreak.type === 'D' ? 'E' : 'D'
-    return `${emoji} ${s.currentStreak.count}${label}`
-  }
-
   return (
     <div
       style={{
@@ -251,7 +282,7 @@ export default function PlayerComparisonModal({
       <div
         style={{
           background: 'hsl(220, 18%, 12%)', border: '1px solid hsl(220, 15%, 22%)',
-          borderRadius: '12px', width: '100%', maxWidth: '700px',
+          borderRadius: '12px', width: '100%', maxWidth: '1100px',
           color: 'hsl(210, 20%, 95%)', position: 'relative',
           boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
         }}
@@ -261,10 +292,10 @@ export default function PlayerComparisonModal({
           padding: '16px 20px', borderBottom: '1px solid hsl(220, 15%, 22%)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-            <span style={{ fontWeight: 700, fontSize: '1.5rem', color: COLORS.p1 }}>{s1.player.name}</span>
-            <span style={{ fontSize: '1.2rem', color: '#475569', fontWeight: 600 }}>VS</span>
-            <span style={{ fontWeight: 700, fontSize: '1.5rem', color: COLORS.p2 }}>{s2.player.name}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, justifyContent: 'center' }}>
+            <span style={{ fontWeight: 700, fontSize: '1.6rem', color: COLORS.p1 }}>{s1.player.name}</span>
+            <span style={{ fontSize: '1.3rem', color: '#475569', fontWeight: 700, letterSpacing: '1px' }}>VS</span>
+            <span style={{ fontWeight: 700, fontSize: '1.6rem', color: COLORS.p2 }}>{s2.player.name}</span>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: '4px' }}>
             <X size={20} />
@@ -272,61 +303,33 @@ export default function PlayerComparisonModal({
         </div>
 
         <div style={{ padding: '16px 20px' }}>
-          {/* Stats comparison */}
-          <div style={{ marginBottom: '20px' }}>
-            <StatRow label="Vitórias" v1={s1.wins} v2={s2.wins} />
-            <StatRow label="Empates" v1={s1.draws} v2={s2.draws} />
-            <StatRow label="Derrotas" v1={s1.losses} v2={s2.losses} highlight="lower" />
-            <StatRow label="Win Rate" v1={`${s1.winRate}%`} v2={`${s2.winRate}%`} />
-            <StatRow label="Pontos" v1={s1.points} v2={s2.points} />
-            <StatRow label="Pts/Jornada" v1={s1.avgPointsPerMatchweek} v2={s2.avgPointsPerMatchweek} />
-            <StatRow label="Streak" v1={streakLabel(s1)} v2={streakLabel(s2)} />
-            <StatRow label="Rating" v1={s1.player.rankingPoints ?? 0} v2={s2.player.rankingPoints ?? 0} />
-            <StatRow label="Melhor Div" v1={s1.highestDivision || '-'} v2={s2.highestDivision || '-'} highlight="lower" />
-            <StatRow label="Pior Div" v1={s1.lowestDivision || '-'} v2={s2.lowestDivision || '-'} highlight="lower" />
-            <StatRow label="Melhor Res." v1={s1.bestWinDiff > 0 ? `+${s1.bestWinDiff}` : '-'} v2={s2.bestWinDiff > 0 ? `+${s2.bestWinDiff}` : '-'} />
-            <StatRow label="Pior Res." v1={s1.worstLossDiff > 0 ? `-${s1.worstLossDiff}` : '-'} v2={s2.worstLossDiff > 0 ? `-${s2.worstLossDiff}` : '-'} highlight="lower" />
+          {/* 3-column layout: Player1 stats | Radar | Player2 stats */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '16px', alignItems: 'start', marginBottom: '20px' }}>
+            {/* Left – Player 1 */}
+            <PlayerCard stats={s1} color={COLORS.p1} align="right" getPlayerById={getPlayerById} />
+
+            {/* Center – Radar */}
+            <div style={{ width: '320px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '12px', alignSelf: 'center' }}>
+              <ResponsiveContainer width="100%" height={300}>
+                <RadarChart data={radarData}>
+                  <PolarGrid stroke="hsl(220, 15%, 22%)" />
+                  <PolarAngleAxis dataKey="stat" tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                  <PolarRadiusAxis tick={false} axisLine={false} domain={[0, 100]} />
+                  <Radar name={s1.player.name} dataKey="p1" stroke={COLORS.p1} fill={COLORS.p1} fillOpacity={0.2} strokeWidth={2} />
+                  <Radar name={s2.player.name} dataKey="p2" stroke={COLORS.p2} fill={COLORS.p2} fillOpacity={0.2} strokeWidth={2} />
+                  <Legend wrapperStyle={{ fontSize: '11px' }} />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Right – Player 2 */}
+            <PlayerCard stats={s2} color={COLORS.p2} align="left" getPlayerById={getPlayerById} />
           </div>
 
-          {/* Biggest wins / worst losses */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
-            <div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#22c55e', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Maiores Vitórias</div>
-              {s1.biggestWins.length > 0 ? s1.biggestWins.map((r, i) => <MatchResultBadge key={i} result={r} getPlayerById={getPlayerById} />) : <span style={{ fontSize: '1.1rem', color: '#475569' }}>—</span>}
-            </div>
-            <div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#22c55e', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Maiores Vitórias</div>
-              {s2.biggestWins.length > 0 ? s2.biggestWins.map((r, i) => <MatchResultBadge key={i} result={r} getPlayerById={getPlayerById} />) : <span style={{ fontSize: '1.1rem', color: '#475569' }}>—</span>}
-            </div>
-            <div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ef4444', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Piores Derrotas</div>
-              {s1.worstLosses.length > 0 ? s1.worstLosses.map((r, i) => <MatchResultBadge key={i} result={r} getPlayerById={getPlayerById} />) : <span style={{ fontSize: '1.1rem', color: '#475569' }}>—</span>}
-            </div>
-            <div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ef4444', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Piores Derrotas</div>
-              {s2.worstLosses.length > 0 ? s2.worstLosses.map((r, i) => <MatchResultBadge key={i} result={r} getPlayerById={getPlayerById} />) : <span style={{ fontSize: '1.1rem', color: '#475569' }}>—</span>}
-            </div>
-          </div>
-
-          {/* Radar chart */}
-          <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '12px', marginBottom: '20px' }}>
-            <h4 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '8px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Comparação Radar</h4>
-            <ResponsiveContainer width="100%" height={280}>
-              <RadarChart data={radarData}>
-                <PolarGrid stroke="hsl(220, 15%, 22%)" />
-                <PolarAngleAxis dataKey="stat" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                <PolarRadiusAxis tick={false} axisLine={false} domain={[0, 100]} />
-                <Radar name={s1.player.name} dataKey="p1" stroke={COLORS.p1} fill={COLORS.p1} fillOpacity={0.2} strokeWidth={2} />
-                <Radar name={s2.player.name} dataKey="p2" stroke={COLORS.p2} fill={COLORS.p2} fillOpacity={0.2} strokeWidth={2} />
-                <Legend wrapperStyle={{ fontSize: '12px' }} />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Points evolution */}
+          {/* Charts below */}
           {chartData.length > 0 && (
-            <>
-              <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '12px', marginBottom: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '12px' }}>
                 <h4 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '8px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Evolução de Pontos</h4>
                 <ResponsiveContainer width="100%" height={220}>
                   <LineChart data={chartData}>
@@ -334,7 +337,7 @@ export default function PlayerComparisonModal({
                     <XAxis dataKey="mw" tick={{ fill: '#64748b', fontSize: 11 }} />
                     <YAxis tick={{ fill: '#64748b', fontSize: 11 }} />
                     <Tooltip contentStyle={{ backgroundColor: 'hsl(220, 18%, 14%)', border: '1px solid hsl(220, 15%, 22%)', borderRadius: '6px', color: '#e2e8f0' }} />
-                    <Legend wrapperStyle={{ fontSize: '12px' }} />
+                    <Legend wrapperStyle={{ fontSize: '11px' }} />
                     <Line type="monotone" dataKey={`${s1.player.name} Pts`} stroke={COLORS.p1} strokeWidth={2} dot={{ fill: COLORS.p1, r: 3 }} />
                     <Line type="monotone" dataKey={`${s2.player.name} Pts`} stroke={COLORS.p2} strokeWidth={2} dot={{ fill: COLORS.p2, r: 3 }} />
                   </LineChart>
@@ -349,13 +352,13 @@ export default function PlayerComparisonModal({
                     <XAxis dataKey="mw" tick={{ fill: '#64748b', fontSize: 11 }} />
                     <YAxis reversed domain={[1, players.length || 48]} tick={{ fill: '#64748b', fontSize: 11 }} />
                     <Tooltip contentStyle={{ backgroundColor: 'hsl(220, 18%, 14%)', border: '1px solid hsl(220, 15%, 22%)', borderRadius: '6px', color: '#e2e8f0' }} />
-                    <Legend wrapperStyle={{ fontSize: '12px' }} />
+                    <Legend wrapperStyle={{ fontSize: '11px' }} />
                     <Line type="monotone" dataKey={`${s1.player.name} Pos`} stroke={COLORS.p1} strokeWidth={2} dot={{ fill: COLORS.p1, r: 3 }} />
                     <Line type="monotone" dataKey={`${s2.player.name} Pos`} stroke={COLORS.p2} strokeWidth={2} dot={{ fill: COLORS.p2, r: 3 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>
