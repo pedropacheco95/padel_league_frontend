@@ -554,3 +554,327 @@
         margin-right: 10px;
     }
 }
+
+.c-player-compare-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    overflow-y: auto;
+    padding: 2rem 1rem;
+}
+
+.c-player-compare {
+    width: 100%;
+    max-width: 110rem;
+    background: $color-light;
+    color: $color-dark;
+    border: 0.1rem solid $color-grey-light;
+    border-top: 0.8rem solid $color-primary;
+    border-radius: 1rem;
+    box-shadow: $box-shadow;
+    overflow: hidden;
+}
+
+.c-player-compare--loading {
+    max-width: 70rem;
+}
+
+.c-player-compare__header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1.4rem 1.8rem;
+    border-bottom: 0.1rem solid $color-grey-light;
+    background: #fff;
+}
+
+.c-player-compare__title {
+    font-family: $font-base;
+    font-size: 2rem;
+    color: $color-primary;
+}
+
+.c-player-compare__close {
+    background: none;
+    border: 0;
+    color: $color-grey-medium;
+    cursor: pointer;
+    padding: 0.3rem;
+    display: flex;
+    align-items: center;
+}
+
+.c-player-compare__body {
+    padding: 1.6rem 1.8rem;
+}
+
+.c-player-compare__loading-text {
+    padding: 1.8rem;
+    font-size: 1.5rem;
+    color: $color-grey-dark;
+}
+
+.c-player-compare__vs {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.c-player-compare__vs-player {
+    font-family: $font-base;
+    font-size: 2.1rem;
+    font-weight: 700;
+}
+
+.c-player-compare__vs-player--p1 {
+    color: #06b6d4;
+}
+
+.c-player-compare__vs-player--p2 {
+    color: #eab308;
+}
+
+.c-player-compare__vs-text {
+    font-family: $font-base;
+    font-size: 1.6rem;
+    color: $color-grey-medium;
+    font-weight: 700;
+    letter-spacing: 0.08rem;
+}
+
+.c-player-compare__stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 32rem 1fr;
+    gap: 1.4rem;
+    align-items: start;
+    margin-bottom: 2rem;
+}
+
+.c-player-compare__stats-grid.is-mobile {
+    grid-template-columns: 1fr 1fr;
+}
+
+.c-player-compare__player-card {
+    min-width: 0;
+}
+
+.c-player-compare__player-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+    justify-content: center;
+}
+
+.c-player-compare__player-avatar {
+    width: 3.2rem;
+    height: 3.2rem;
+    border-radius: 50%;
+    border: 0.2rem solid $color-secondary;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    flex: 0 0 auto;
+}
+
+.c-player-compare__player-name {
+    font-family: $font-base;
+    font-size: 1.9rem;
+    margin-bottom: 0;
+}
+
+.c-player-compare__player-name--left {
+    text-align: left;
+}
+
+.c-player-compare__player-name--right {
+    text-align: right;
+}
+
+.c-player-compare__player-stats {
+    background: #fff;
+    border: 0.1rem solid $color-grey-light;
+    border-radius: 0.8rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.c-player-compare__stat {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding: 0.3rem 0;
+    border-bottom: 0.1rem solid rgba(0, 0, 0, 0.05);
+}
+
+.c-player-compare__stat--right {
+    flex-direction: row-reverse;
+    justify-content: flex-start;
+}
+
+.c-player-compare__stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: $color-dark;
+    min-width: 3rem;
+}
+
+.c-player-compare__stat-label {
+    font-size: 1.1rem;
+    color: $color-grey-dark;
+    text-transform: uppercase;
+    letter-spacing: 0.03rem;
+    font-weight: 600;
+}
+
+.c-player-compare__results-block {
+    margin-bottom: 0.9rem;
+}
+
+.c-player-compare__results-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05rem;
+}
+
+.c-player-compare__results-title--left {
+    text-align: left;
+}
+
+.c-player-compare__results-title--right {
+    text-align: right;
+}
+
+.c-player-compare__results-title--win {
+    color: #22c55e;
+}
+
+.c-player-compare__results-title--loss {
+    color: #ef4444;
+}
+
+.c-player-compare__match-badge {
+    font-size: 1.1rem;
+    padding: 0.4rem 0.6rem;
+    border-radius: 0.4rem;
+    background: #fff;
+    border: 0.1rem solid $color-grey-light;
+    margin-bottom: 0.35rem;
+}
+
+.c-player-compare__match-score {
+    font-weight: 700;
+}
+
+.c-player-compare__match-opponents {
+    margin-left: 0.6rem;
+    color: $color-grey-dark;
+}
+
+.c-player-compare__match-week {
+    margin-left: 0.4rem;
+    color: $color-grey-medium;
+    font-size: 1rem;
+}
+
+.c-player-compare__radar-card {
+    background: #fff;
+    border: 0.1rem solid $color-grey-light;
+    border-radius: 0.8rem;
+    padding: 1.2rem;
+    width: 32rem;
+    align-self: center;
+}
+
+.c-player-compare__radar-card--mobile {
+    width: 100%;
+    margin-bottom: 2rem;
+}
+
+.c-player-compare__charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+}
+
+.c-player-compare__charts-grid.is-mobile {
+    grid-template-columns: 1fr;
+}
+
+.c-player-compare__chart-card {
+    background: #fff;
+    border: 0.1rem solid $color-grey-light;
+    border-radius: 0.8rem;
+    padding: 1.2rem;
+}
+
+.c-player-compare__chart-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.8rem;
+    color: $color-primary;
+    text-transform: uppercase;
+    letter-spacing: 0.05rem;
+}
+
+@include size-query(small) {
+    .c-player-compare-modal {
+        padding: 1rem 0.6rem;
+    }
+
+    .c-player-compare__header {
+        padding: 1.1rem 1.2rem;
+    }
+
+    .c-player-compare__body {
+        padding: 1.2rem;
+    }
+
+    .c-player-compare__vs {
+        gap: 0.6rem;
+    }
+
+    .c-player-compare__vs-player {
+        font-size: 1.6rem;
+    }
+
+    .c-player-compare__vs-text {
+        font-size: 1.2rem;
+    }
+
+    .c-player-compare__stats-grid {
+        gap: 0.8rem;
+    }
+
+    .c-player-compare__player-name {
+        font-size: 1.5rem;
+    }
+
+    .c-player-compare__player-name--left,
+    .c-player-compare__player-name--right {
+        text-align: center;
+    }
+
+    .c-player-compare__stat {
+        justify-content: center;
+    }
+
+    .c-player-compare__stat--right {
+        flex-direction: row;
+    }
+
+    .c-player-compare__results-title--left,
+    .c-player-compare__results-title--right {
+        text-align: center;
+    }
+}

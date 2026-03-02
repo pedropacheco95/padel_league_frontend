@@ -1,5 +1,5 @@
 import { IndexData, TournamentsData, TournamentDetail, PlayerRanking, PlayerDetail, ForEditData, User } from '../types'
-import { ShuffleTournamentDetail } from '@/types/tournament'
+import { PlayerComparisonResponse, ShuffleTournamentDetail } from '@/types/tournament'
 
 export const USE_MOCK = import.meta.env.VITE_USE_MOCK_DATA === 'true'
 export const MOCK_LOGGED_IN = import.meta.env.VITE_MOCK_LOGGED_IN === 'true'
@@ -500,4 +500,73 @@ export const mockShuffleTournamentDetail: ShuffleTournamentDetail = {
     { id: 'd2w3m5', matchweek: 3, division: 2, team1: ['p9', 'p16'], team2: ['p12', 'p13'], played: false },
     { id: 'd2w3m6', matchweek: 3, division: 2, team1: ['p10', 'p15'], team2: ['p11', 'p14'], played: false },
   ],
+}
+
+export function mockPlayerComparisonResponse(payload: {
+  tournamentId: number
+  player1Id: string
+  player2Id: string
+}): PlayerComparisonResponse {
+  return {
+    tournamentId: payload.tournamentId,
+    totalPlayers: 0,
+    player1: {
+      player: {
+        id: payload.player1Id,
+        name: 'Jogador 1',
+        points: 0,
+        wins: 0,
+        draws: 0,
+        losses: 0,
+        gamesPlayed: 0,
+        gamesWon: 0,
+        gamesLost: 0,
+      },
+      wins: 0,
+      draws: 0,
+      losses: 0,
+      winRate: 0,
+      totalGames: 0,
+      points: 0,
+      bestWinDiff: 0,
+      worstLossDiff: 0,
+      currentStreak: { type: 'W', count: 0 },
+      divisionsPlayed: [],
+      highestDivision: 0,
+      lowestDivision: 0,
+      biggestWins: [],
+      worstLosses: [],
+      avgPointsPerMatchweek: 0,
+      snapshots: [],
+    },
+    player2: {
+      player: {
+        id: payload.player2Id,
+        name: 'Jogador 2',
+        points: 0,
+        wins: 0,
+        draws: 0,
+        losses: 0,
+        gamesPlayed: 0,
+        gamesWon: 0,
+        gamesLost: 0,
+      },
+      wins: 0,
+      draws: 0,
+      losses: 0,
+      winRate: 0,
+      totalGames: 0,
+      points: 0,
+      bestWinDiff: 0,
+      worstLossDiff: 0,
+      currentStreak: { type: 'W', count: 0 },
+      divisionsPlayed: [],
+      highestDivision: 0,
+      lowestDivision: 0,
+      biggestWins: [],
+      worstLosses: [],
+      avgPointsPerMatchweek: 0,
+      snapshots: [],
+    },
+  }
 }

@@ -137,7 +137,6 @@ const Index = () => {
     { key: "standings", label: "Standings" },
     { key: "divisions", label: "Divisions" },
     { key: "matches", label: "Matches" },
-    { key: "stats", label: "Estatísticas" },
   ];
 
   return (

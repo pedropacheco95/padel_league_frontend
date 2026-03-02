@@ -138,7 +138,7 @@ export default function EditableMatchCard({
 
   const bothScoresFilled = homeGames !== '' && awayGames !== ''
   const showSave = dirty && bothScoresFilled
-  const showRed = showSave && !inputRecentlyFocused
+  const showRed = showSave && !inputRecentlyFocused && !saving
 
   function markDirty() {
     setDirty(true)

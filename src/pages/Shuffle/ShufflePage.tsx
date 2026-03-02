@@ -5,8 +5,11 @@ import { Match, Player, ShuffleTournamentDetail } from '@/types/tournament'
 import { matchesApi } from '@/api/matches'
 import LeagueMatchCard from '@/components/LeagueMatchCard'
 import EditableMatchCard, { EditableCardPlayer } from '@/components/EditableMatchCard'
+import { PlayerStatsView } from '@/components/PlayerStatsView'
+import PlayerComparisonModal from '@/components/PlayerComparisonModal'
 
-type Tab = 'standings' | 'matches' | 'edit_matches' | 'divisions'
+type Tab = 'standings' | 'matches' | 'edit_matches' | 'divisions' | 'stats'
+const DEFAULT_PLAYER_PICTURE = '/static/images/Player/default_player.jpg'
 
 const DIV_BADGE: Record<number, { color: string; bg: string; headerBg: string }> = {
   1: { color: '#7a5800', bg: '#fff0b0', headerBg: '#c8960a' },
@@ -67,9 +70,14 @@ export default function ShufflePage() {
   const [actionsError, setActionsError] = useState<string | null>(null)
   const [shareMessage, setShareMessage] = useState<string>('')
   const [copiedShare, setCopiedShare] = useState(false)
+  const [selectedPlayer1, setSelectedPlayer1] = useState<string | null>(null)
+  const [selectedPlayer2, setSelectedPlayer2] = useState<string | null>(null)
+  const [showComparison, setShowComparison] = useState(false)
 
-  function fetchData() {
-    return shuffleTournamentApi.detail().then(({ data }) => {
+  function fetchData(silent = false) {
+    return shuffleTournamentApi
+      .detail(silent ? { skipGlobalLoader: true } : undefined)
+      .then(({ data }) => {
       setData(data)
       if (data.divisions.length > 0) setSelectedDivision(prev => prev || data.divisions[0].number)
       return data
@@ -101,6 +109,15 @@ export default function ShufflePage() {
   function getDivisionForPlayer(playerId: string): number {
     const div = data.divisions.find(d => d.playerIds.includes(playerId))
     return div ? div.number : 0
+  }
+
+  function renderPlayerPicture(player: Player) {
+    return (
+      <div
+        className="c-teams__img u-img-cropped u-img-cropped--classification"
+        style={{ backgroundImage: `url(${player.pictureUrl || DEFAULT_PLAYER_PICTURE})` }}
+      />
+    )
   }
 
   async function handleCalculateDivisions() {
@@ -259,11 +276,11 @@ export default function ShufflePage() {
             playerId: String(playerId),
             matchweek,
           })
-          await fetchData()
+          await fetchData(true)
         }}
         onSave={async ({ homeGames, awayGames }) => {
           await matchesApi.editShuffleMatch(match.id, { homeGames, awayGames })
-          await fetchData()
+          await fetchData(true)
         }}
       />
     )
@@ -330,10 +347,23 @@ export default function ShufflePage() {
       </div>
 
       <div className="l-grid">
+        {/* Selection banner */}
+        {selectedPlayer1 && !showComparison && (
+          <div className="c-shuffle-selection-banner">
+            <span className="c-shuffle-selection-banner__text">
+              <strong>{getPlayerById(selectedPlayer1)?.name}</strong> selecionado — clica noutro jogador para comparar
+            </span>
+            <button onClick={() => setSelectedPlayer1(null)} className="c-shuffle-selection-banner__close">
+              ✕
+            </button>
+          </div>
+        )}
+
         <div className={`c-flex-table--shuffle-games c-flex-table c-flex-table--ranking c-flex-table--tab ${tabContentClass('standings')}`} id="shuffle_standings_tab">
           <table id="classification_table" className="classification_table">
             <thead>
               <tr>
+                <th />
                 <th />
                 <th />
                 <th className="desktop_table_columns">V</th>
@@ -341,8 +371,8 @@ export default function ShufflePage() {
                 <th className="desktop_table_columns">D</th>
                 <th className="desktop_table_columns">JG</th>
                 <th className="desktop_table_columns">JP</th>
-                <th className="optional_table_columns">DJ</th>
                 <th className="optional_table_columns">P</th>
+                <th className="optional_table_columns">DJ</th>
                 <th>Pts</th>
                 <th className="shuffle-div-column">Div</th>
               </tr>
@@ -351,9 +381,30 @@ export default function ShufflePage() {
               {orderedPlayers.map(player => {
                 const div = getDivisionForPlayer(player.id)
                 const badge = DIV_BADGE[div]
+                const isSelected = player.id === selectedPlayer1
                 return (
-                  <tr key={player.id} className="player_classification_row">
+                  <tr
+                    key={player.id}
+                    className="player_classification_row"
+                    onClick={() => {
+                      if (selectedPlayer1 && selectedPlayer1 !== player.id) {
+                        setSelectedPlayer2(player.id)
+                        setShowComparison(true)
+                      } else if (selectedPlayer1 === player.id) {
+                        setSelectedPlayer1(null)
+                      } else {
+                        setSelectedPlayer1(player.id)
+                      }
+                    }}
+                    style={{
+                      cursor: 'pointer',
+                      background: isSelected ? 'rgba(6,182,212,0.12)' : undefined,
+                      boxShadow: isSelected ? 'inset 3px 0 0 #06b6d4' : undefined,
+                      transition: 'background 0.2s, box-shadow 0.2s',
+                    }}
+                  >
                     <td>{player.position ?? '-'}</td>
+                    <td>{renderPlayerPicture(player)}</td>
                     <td className="shuffle-player-name-cell">
                       <span className="shuffle-player-name">
                         <span>{player.name}</span>
@@ -573,13 +624,14 @@ export default function ShufflePage() {
                           <tr>
                             <th />
                             <th />
+                            <th />
                             <th className="desktop_table_columns">V</th>
                             <th className="desktop_table_columns">E</th>
                             <th className="desktop_table_columns">D</th>
                             <th className="desktop_table_columns">JG</th>
                             <th className="desktop_table_columns">JP</th>
-                            <th className="optional_table_columns">DJ</th>
                             <th className="optional_table_columns">P</th>
+                            <th className="optional_table_columns">DJ</th>
                             <th>Pts</th>
                           </tr>
                         </thead>
@@ -587,6 +639,7 @@ export default function ShufflePage() {
                           {divPlayers.map((player, idx) => (
                             <tr key={player!.id} className="player_classification_row">
                               <td>{idx + 1}</td>
+                              <td>{renderPlayerPicture(player!)}</td>
                               <td className="shuffle-player-name-cell">
                                 <span className="shuffle-player-name">
                                   <span>{player!.name}</span>
@@ -661,6 +714,27 @@ export default function ShufflePage() {
             }}
           />
         </div>
+      )}
+
+      {activeTab === 'stats' && (
+        <div className="l-grid">
+          <PlayerStatsView />
+        </div>
+      )}
+
+      {showComparison && selectedPlayer1 && selectedPlayer2 && (
+        <PlayerComparisonModal
+          tournamentId={data.id}
+          player1Id={selectedPlayer1}
+          player2Id={selectedPlayer2}
+          playersCount={data.players.length}
+          getPlayerById={getPlayerById}
+          onClose={() => {
+            setShowComparison(false)
+            setSelectedPlayer1(null)
+            setSelectedPlayer2(null)
+          }}
+        />
       )}
     </>
   )

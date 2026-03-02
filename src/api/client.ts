@@ -7,6 +7,7 @@ export const api = axios.create({
 
 type LoaderTrackedConfig = AxiosRequestConfig & {
   skipGlobalLoader?: boolean;
+  trackGlobalLoader?: boolean;
   __trackedByGlobalLoader?: boolean;
 };
 
@@ -36,7 +37,12 @@ export const getApiLoadingState = () => activeRequests > 0;
 
 api.interceptors.request.use((config) => {
   const trackedConfig = config as InternalAxiosRequestConfig & LoaderTrackedConfig;
-  if (!trackedConfig.skipGlobalLoader) {
+  const method = (trackedConfig.method ?? "get").toLowerCase();
+  const shouldTrackLoader = trackedConfig.skipGlobalLoader
+    ? false
+    : trackedConfig.trackGlobalLoader ?? method === "get";
+
+  if (shouldTrackLoader) {
     trackedConfig.__trackedByGlobalLoader = true;
     startRequest();
   }
