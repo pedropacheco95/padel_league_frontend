@@ -8,7 +8,8 @@ import EditableMatchCard, { EditableCardPlayer } from '@/components/EditableMatc
 import { PlayerStatsView } from '@/components/PlayerStatsView'
 import PlayerComparisonModal from '@/components/PlayerComparisonModal'
 
-type Tab = 'standings' | 'matches' | 'edit_matches' | 'divisions' | 'stats'
+type Tab = 'standings' | 'matches' | 'edit_matches' | 'divisions'
+const DEFAULT_PLAYER_PICTURE = '/static/images/Player/default_player.jpg'
 
 const DIV_BADGE: Record<number, { color: string; bg: string; headerBg: string }> = {
   1: { color: '#7a5800', bg: '#fff0b0', headerBg: '#c8960a' },
@@ -106,6 +107,15 @@ export default function ShufflePage() {
   function getDivisionForPlayer(playerId: string): number {
     const div = data.divisions.find(d => d.playerIds.includes(playerId))
     return div ? div.number : 0
+  }
+
+  function renderPlayerPicture(player: Player) {
+    return (
+      <div
+        className="c-teams__img u-img-cropped u-img-cropped--classification"
+        style={{ backgroundImage: `url(${player.pictureUrl || DEFAULT_PLAYER_PICTURE})` }}
+      />
+    )
   }
 
   async function handleCalculateDivisions() {
@@ -371,13 +381,14 @@ export default function ShufflePage() {
               <tr>
                 <th />
                 <th />
+                <th />
                 <th className="desktop_table_columns">V</th>
                 <th className="desktop_table_columns">E</th>
                 <th className="desktop_table_columns">D</th>
                 <th className="desktop_table_columns">JG</th>
                 <th className="desktop_table_columns">JP</th>
-                <th className="optional_table_columns">DJ</th>
                 <th className="optional_table_columns">P</th>
+                <th className="optional_table_columns">DJ</th>
                 <th>Pts</th>
                 <th className="shuffle-div-column">Div</th>
               </tr>
@@ -409,6 +420,7 @@ export default function ShufflePage() {
                     }}
                   >
                     <td>{player.position ?? '-'}</td>
+                    <td>{renderPlayerPicture(player)}</td>
                     <td className="shuffle-player-name-cell">
                       <span className="shuffle-player-name">
                         <span>{player.name}</span>
@@ -628,13 +640,14 @@ export default function ShufflePage() {
                           <tr>
                             <th />
                             <th />
+                            <th />
                             <th className="desktop_table_columns">V</th>
                             <th className="desktop_table_columns">E</th>
                             <th className="desktop_table_columns">D</th>
                             <th className="desktop_table_columns">JG</th>
                             <th className="desktop_table_columns">JP</th>
-                            <th className="optional_table_columns">DJ</th>
                             <th className="optional_table_columns">P</th>
+                            <th className="optional_table_columns">DJ</th>
                             <th>Pts</th>
                           </tr>
                         </thead>
@@ -642,6 +655,7 @@ export default function ShufflePage() {
                           {divPlayers.map((player, idx) => (
                             <tr key={player!.id} className="player_classification_row">
                               <td>{idx + 1}</td>
+                              <td>{renderPlayerPicture(player!)}</td>
                               <td className="shuffle-player-name-cell">
                                 <span className="shuffle-player-name">
                                   <span>{player!.name}</span>
