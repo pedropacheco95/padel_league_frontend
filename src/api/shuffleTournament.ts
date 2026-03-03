@@ -1,4 +1,5 @@
 import { api } from './client'
+import type { AxiosRequestConfig } from 'axios'
 import { PlayerComparisonResponse, ShuffleTournamentDetail } from '@/types/tournament'
 import { ShufflePayload } from '@/types'
 import {
@@ -12,7 +13,7 @@ export const shuffleTournamentApi = {
   detail: (options?: { skipGlobalLoader?: boolean; trackGlobalLoader?: boolean }) =>
     USE_MOCK
       ? mockResponse(mockShuffleTournamentDetail)
-      : api.get<ShuffleTournamentDetail>('/shuffle_tournament', options),
+      : api.get<ShuffleTournamentDetail>('/shuffle_tournament', options as AxiosRequestConfig),
 
   calculateDivisions: (tournamentId: number) =>
     USE_MOCK
