@@ -87,11 +87,38 @@ export interface PlayerComparisonStats {
   snapshots: PlayerComparisonSnapshot[];
 }
 
+export interface PlayerComparisonHeadToHeadResult {
+  matchId: number;
+  source: "shuffle" | "league";
+  sourceLabel: string;
+  matchweek: number;
+  division: number;
+  divisionLabel?: string | null;
+  p1PartnerId: string;
+  p1PartnerName?: string | null;
+  p2PartnerId: string;
+  p2PartnerName?: string | null;
+  p1Score: number;
+  p2Score: number;
+  winner: "p1" | "p2" | "draw";
+}
+
+export interface PlayerComparisonHeadToHeadTotals {
+  total: number;
+  p1Wins: number;
+  p2Wins: number;
+  draws: number;
+  p1Losses: number;
+  p2Losses: number;
+}
+
 export interface PlayerComparisonResponse {
   tournamentId: number;
   totalPlayers: number;
   player1: PlayerComparisonStats;
   player2: PlayerComparisonStats;
+  headToHead: PlayerComparisonHeadToHeadResult[];
+  headToHeadTotals?: PlayerComparisonHeadToHeadTotals;
 }
 
 export const DIVISION_MULTIPLIERS: Record<number, number> = {
