@@ -728,6 +728,7 @@ export default function ShufflePage() {
           player1Id={selectedPlayer1}
           player2Id={selectedPlayer2}
           playersCount={data.players.length}
+          matches={data.matches}
           getPlayerById={getPlayerById}
           onClose={() => {
             setShowComparison(false)

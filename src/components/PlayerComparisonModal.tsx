@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+  Match,
   Player,
   PlayerComparisonMatchResult,
   PlayerComparisonResponse,
@@ -160,11 +161,22 @@ function PlayerCard({
   )
 }
 
+interface H2HResult {
+  matchweek: number
+  division: number
+  p1Partner: string
+  p2Partner: string
+  p1Score: number
+  p2Score: number
+  winner: 'p1' | 'p2' | 'draw'
+}
+
 interface Props {
   tournamentId: number
   player1Id: string
   player2Id: string
   playersCount: number
+  matches: Match[]
   onClose: () => void
   getPlayerById: (id: string) => Player | undefined
 }
@@ -174,6 +186,7 @@ export default function PlayerComparisonModal({
   player1Id,
   player2Id,
   playersCount,
+  matches,
   onClose,
   getPlayerById,
 }: Props) {
@@ -199,6 +212,50 @@ export default function PlayerComparisonModal({
       isActive = false
     }
   }, [tournamentId, player1Id, player2Id])
+
+  const h2hResults = useMemo<H2HResult[]>(() => {
+    const results: H2HResult[] = []
+    for (const m of matches) {
+      if (!m.played || m.score1 == null || m.score2 == null) continue
+      const t1Has1 = m.team1.includes(player1Id)
+      const t1Has2 = m.team1.includes(player2Id)
+      const t2Has1 = m.team2.includes(player1Id)
+      const t2Has2 = m.team2.includes(player2Id)
+
+      // Same team — skip
+      if ((t1Has1 && t1Has2) || (t2Has1 && t2Has2)) continue
+      // Must be on opposite teams
+      if (!((t1Has1 && t2Has2) || (t1Has2 && t2Has1))) continue
+
+      const p1InTeam1 = t1Has1
+      const p1Score = p1InTeam1 ? m.score1 : m.score2
+      const p2Score = p1InTeam1 ? m.score2 : m.score1
+      const p1Partner = p1InTeam1
+        ? m.team1.find(id => id !== player1Id) || ''
+        : m.team2.find(id => id !== player1Id) || ''
+      const p2Partner = p1InTeam1
+        ? m.team2.find(id => id !== player2Id) || ''
+        : m.team1.find(id => id !== player2Id) || ''
+
+      results.push({
+        matchweek: m.matchweek,
+        division: m.division,
+        p1Partner,
+        p2Partner,
+        p1Score,
+        p2Score,
+        winner: p1Score > p2Score ? 'p1' : p2Score > p1Score ? 'p2' : 'draw',
+      })
+    }
+    return results.sort((a, b) => a.matchweek - b.matchweek)
+  }, [matches, player1Id, player2Id])
+
+  const h2hSummary = useMemo(() => {
+    const p1Wins = h2hResults.filter(r => r.winner === 'p1').length
+    const p2Wins = h2hResults.filter(r => r.winner === 'p2').length
+    const draws = h2hResults.filter(r => r.winner === 'draw').length
+    return { p1Wins, p2Wins, draws, total: h2hResults.length }
+  }, [h2hResults])
 
   const s1 = data?.player1
   const s2 = data?.player2
@@ -332,6 +389,94 @@ export default function PlayerComparisonModal({
               </ResponsiveContainer>
             </div>
           )}
+
+          {/* H2H Section */}
+          <div className="c-player-compare__h2h">
+            <h4 className="c-player-compare__chart-title" style={{ textAlign: 'center', marginBottom: '12px' }}>
+              Head to Head
+            </h4>
+            {h2hSummary.total === 0 ? (
+              <p style={{ textAlign: 'center', color: '#888', fontSize: '13px' }}>
+                Sem confrontos diretos
+              </p>
+            ) : (
+              <>
+                <div className="c-player-compare__h2h-summary">
+                  <span className="c-player-compare__h2h-count" style={{ color: COLORS.p1 }}>
+                    {h2hSummary.p1Wins}
+                  </span>
+                  <span className="c-player-compare__h2h-label">
+                    {h2hSummary.draws > 0 && (
+                      <span style={{ color: '#888' }}>{h2hSummary.draws}E</span>
+                    )}
+                    <span style={{ color: '#aaa', fontSize: '11px', margin: '0 6px' }}>
+                      ({h2hSummary.total} jogos)
+                    </span>
+                  </span>
+                  <span className="c-player-compare__h2h-count" style={{ color: COLORS.p2 }}>
+                    {h2hSummary.p2Wins}
+                  </span>
+                </div>
+
+                <div className="c-player-compare__h2h-bar">
+                  {h2hSummary.p1Wins > 0 && (
+                    <div
+                      className="c-player-compare__h2h-bar-seg"
+                      style={{
+                        flex: h2hSummary.p1Wins,
+                        background: COLORS.p1,
+                        borderRadius: h2hSummary.p2Wins === 0 && h2hSummary.draws === 0 ? '4px' : '4px 0 0 4px',
+                      }}
+                    />
+                  )}
+                  {h2hSummary.draws > 0 && (
+                    <div
+                      className="c-player-compare__h2h-bar-seg"
+                      style={{ flex: h2hSummary.draws, background: '#888' }}
+                    />
+                  )}
+                  {h2hSummary.p2Wins > 0 && (
+                    <div
+                      className="c-player-compare__h2h-bar-seg"
+                      style={{
+                        flex: h2hSummary.p2Wins,
+                        background: COLORS.p2,
+                        borderRadius: h2hSummary.p1Wins === 0 && h2hSummary.draws === 0 ? '4px' : '0 4px 4px 0',
+                      }}
+                    />
+                  )}
+                </div>
+
+                <div className="c-player-compare__h2h-matches">
+                  {h2hResults.map((r, i) => {
+                    const p1Partner = getPlayerById(r.p1Partner)
+                    const p2Partner = getPlayerById(r.p2Partner)
+                    return (
+                      <div key={i} className="c-player-compare__h2h-match">
+                        <span className="c-player-compare__h2h-mw">JW{r.matchweek} · D{r.division}</span>
+                        <span className="c-player-compare__h2h-teams">
+                          <span style={{ color: COLORS.p1, fontWeight: r.winner === 'p1' ? 700 : 400 }}>
+                            {s1.player.name} & {p1Partner?.name || '?'}
+                          </span>
+                          <span
+                            className="c-player-compare__h2h-score"
+                            style={{
+                              color: r.winner === 'draw' ? '#888' : r.winner === 'p1' ? COLORS.p1 : COLORS.p2,
+                            }}
+                          >
+                            {r.p1Score} - {r.p2Score}
+                          </span>
+                          <span style={{ color: COLORS.p2, fontWeight: r.winner === 'p2' ? 700 : 400 }}>
+                            {s2.player.name} & {p2Partner?.name || '?'}
+                          </span>
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
+            )}
+          </div>
 
           {chartData.length > 0 && (
             <div className={`c-player-compare__charts-grid ${isMobile ? 'is-mobile' : ''}`}>
