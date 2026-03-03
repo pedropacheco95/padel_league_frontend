@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   Match,
   Player,
+  PlayerComparisonHeadToHeadResult,
   PlayerComparisonMatchResult,
   PlayerComparisonResponse,
   PlayerComparisonStats,
@@ -161,16 +162,6 @@ function PlayerCard({
   )
 }
 
-interface H2HResult {
-  matchweek: number
-  division: number
-  p1Partner: string
-  p2Partner: string
-  p1Score: number
-  p2Score: number
-  winner: 'p1' | 'p2' | 'draw'
-}
-
 interface Props {
   tournamentId: number
   player1Id: string
@@ -213,8 +204,15 @@ export default function PlayerComparisonModal({
     }
   }, [tournamentId, player1Id, player2Id])
 
-  const h2hResults = useMemo<H2HResult[]>(() => {
-    const results: H2HResult[] = []
+  const h2hResults = useMemo<PlayerComparisonHeadToHeadResult[]>(() => {
+    if (data?.headToHead?.length) {
+      return [...data.headToHead]
+        .sort((a, b) => b.matchweek - a.matchweek || b.matchId - a.matchId)
+        .slice(0, 5)
+    }
+
+    // Backward-compatible fallback for older API payloads.
+    const results: PlayerComparisonHeadToHeadResult[] = []
     for (const m of matches) {
       if (!m.played || m.score1 == null || m.score2 == null) continue
       const t1Has1 = m.team1.includes(player1Id)
@@ -238,24 +236,41 @@ export default function PlayerComparisonModal({
         : m.team1.find(id => id !== player2Id) || ''
 
       results.push({
+        matchId: Number(m.id) || 0,
+        source: 'shuffle',
+        sourceLabel: 'Shuffle',
         matchweek: m.matchweek,
         division: m.division,
-        p1Partner,
-        p2Partner,
+        divisionLabel: null,
+        p1PartnerId: p1Partner,
+        p2PartnerId: p2Partner,
+        p1PartnerName: getPlayerById(p1Partner)?.name || '?',
+        p2PartnerName: getPlayerById(p2Partner)?.name || '?',
         p1Score,
         p2Score,
         winner: p1Score > p2Score ? 'p1' : p2Score > p1Score ? 'p2' : 'draw',
       })
     }
-    return results.sort((a, b) => a.matchweek - b.matchweek)
-  }, [matches, player1Id, player2Id])
+    return results
+      .sort((a, b) => b.matchweek - a.matchweek || b.matchId - a.matchId)
+      .slice(0, 5)
+  }, [data?.headToHead, matches, player1Id, player2Id, getPlayerById])
 
   const h2hSummary = useMemo(() => {
+    if (data?.headToHeadTotals) return data.headToHeadTotals
+
     const p1Wins = h2hResults.filter(r => r.winner === 'p1').length
     const p2Wins = h2hResults.filter(r => r.winner === 'p2').length
     const draws = h2hResults.filter(r => r.winner === 'draw').length
-    return { p1Wins, p2Wins, draws, total: h2hResults.length }
-  }, [h2hResults])
+    return {
+      p1Wins,
+      p2Wins,
+      draws,
+      total: h2hResults.length,
+      p1Losses: p2Wins,
+      p2Losses: p1Wins,
+    }
+  }, [data?.headToHeadTotals, h2hResults])
 
   const s1 = data?.player1
   const s2 = data?.player2
@@ -417,6 +432,11 @@ export default function PlayerComparisonModal({
                     {h2hSummary.p2Wins}
                   </span>
                 </div>
+                <div style={{ textAlign: 'center', fontSize: '11px', color: '#777', marginBottom: '8px' }}>
+                  {s1.player.name}: {h2hSummary.p1Wins}V / {h2hSummary.draws}E / {h2hSummary.p1Losses}D
+                  {' · '}
+                  {s2.player.name}: {h2hSummary.p2Wins}V / {h2hSummary.draws}E / {h2hSummary.p2Losses}D
+                </div>
 
                 <div className="c-player-compare__h2h-bar">
                   {h2hSummary.p1Wins > 0 && (
@@ -449,14 +469,14 @@ export default function PlayerComparisonModal({
 
                 <div className="c-player-compare__h2h-matches">
                   {h2hResults.map((r, i) => {
-                    const p1Partner = getPlayerById(r.p1Partner)
-                    const p2Partner = getPlayerById(r.p2Partner)
                     return (
                       <div key={i} className="c-player-compare__h2h-match">
-                        <span className="c-player-compare__h2h-mw">JW{r.matchweek} · D{r.division}</span>
+                        <span className="c-player-compare__h2h-mw">
+                          {r.sourceLabel} · JW{r.matchweek} · {r.divisionLabel || `D${r.division}`}
+                        </span>
                         <span className="c-player-compare__h2h-teams">
                           <span style={{ color: COLORS.p1, fontWeight: r.winner === 'p1' ? 700 : 400 }}>
-                            {s1.player.name} & {p1Partner?.name || '?'}
+                            {s1.player.name} & {r.p1PartnerName || '?'}
                           </span>
                           <span
                             className="c-player-compare__h2h-score"
@@ -467,7 +487,7 @@ export default function PlayerComparisonModal({
                             {r.p1Score} - {r.p2Score}
                           </span>
                           <span style={{ color: COLORS.p2, fontWeight: r.winner === 'p2' ? 700 : 400 }}>
-                            {s2.player.name} & {p2Partner?.name || '?'}
+                            {s2.player.name} & {r.p2PartnerName || '?'}
                           </span>
                         </span>
                       </div>

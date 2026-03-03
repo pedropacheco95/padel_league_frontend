@@ -63,6 +63,8 @@
     font-size: 1rem;
     min-width: 6rem;
     flex-shrink: 0;
+    width: 50%;
+    text-align: center;
 }
 
 .c-player-compare__h2h-teams {
@@ -71,6 +73,17 @@
     gap: 0.6rem;
     flex: 1;
     justify-content: center;
+    width: 50%;
+
+    span:nth-child(1){
+        width: 40%;
+    }
+    span:nth-child(2){
+        width: 20%;
+    }
+    span:nth-child(3){
+        width: 40%;
+    }
 }
 
 .c-player-compare__h2h-score {
