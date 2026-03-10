@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, type CSSProperties } from 'react'
 import { Match } from '@/types'
 import { matchesApi } from '@/api/matches'
 import { Button } from '@/components/ui/button'
-import { Save } from 'lucide-react'
+import { Loader2, Save } from 'lucide-react'
 
 type SlotKey = 'homeplayer0' | 'homeplayer1' | 'awayplayer0' | 'awayplayer1'
 type PlayerId = number | string
@@ -93,7 +93,7 @@ export default function EditableMatchCard({
   )
   const [pendingSlot, setPendingSlot] = useState<SlotKey | null>(null)
   const [confirmSlot, setConfirmSlot] = useState<SlotKey | null>(null)
-  const [eliminated, setEliminated] = useState<Set<SlotKey>>(new Set())
+  const [removingSlot, setRemovingSlot] = useState<SlotKey | null>(null)
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
   const [savedOnce, setSavedOnce] = useState(false)
@@ -111,11 +111,19 @@ export default function EditableMatchCard({
     setAwayGames(match.gamesAwayTeam != null ? String(match.gamesAwayTeam) : '')
     setPendingSlot(null)
     setConfirmSlot(null)
-    setEliminated(new Set())
+    setRemovingSlot(null)
     setDirty(false)
     setSavedOnce(false)
     onDirtyChangeRef.current?.(false)
-  }, [match.id, match.gamesHomeTeam, match.gamesAwayTeam])
+  }, [
+    match.id,
+    match.gamesHomeTeam,
+    match.gamesAwayTeam,
+    match.homePlayers[0]?.id,
+    match.homePlayers[1]?.id,
+    match.awayPlayers[0]?.id,
+    match.awayPlayers[1]?.id,
+  ])
 
   useEffect(() => {
     if (inputFocused) {
@@ -157,7 +165,6 @@ export default function EditableMatchCard({
   }, [dirty])
 
   function isSlotEliminated(slot: SlotKey): boolean {
-    if (eliminated.has(slot)) return true
     const pid = slotPlayers[slot].id
     if (pid === null) return false
     return externalEliminated.includes(pid)
@@ -180,16 +187,19 @@ export default function EditableMatchCard({
   }
 
   async function handleConfirm() {
-    if (!confirmSlot) return
-    const playerId = slotPlayers[confirmSlot].id
+    const currentSlot = confirmSlot
+    if (!currentSlot) return
+    const playerId = slotPlayers[currentSlot].id
     if (playerId === null) return
 
+    setRemovingSlot(currentSlot)
     try {
       await onPlayerEliminated?.(playerId, match.matchweek)
-      setEliminated(prev => new Set([...prev, confirmSlot]))
       setConfirmSlot(null)
     } catch {
       window.alert('Não foi possível remover o jogador desta jornada.')
+    } finally {
+      setRemovingSlot(null)
     }
   }
 
@@ -229,7 +239,11 @@ export default function EditableMatchCard({
   function renderPlayerSlot(slot: SlotKey) {
     const isPending = pendingSlot === slot
     const isElim = isSlotEliminated(slot)
-    const isClickable = canEliminatePlayers && !isElim && slotPlayers[slot].id !== null
+    const isClickable =
+      canEliminatePlayers &&
+      !isElim &&
+      slotPlayers[slot].id !== null &&
+      removingSlot === null
 
     if (!showPlayerImages) return null
 
@@ -480,11 +494,22 @@ export default function EditableMatchCard({
               Tens a certeza que queres tirar <strong>{confirmPlayerName}</strong> desta jornada toda?
             </p>
             <div className="modal-buttons">
-              <button onClick={handleCancelModal} style={{ backgroundColor: '#ccc' }}>
+              <button onClick={handleCancelModal} disabled={!!removingSlot} style={{ backgroundColor: '#ccc' }}>
                 Cancelar
               </button>
-              <button onClick={handleConfirm} style={{ backgroundColor: '#e74c3c', color: 'white' }}>
-                Sim, ele não veio
+              <button
+                onClick={handleConfirm}
+                disabled={!!removingSlot}
+                style={{ backgroundColor: '#e74c3c', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                {removingSlot ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    A remover...
+                  </>
+                ) : (
+                  'Sim, ele não veio'
+                )}
               </button>
             </div>
           </div>

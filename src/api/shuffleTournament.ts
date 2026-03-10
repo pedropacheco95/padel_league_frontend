@@ -20,10 +20,20 @@ export const shuffleTournamentApi = {
       ? mockResponse(mockShuffleTournamentDetail)
       : api.post<ShuffleTournamentDetail>('/shuffle_tournament/calculate_divisions', { tournamentId }),
 
+  undoCalculateDivisions: (tournamentId: number) =>
+    USE_MOCK
+      ? mockResponse(mockShuffleTournamentDetail)
+      : api.post<ShuffleTournamentDetail>('/shuffle_tournament/undo_calculate_divisions', { tournamentId }),
+
   generateMatchweek: (tournamentId: number) =>
     USE_MOCK
       ? mockResponse(mockShuffleTournamentDetail)
       : api.post<ShuffleTournamentDetail>('/shuffle_tournament/generate_matchweek', { tournamentId }),
+
+  deleteLastMatchweek: (tournamentId: number) =>
+    USE_MOCK
+      ? mockResponse({ tournament: mockShuffleTournamentDetail })
+      : api.post<{ tournament: ShuffleTournamentDetail }>('/shuffle_tournament/delete_last_matchweek', { tournamentId }),
 
   removePlayerFromMatchweek: (payload: { tournamentId: number; playerId: string; matchweek: number }) =>
     USE_MOCK

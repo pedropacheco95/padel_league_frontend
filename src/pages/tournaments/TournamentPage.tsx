@@ -2,10 +2,12 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { tournamentsApi } from '@/api/tournaments'
 import { TournamentDetail, Match, User } from '@/types'
+import { Player as ComparisonPlayer } from '@/types/tournament'
 import { useAuth } from '@/context/AuthContext'
 import LeagueMatchCard from '@/components/LeagueMatchCard'
 import EditableMatchCard from '@/components/EditableMatchCard'
 import MonthlyMatchesCalendar from '@/components/MonthlyMatchesCalendar'
+import PlayerComparisonModal from '@/components/PlayerComparisonModal'
 
 type Tab = 'general' | 'matches' | 'edit_matches' | 'calendar' | 'add_game'
 
@@ -135,6 +137,9 @@ export default function TournamentPage() {
   const { user } = useAuth()
   const [data, setData] = useState<TournamentDetail | null>(null)
   const [activeTab, setActiveTab] = useState<Tab>('general')
+  const [selectedPlayer1, setSelectedPlayer1] = useState<string | null>(null)
+  const [selectedPlayer2, setSelectedPlayer2] = useState<string | null>(null)
+  const [showComparison, setShowComparison] = useState(false)
 
   const fetchData = useCallback(() => {
     if (!id) return
@@ -148,6 +153,26 @@ export default function TournamentPage() {
   if (!data) return null
 
   const { division, standings, matches, allMatches } = data
+
+  function getPlayerById(id: string): ComparisonPlayer | undefined {
+    const found = data.players.find(p => String(p.id) === id)
+    if (!found || found.id == null) return undefined
+    return {
+      id: String(found.id),
+      name: found.name,
+      fullName: found.fullName,
+      pictureUrl: found.pictureUrl,
+      rankingPoints: found.rankingPoints,
+      position: 0,
+      points: 0,
+      wins: 0,
+      draws: 0,
+      losses: 0,
+      gamesPlayed: 0,
+      gamesWon: 0,
+      gamesLost: 0,
+    }
+  }
 
   function tabClass(tab: Tab) {
     return `c-tor-header__item${activeTab === tab ? ' c-tor-header__item--active' : ''}`
@@ -201,6 +226,20 @@ export default function TournamentPage() {
       </div>
 
       <div className="l-grid">
+        {selectedPlayer1 && !showComparison && (
+          <div className="c-shuffle-selection-banner">
+            <span className="c-shuffle-selection-banner__text">
+              <strong>{getPlayerById(selectedPlayer1)?.name}</strong> selecionado - clica noutro jogador para comparar
+            </span>
+            <button
+              onClick={() => setSelectedPlayer1(null)}
+              className="c-shuffle-selection-banner__close"
+            >
+              X
+            </button>
+          </div>
+        )}
+
         {/* General information tab — standings table */}
         <div className={tabContentClass('general')} id="general_information_tab">
           <table id="classification_table" className="classification_table">
@@ -222,6 +261,30 @@ export default function TournamentPage() {
                   key={row.player.id}
                   className="player_classification_row"
                   id={String(row.player.id)}
+                  onClick={() => {
+                    if (!row.player.id) return
+                    const currentId = String(row.player.id)
+                    if (selectedPlayer1 && selectedPlayer1 !== currentId) {
+                      setSelectedPlayer2(currentId)
+                      setShowComparison(true)
+                    } else if (selectedPlayer1 === currentId) {
+                      setSelectedPlayer1(null)
+                    } else {
+                      setSelectedPlayer1(currentId)
+                    }
+                  }}
+                  style={{
+                    cursor: row.player.id ? 'pointer' : 'default',
+                    background:
+                      selectedPlayer1 === String(row.player.id)
+                        ? 'rgba(6,182,212,0.12)'
+                        : undefined,
+                    boxShadow:
+                      selectedPlayer1 === String(row.player.id)
+                        ? 'inset 3px 0 0 #06b6d4'
+                        : undefined,
+                    transition: 'background 0.2s, box-shadow 0.2s',
+                  }}
                 >
                   <td>{row.position}</td>
                   <td>
@@ -282,6 +345,25 @@ export default function TournamentPage() {
           <div className={tabContentClass('add_game')} id="add_game_tab" />
         )}
       </div>
+
+      {showComparison && selectedPlayer1 && selectedPlayer2 && (
+        <PlayerComparisonModal
+          tournamentId={division.id}
+          player1Id={selectedPlayer1}
+          player2Id={selectedPlayer2}
+          playersCount={data.players.length}
+          matches={[]}
+          getPlayerById={getPlayerById}
+          loadComparison={({ tournamentId, player1Id, player2Id }) =>
+            tournamentsApi.playerComparison(tournamentId, { player1Id, player2Id })
+          }
+          onClose={() => {
+            setShowComparison(false)
+            setSelectedPlayer1(null)
+            setSelectedPlayer2(null)
+          }}
+        />
+      )}
     </>
   )
 }

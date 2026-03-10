@@ -168,6 +168,11 @@ interface Props {
   player2Id: string
   playersCount: number
   matches: Match[]
+  loadComparison?: (payload: {
+    tournamentId: number
+    player1Id: string
+    player2Id: string
+  }) => Promise<{ data: PlayerComparisonResponse }>
   onClose: () => void
   getPlayerById: (id: string) => Player | undefined
 }
@@ -178,6 +183,7 @@ export default function PlayerComparisonModal({
   player2Id,
   playersCount,
   matches,
+  loadComparison,
   onClose,
   getPlayerById,
 }: Props) {
@@ -190,8 +196,9 @@ export default function PlayerComparisonModal({
     setLoadError(null)
     setData(null)
 
-    shuffleTournamentApi
-      .playerComparison({ tournamentId, player1Id, player2Id })
+    const load = loadComparison ?? shuffleTournamentApi.playerComparison
+
+    load({ tournamentId, player1Id, player2Id })
       .then(({ data }) => {
         if (isActive) setData(data)
       })
@@ -202,7 +209,7 @@ export default function PlayerComparisonModal({
     return () => {
       isActive = false
     }
-  }, [tournamentId, player1Id, player2Id])
+  }, [tournamentId, player1Id, player2Id, loadComparison])
 
   const h2hResults = useMemo<PlayerComparisonHeadToHeadResult[]>(() => {
     if (data?.headToHead?.length) {
