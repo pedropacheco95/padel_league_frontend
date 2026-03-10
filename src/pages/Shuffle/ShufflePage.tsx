@@ -7,8 +7,10 @@ import LeagueMatchCard from '@/components/LeagueMatchCard'
 import EditableMatchCard, { EditableCardPlayer } from '@/components/EditableMatchCard'
 import { PlayerStatsView } from '@/components/PlayerStatsView'
 import PlayerComparisonModal from '@/components/PlayerComparisonModal'
+import { Loader2 } from 'lucide-react'
 
 type Tab = 'standings' | 'matches' | 'edit_matches' | 'divisions' | 'stats'
+type ConfirmAction = 'calculate' | 'undo_divisions' | 'delete_last_matchweek' | null
 const DEFAULT_PLAYER_PICTURE = '/static/images/Player/default_player.jpg'
 
 const DIV_BADGE: Record<number, { color: string; bg: string; headerBg: string }> = {
@@ -57,6 +59,25 @@ function orderMatches(matches: Match[]): Match[] {
   return result
 }
 
+function removePlayerFromLocalMatchweek(
+  tournament: ShuffleTournamentDetail,
+  playerId: string,
+  matchweek: number
+): ShuffleTournamentDetail {
+  return {
+    ...tournament,
+    matches: tournament.matches.map(match => {
+      if (match.matchweek !== matchweek) return match
+
+      return {
+        ...match,
+        team1: match.team1.map(id => (id === playerId ? 'sub' : id)) as [string, string],
+        team2: match.team2.map(id => (id === playerId ? 'sub' : id)) as [string, string],
+      }
+    }),
+  }
+}
+
 export default function ShufflePage() {
   const { user } = useAuth()
   const [data, setData] = useState<ShuffleTournamentDetail | null>(null)
@@ -66,8 +87,11 @@ export default function ShufflePage() {
   const [editMatchesDivFilter, setEditMatchesDivFilter] = useState(0)
   const [editMode, setEditMode] = useState(false)
   const [isCalculatingDivisions, setIsCalculatingDivisions] = useState(false)
+  const [isUndoingDivisions, setIsUndoingDivisions] = useState(false)
   const [isGeneratingMatchweek, setIsGeneratingMatchweek] = useState(false)
+  const [isDeletingLastMatchweek, setIsDeletingLastMatchweek] = useState(false)
   const [actionsError, setActionsError] = useState<string | null>(null)
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null)
   const [shareMessage, setShareMessage] = useState<string>('')
   const [copiedShare, setCopiedShare] = useState(false)
   const [selectedPlayer1, setSelectedPlayer1] = useState<string | null>(null)
@@ -133,6 +157,19 @@ export default function ShufflePage() {
     }
   }
 
+  async function handleUndoCalculateDivisions() {
+    setActionsError(null)
+    setIsUndoingDivisions(true)
+    try {
+      await shuffleTournamentApi.undoCalculateDivisions(data.id)
+      await fetchData()
+    } catch (error) {
+      setActionsError('Não foi possível desfazer o cálculo das divisões.')
+    } finally {
+      setIsUndoingDivisions(false)
+    }
+  }
+
   async function handleGenerateMatchweek() {
     setActionsError(null)
     setCopiedShare(false)
@@ -149,6 +186,53 @@ export default function ShufflePage() {
       setIsGeneratingMatchweek(false)
     }
   }
+
+  async function handleDeleteLastMatchweek() {
+    setActionsError(null)
+    setCopiedShare(false)
+    setIsDeletingLastMatchweek(true)
+    try {
+      await shuffleTournamentApi.deleteLastMatchweek(data.id)
+      await fetchData()
+      setShareMessage('')
+    } catch (error) {
+      setActionsError('Não foi possível apagar a última jornada.')
+    } finally {
+      setIsDeletingLastMatchweek(false)
+    }
+  }
+
+  async function handleConfirmAction() {
+    if (confirmAction === 'calculate') {
+      await handleCalculateDivisions()
+    } else if (confirmAction === 'undo_divisions') {
+      await handleUndoCalculateDivisions()
+    } else if (confirmAction === 'delete_last_matchweek') {
+      await handleDeleteLastMatchweek()
+    }
+    setConfirmAction(null)
+  }
+
+  const confirmDialogText =
+    confirmAction === 'calculate'
+      ? 'Tens a certeza que queres calcular novas divisões oh burro?'
+      : confirmAction === 'undo_divisions'
+        ? 'Foste precipitadinho a criar as divisões e agora queres que alguém te salve é? Desta vez tens a certeza do que estás a fazer?'
+        : confirmAction === 'delete_last_matchweek'
+          ? 'Foste precipitadinho a criar nova jornada  e agora queres que alguém te salve é? Vais apagar os jogos todos dessa jornada. Tens a certeza?'
+          : ''
+
+  const confirmDialogButtonText =
+    confirmAction === 'calculate'
+      ? 'Sim, calcular'
+      : confirmAction === 'undo_divisions'
+        ? 'Sim, desfazer'
+        : 'Sim, apagar'
+
+  const confirmDialogLoading =
+    (confirmAction === 'calculate' && isCalculatingDivisions) ||
+    (confirmAction === 'undo_divisions' && isUndoingDivisions) ||
+    (confirmAction === 'delete_last_matchweek' && isDeletingLastMatchweek)
 
   function buildShuffleShareMessage(tournament: ShuffleTournamentDetail): string {
     const emojis = ['🟡', '🔴', '🟢', '🔵']
@@ -276,7 +360,11 @@ export default function ShufflePage() {
             playerId: String(playerId),
             matchweek,
           })
-          await fetchData(true)
+          setData(current =>
+            current
+              ? removePlayerFromLocalMatchweek(current, String(playerId), matchweek)
+              : current
+          )
         }}
         onSave={async ({ homeGames, awayGames }) => {
           await matchesApi.editShuffleMatch(match.id, { homeGames, awayGames })
@@ -306,19 +394,91 @@ export default function ShufflePage() {
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
               <button
                 className="c-btn c-btn--small"
-                disabled={isCalculatingDivisions || isGeneratingMatchweek}
-                onClick={handleCalculateDivisions}
-                style={{ cursor: isCalculatingDivisions || isGeneratingMatchweek ? 'not-allowed' : 'pointer', opacity: isCalculatingDivisions || isGeneratingMatchweek ? 0.6 : 1 }}
+                disabled={isCalculatingDivisions || isUndoingDivisions || isGeneratingMatchweek || isDeletingLastMatchweek}
+                onClick={() => setConfirmAction('calculate')}
+                style={{
+                  cursor:
+                    isCalculatingDivisions || isUndoingDivisions || isGeneratingMatchweek || isDeletingLastMatchweek
+                      ? 'not-allowed'
+                      : 'pointer',
+                  opacity:
+                    isCalculatingDivisions || isUndoingDivisions || isGeneratingMatchweek || isDeletingLastMatchweek
+                      ? 0.6
+                      : 1,
+                  background: '#facc15',
+                  borderColor: '#facc15',
+                  color: '#1f2937',
+                  boxShadow: '0 10px 24px rgba(250, 204, 21, 0.3)',
+                  fontWeight: 800,
+                  borderRadius: '12px',
+                }}
               >
                 {isCalculatingDivisions ? 'A calcular...' : 'Calcular Divisões'}
               </button>
               <button
                 className="c-btn c-btn--small"
-                disabled={isGeneratingMatchweek || isCalculatingDivisions}
+                disabled={isUndoingDivisions || isGeneratingMatchweek || isCalculatingDivisions || isDeletingLastMatchweek}
+                onClick={() => setConfirmAction('undo_divisions')}
+                style={{
+                  cursor:
+                    isUndoingDivisions || isGeneratingMatchweek || isCalculatingDivisions || isDeletingLastMatchweek
+                      ? 'not-allowed'
+                      : 'pointer',
+                  opacity:
+                    isUndoingDivisions || isGeneratingMatchweek || isCalculatingDivisions || isDeletingLastMatchweek
+                      ? 0.6
+                      : 1,
+                  background: '#b42318',
+                  borderColor: '#b42318',
+                  color: '#fff',
+                  fontWeight: 700,
+                  borderRadius: '12px',
+                }}
+              >
+                {isUndoingDivisions ? 'A desfazer...' : 'Desfazer calculo de divisoes'}
+              </button>
+              <button
+                className="c-btn c-btn--small"
+                disabled={isGeneratingMatchweek || isCalculatingDivisions || isUndoingDivisions || isDeletingLastMatchweek}
                 onClick={handleGenerateMatchweek}
-                style={{ cursor: isGeneratingMatchweek || isCalculatingDivisions ? 'not-allowed' : 'pointer', opacity: isGeneratingMatchweek || isCalculatingDivisions ? 0.6 : 1 }}
+                style={{
+                  cursor:
+                    isGeneratingMatchweek || isCalculatingDivisions || isUndoingDivisions || isDeletingLastMatchweek
+                      ? 'not-allowed'
+                      : 'pointer',
+                  opacity:
+                    isGeneratingMatchweek || isCalculatingDivisions || isUndoingDivisions || isDeletingLastMatchweek
+                      ? 0.6
+                      : 1,
+                  background: '#2563eb',
+                  borderColor: '#2563eb',
+                  color: '#fff',
+                  borderRadius: '12px',
+                }}
               >
                 {isGeneratingMatchweek ? 'A gerar...' : 'Gerar Jornada'}
+              </button>
+              <button
+                className="c-btn c-btn--small"
+                disabled={isDeletingLastMatchweek || isGeneratingMatchweek || isCalculatingDivisions || isUndoingDivisions}
+                onClick={() => setConfirmAction('delete_last_matchweek')}
+                style={{
+                  cursor:
+                    isDeletingLastMatchweek || isGeneratingMatchweek || isCalculatingDivisions || isUndoingDivisions
+                      ? 'not-allowed'
+                      : 'pointer',
+                  opacity:
+                    isDeletingLastMatchweek || isGeneratingMatchweek || isCalculatingDivisions || isUndoingDivisions
+                      ? 0.6
+                      : 1,
+                  background: '#ef4444',
+                  borderColor: '#ef4444',
+                  color: '#fff',
+                  fontWeight: 700,
+                  borderRadius: '12px',
+                }}
+              >
+                {isDeletingLastMatchweek ? 'A apagar...' : 'Apagar a ultima jornada'}
               </button>
             </div>
           )}
@@ -347,6 +507,33 @@ export default function ShufflePage() {
       </div>
 
       <div className="l-grid">
+        {confirmAction && (
+          <div className="gpt_modal" style={{ display: 'flex' }}>
+            <div className="modal-content">
+              <p>{confirmDialogText}</p>
+              <div className="modal-buttons">
+                <button onClick={() => setConfirmAction(null)} disabled={confirmDialogLoading} style={{ backgroundColor: '#ccc' }}>
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleConfirmAction}
+                  disabled={confirmDialogLoading}
+                  style={{ backgroundColor: '#e74c3c', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  {confirmDialogLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      A processar...
+                    </>
+                  ) : (
+                    confirmDialogButtonText
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Selection banner */}
         {selectedPlayer1 && !showComparison && (
           <div className="c-shuffle-selection-banner">
