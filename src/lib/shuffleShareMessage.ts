@@ -2,9 +2,13 @@ import type { ShuffleTournamentDetail } from '@/types/tournament'
 
 export function buildShuffleShareMessage(tournament: ShuffleTournamentDetail): string {
   const emojis = ['🟡', '🔴', '🟢', '🔵']
-  const now = new Date()
-  const day = String(now.getDate()).padStart(2, '0')
-  const month = String(now.getMonth() + 1).padStart(2, '0')
+  // Matchweeks happen on Tuesdays. Show today if today is Tuesday, else the next upcoming Tuesday.
+  const TUESDAY = 2
+  const target = new Date()
+  const daysUntilTuesday = (TUESDAY - target.getDay() + 7) % 7
+  target.setDate(target.getDate() + daysUntilTuesday)
+  const day = String(target.getDate()).padStart(2, '0')
+  const month = String(target.getMonth() + 1).padStart(2, '0')
   const dateLabel = `${day}/${month}`
 
   const lines: string[] = [
