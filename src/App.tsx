@@ -21,7 +21,6 @@ import CalendarPage from "./pages/CalendarPage";
 import CreateDivisionsPage from "./pages/editions/CreateDivisionsPage";
 import NextMatchweekMessagePage from "./pages/editions/NextMatchweekMessagePage";
 import GlobalApiLoader from "./components/GlobalApiLoader";
-import ChatbotPage from "./pages/ChatbotPage";
 
 const queryClient = new QueryClient();
 
@@ -43,7 +42,6 @@ const App = () => (
               <Route path="/players/:id" element={<Layout><PlayerPage /></Layout>} />
               <Route path="/matches/for_edit" element={<Layout><ForEditPage /></Layout>} />
               <Route path="/calendar" element={<Layout><CalendarPage /></Layout>} />
-              <Route path="/chatbot" element={<Layout><ChatbotPage /></Layout>} />
               <Route path="/shuffle" element={<Layout><ShufflePage /></Layout>} />
               <Route path="/shuffle/create" element={<Layout><CreateShufflePage /></Layout>} />
               <Route path="/edition/create_divisions" element={<Layout><CreateDivisionsPage /></Layout>} />
