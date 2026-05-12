@@ -1,4 +1,4 @@
-import type { Edition, Match } from '@/types'
+import type { Edition, Match, PlayerShort } from '@/types'
 
 export interface LeagueMatchweekData {
   divisionId: number
@@ -79,16 +79,35 @@ export function buildLeagueShareMessage(
 
   visible.forEach(division => {
     lines.push(`*${division.divisionNumber}.ª Divisão*`)
-    division.matches.forEach((match, matchIdx) => {
-      const homeEmoji = EMOJIS[(2 * matchIdx) % EMOJIS.length]
-      const awayEmoji = EMOJIS[(2 * matchIdx + 1) % EMOJIS.length]
-      match.homePlayers.forEach(player => {
-        if (player?.name) lines.push(`${homeEmoji} ${player.name}`)
-      })
-      match.awayPlayers.forEach(player => {
-        if (player?.name) lines.push(`${awayEmoji} ${player.name}`)
+
+    // A matchweek's pairings are unique; the same team can appear in multiple
+    // matches. Dedupe teams by the unordered pair of player IDs, preserving
+    // the order they're first encountered across home/away of each match.
+    const seen = new Map<string, [PlayerShort, PlayerShort]>()
+    const teamKey = (team: [PlayerShort, PlayerShort]): string => {
+      const ids = team
+        .map(p => (p?.id ?? `name:${p?.name ?? ''}`))
+        .map(String)
+        .sort()
+      return ids.join('-')
+    }
+    division.matches.forEach(match => {
+      const teams: [PlayerShort, PlayerShort][] = [match.homePlayers, match.awayPlayers]
+      teams.forEach(team => {
+        const key = teamKey(team)
+        if (!seen.has(key)) seen.set(key, team)
       })
     })
+
+    let teamIdx = 0
+    seen.forEach(team => {
+      const emoji = EMOJIS[teamIdx % EMOJIS.length]
+      team.forEach(player => {
+        if (player?.name) lines.push(`${emoji} ${player.name}`)
+      })
+      teamIdx += 1
+    })
+
     lines.push('')
   })
 
