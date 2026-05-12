@@ -39,7 +39,9 @@ function TournamentCard({ tournament }: { tournament: Division }) {
           </header>
           <footer className="c-tournaments__bottom-card">
             <div className="c-tournaments__header">
-              <h3 className="c-tournaments__title">{tournament.name}</h3>
+              <h3 className="c-tournaments__title">
+                {tournament.editionName ? `${tournament.editionName} - ${tournament.name}` : tournament.name}
+              </h3>
               <p className="c-tournaments__cat">Rating: {tournament.rating}</p>
             </div>
           </footer>
