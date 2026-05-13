@@ -140,6 +140,7 @@ export default function TournamentPage() {
   const [selectedPlayer1, setSelectedPlayer1] = useState<string | null>(null)
   const [selectedPlayer2, setSelectedPlayer2] = useState<string | null>(null)
   const [showComparison, setShowComparison] = useState(false)
+  const [editMode, setEditMode] = useState(false)
 
   const fetchData = useCallback(() => {
     if (!id) return
@@ -312,12 +313,54 @@ export default function TournamentPage() {
 
         {/* Matches tab */}
         <div className={tabContentClass('matches')} id="matches_information_tab">
+          <div style={{ position: 'relative' }}>
+            {user && (
+              <div
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: 0,
+                  transform: 'translateY(-115%)',
+                  background: '#fff',
+                  border: '1px solid #d9d9d9',
+                  borderRadius: '999px',
+                  padding: '6px 10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  zIndex: 2,
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                }}
+              >
+                <span style={{ fontSize: '1.2rem', fontWeight: 700, lineHeight: 1 }}>Editar Jogos</span>
+                <button
+                  onClick={() => setEditMode(prev => !prev)}
+                  aria-pressed={editMode}
+                  style={{
+                    border: 0,
+                    borderRadius: '999px',
+                    width: '44px',
+                    height: '24px',
+                    cursor: 'pointer',
+                    background: editMode ? '#198754' : '#adb5bd',
+                    color: '#fff',
+                    fontSize: '1rem',
+                    fontWeight: 700,
+                    lineHeight: 1,
+                  }}
+                >
+                  {editMode ? 'ON' : 'OFF'}
+                </button>
+              </div>
+            )}
+          </div>
           <MatchesTab
             tournamentId={division.id}
             matches={matches}
             allMatches={allMatches}
             user={user}
             onRefresh={fetchData}
+            forceEdit={editMode}
           />
         </div>
 
