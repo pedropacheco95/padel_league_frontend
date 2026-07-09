@@ -5,7 +5,6 @@ import { tournamentsApi } from '@/api/tournaments'
 import { TournamentDetail, Match, User } from '@/types'
 import { Player as ComparisonPlayer } from '@/types/tournament'
 import { useAuth } from '@/context/AuthContext'
-import { Button } from '@/components/ui/button'
 import LeagueMatchCard from '@/components/LeagueMatchCard'
 import EditableMatchCard from '@/components/EditableMatchCard'
 import MonthlyMatchesCalendar from '@/components/MonthlyMatchesCalendar'
@@ -144,6 +143,7 @@ export default function TournamentPage() {
   const [showComparison, setShowComparison] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [refreshingStandings, setRefreshingStandings] = useState(false)
+  const [refreshHover, setRefreshHover] = useState(false)
 
   const fetchData = useCallback(() => {
     if (!id) return
@@ -266,11 +266,9 @@ export default function TournamentPage() {
         {/* General information tab — standings table */}
         <div className={tabContentClass('general')} id="general_information_tab">
           {user && (
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <Button
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
+              <button
                 type="button"
-                variant="ghost"
-                size="icon"
                 title={
                   division.standingsUpToDate === false
                     ? 'Classificação desatualizada — clica para atualizar'
@@ -279,10 +277,28 @@ export default function TournamentPage() {
                 aria-label="Atualizar classificação"
                 onClick={handleRefreshStandings}
                 disabled={refreshingStandings}
-                style={{ position: 'relative' }}
+                onMouseEnter={() => setRefreshHover(true)}
+                onMouseLeave={() => setRefreshHover(false)}
+                style={{
+                  position: 'relative',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 28,
+                  height: 28,
+                  padding: 0,
+                  margin: 0,
+                  border: 'none',
+                  borderRadius: '50%',
+                  background: refreshHover && !refreshingStandings ? 'rgba(0, 0, 0, 0.06)' : 'transparent',
+                  color: '#6c757d',
+                  cursor: refreshingStandings ? 'not-allowed' : 'pointer',
+                  opacity: refreshingStandings ? 0.5 : 1,
+                  transition: 'background 0.15s',
+                }}
               >
                 <RefreshCw
-                  size={16}
+                  size={14}
                   className={refreshingStandings ? 'animate-spin' : ''}
                 />
                 {division.standingsUpToDate === false && !refreshingStandings && (
@@ -290,8 +306,8 @@ export default function TournamentPage() {
                     aria-hidden="true"
                     style={{
                       position: 'absolute',
-                      top: 4,
-                      right: 4,
+                      top: 2,
+                      right: 2,
                       width: 6,
                       height: 6,
                       borderRadius: '50%',
@@ -299,7 +315,7 @@ export default function TournamentPage() {
                     }}
                   />
                 )}
-              </Button>
+              </button>
             </div>
           )}
           <table id="classification_table" className="classification_table">
