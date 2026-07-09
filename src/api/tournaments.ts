@@ -1,5 +1,5 @@
 import { api } from './client'
-import { TournamentsData, TournamentDetail } from '../types'
+import { TournamentsData, TournamentDetail, StandingsRow } from '../types'
 import { PlayerComparisonResponse } from '@/types/tournament'
 import {
   USE_MOCK,
@@ -20,6 +20,10 @@ export const tournamentsApi = {
     USE_MOCK
       ? mockResponse({} as Record<string, never>)
       : api.post(`/tournaments/${id}/remove_player_from_matchweek`, payload),
+  refreshStandings: (id: number) =>
+    USE_MOCK
+      ? mockResponse({ standings: mockTournamentDetails[id]?.standings ?? [] })
+      : api.post<{ standings: StandingsRow[] }>(`/tournaments/${id}/refresh_standings`),
   playerComparison: (id: number, payload: { player1Id: string; player2Id: string }) =>
     USE_MOCK
       ? mockResponse(

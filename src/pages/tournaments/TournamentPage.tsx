@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { RefreshCw } from 'lucide-react'
 import { tournamentsApi } from '@/api/tournaments'
 import { TournamentDetail, Match, User } from '@/types'
 import { Player as ComparisonPlayer } from '@/types/tournament'
 import { useAuth } from '@/context/AuthContext'
+import { Button } from '@/components/ui/button'
 import LeagueMatchCard from '@/components/LeagueMatchCard'
 import EditableMatchCard from '@/components/EditableMatchCard'
 import MonthlyMatchesCalendar from '@/components/MonthlyMatchesCalendar'
@@ -141,6 +143,7 @@ export default function TournamentPage() {
   const [selectedPlayer2, setSelectedPlayer2] = useState<string | null>(null)
   const [showComparison, setShowComparison] = useState(false)
   const [editMode, setEditMode] = useState(false)
+  const [refreshingStandings, setRefreshingStandings] = useState(false)
 
   const fetchData = useCallback(() => {
     if (!id) return
@@ -150,6 +153,17 @@ export default function TournamentPage() {
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  async function handleRefreshStandings() {
+    if (!id || refreshingStandings) return
+    setRefreshingStandings(true)
+    try {
+      const { data: refreshed } = await tournamentsApi.refreshStandings(Number(id))
+      setData(prev => (prev ? { ...prev, standings: refreshed.standings } : prev))
+    } finally {
+      setRefreshingStandings(false)
+    }
+  }
 
   if (!data) return null
 
@@ -243,6 +257,24 @@ export default function TournamentPage() {
 
         {/* General information tab — standings table */}
         <div className={tabContentClass('general')} id="general_information_tab">
+          {user && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                title="Atualizar classificação"
+                aria-label="Atualizar classificação"
+                onClick={handleRefreshStandings}
+                disabled={refreshingStandings}
+              >
+                <RefreshCw
+                  size={16}
+                  className={refreshingStandings ? 'animate-spin' : ''}
+                />
+              </Button>
+            </div>
+          )}
           <table id="classification_table" className="classification_table">
             <thead>
               <tr>
