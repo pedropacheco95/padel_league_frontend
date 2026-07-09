@@ -22,8 +22,13 @@ export const tournamentsApi = {
       : api.post(`/tournaments/${id}/remove_player_from_matchweek`, payload),
   refreshStandings: (id: number) =>
     USE_MOCK
-      ? mockResponse({ standings: mockTournamentDetails[id]?.standings ?? [] })
-      : api.post<{ standings: StandingsRow[] }>(`/tournaments/${id}/refresh_standings`),
+      ? mockResponse({
+          standings: mockTournamentDetails[id]?.standings ?? [],
+          standingsUpToDate: true,
+        })
+      : api.post<{ standings: StandingsRow[]; standingsUpToDate: boolean }>(
+          `/tournaments/${id}/refresh_standings`
+        ),
   playerComparison: (id: number, payload: { player1Id: string; player2Id: string }) =>
     USE_MOCK
       ? mockResponse(

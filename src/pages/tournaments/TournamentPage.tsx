@@ -159,7 +159,15 @@ export default function TournamentPage() {
     setRefreshingStandings(true)
     try {
       const { data: refreshed } = await tournamentsApi.refreshStandings(Number(id))
-      setData(prev => (prev ? { ...prev, standings: refreshed.standings } : prev))
+      setData(prev =>
+        prev
+          ? {
+              ...prev,
+              standings: refreshed.standings,
+              division: { ...prev.division, standingsUpToDate: refreshed.standingsUpToDate },
+            }
+          : prev
+      )
     } finally {
       setRefreshingStandings(false)
     }
@@ -263,15 +271,34 @@ export default function TournamentPage() {
                 type="button"
                 variant="ghost"
                 size="icon"
-                title="Atualizar classificação"
+                title={
+                  division.standingsUpToDate === false
+                    ? 'Classificação desatualizada — clica para atualizar'
+                    : 'Atualizar classificação'
+                }
                 aria-label="Atualizar classificação"
                 onClick={handleRefreshStandings}
                 disabled={refreshingStandings}
+                style={{ position: 'relative' }}
               >
                 <RefreshCw
                   size={16}
                   className={refreshingStandings ? 'animate-spin' : ''}
                 />
+                {division.standingsUpToDate === false && !refreshingStandings && (
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      backgroundColor: 'var(--color-warning, #e0a800)',
+                    }}
+                  />
+                )}
               </Button>
             </div>
           )}
