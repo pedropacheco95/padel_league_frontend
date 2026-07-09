@@ -54,6 +54,7 @@ export interface Division {
   rating: number | null
   hasEnded: boolean
   openDivision: boolean
+  standingsUpToDate: boolean
   logoImageUrl: string | null
   largePictureUrl: string | null
   editionId: number
