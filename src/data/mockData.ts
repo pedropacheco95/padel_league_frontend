@@ -337,14 +337,14 @@ const playedMatches51 = allMatches51.filter((m) => m.played)
 // Fred: 3W 3L = 9pts | Dinis: 3W 3L = 9pts | BC: 2W 4L = 6pts
 // Carlo: 2W 4L = 6pts | Miguel SG: 0W (no games played yet) = 0pts
 const standings51 = [
-  { position: 1, player: P_PANCHO,   points: 12, wins: 4, draws: 0, losts: 2, appearances: 2 },
-  { position: 2, player: P_MALAFAYA, points: 12, wins: 4, draws: 0, losts: 2, appearances: 2 },
-  { position: 3, player: P_CUCA,     points:  9, wins: 3, draws: 0, losts: 3, appearances: 2 },
-  { position: 4, player: P_FRED,     points:  9, wins: 3, draws: 0, losts: 3, appearances: 2 },
-  { position: 5, player: P_DINIS,    points:  9, wins: 3, draws: 0, losts: 3, appearances: 2 },
-  { position: 6, player: P_BC,       points:  6, wins: 2, draws: 0, losts: 4, appearances: 2 },
-  { position: 7, player: P_CARLO,    points:  6, wins: 2, draws: 0, losts: 4, appearances: 2 },
-  { position: 8, player: P_MIGUELSG, points:  0, wins: 0, draws: 0, losts: 0, appearances: 0 },
+  { position: 1, player: P_PANCHO,   points: 12, wins: 4, draws: 0, losts: 2, appearances: 2, gamesWon: 43, gamesLost: 37 },
+  { position: 2, player: P_MALAFAYA, points: 12, wins: 4, draws: 0, losts: 2, appearances: 2, gamesWon: 46, gamesLost: 32 },
+  { position: 3, player: P_CUCA,     points:  9, wins: 3, draws: 0, losts: 3, appearances: 2, gamesWon: 41, gamesLost: 35 },
+  { position: 4, player: P_FRED,     points:  9, wins: 3, draws: 0, losts: 3, appearances: 2, gamesWon: 41, gamesLost: 44 },
+  { position: 5, player: P_DINIS,    points:  9, wins: 3, draws: 0, losts: 3, appearances: 2, gamesWon: 43, gamesLost: 39 },
+  { position: 6, player: P_BC,       points:  6, wins: 2, draws: 0, losts: 4, appearances: 2, gamesWon: 35, gamesLost: 41 },
+  { position: 7, player: P_CARLO,    points:  6, wins: 2, draws: 0, losts: 4, appearances: 2, gamesWon: 33, gamesLost: 50 },
+  { position: 8, player: P_MIGUELSG, points:  0, wins: 0, draws: 0, losts: 0, appearances: 0, gamesWon:  0, gamesLost:  0 },
 ]
 
 // ---------------------------------------------------------------------------
