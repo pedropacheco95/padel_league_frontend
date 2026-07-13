@@ -318,72 +318,78 @@ export default function TournamentPage() {
               </button>
             </div>
           )}
-          <table id="classification_table" className="classification_table">
-            <thead>
-              <tr>
-                <th />
-                <th />
-                <th />
-                <th className="optional_table_columns">Presenças</th>
-                <th className="optional_table_columns">V</th>
-                <th className="optional_table_columns">E</th>
-                <th className="optional_table_columns">D</th>
-                <th>Pontos</th>
-              </tr>
-            </thead>
-            <tbody>
-              {standings.map(row => (
-                <tr
-                  key={row.player.id}
-                  className="player_classification_row"
-                  id={String(row.player.id)}
-                  onClick={() => {
-                    if (!row.player.id) return
-                    const currentId = String(row.player.id)
-                    if (selectedPlayer1 && selectedPlayer1 !== currentId) {
-                      setSelectedPlayer2(currentId)
-                      setShowComparison(true)
-                    } else if (selectedPlayer1 === currentId) {
-                      setSelectedPlayer1(null)
-                    } else {
-                      setSelectedPlayer1(currentId)
-                    }
-                  }}
-                  style={{
-                    cursor: row.player.id ? 'pointer' : 'default',
-                    background:
-                      selectedPlayer1 === String(row.player.id)
-                        ? 'rgba(6,182,212,0.12)'
-                        : undefined,
-                    boxShadow:
-                      selectedPlayer1 === String(row.player.id)
-                        ? 'inset 3px 0 0 #06b6d4'
-                        : undefined,
-                    transition: 'background 0.2s, box-shadow 0.2s',
-                  }}
-                >
-                  <td>{row.position}</td>
-                  <td>
-                    <Link
-                      className="c-trigger"
-                      to={row.player.id ? `/players/${row.player.id}` : '#'}
-                    >
-                      <div
-                        className="c-teams__img u-img-cropped u-img-cropped--classification"
-                        style={{ backgroundImage: `url(${row.player.pictureUrl})` }}
-                      />
-                    </Link>
-                  </td>
-                  <td>{row.player.name}</td>
-                  <td className="optional_table_columns">{row.appearances}</td>
-                  <td className="optional_table_columns">{row.wins}</td>
-                  <td className="optional_table_columns">{row.draws}</td>
-                  <td className="optional_table_columns">{row.losts}</td>
-                  <td>{row.points}</td>
+          <div className="overflow-x-auto">
+            <table id="classification_table" className="classification_table">
+              <thead>
+                <tr>
+                  <th />
+                  <th />
+                  <th />
+                  <th>Pontos</th>
+                  <th>Presenças</th>
+                  <th>V</th>
+                  <th>E</th>
+                  <th>D</th>
+                  <th>JG</th>
+                  <th>JP</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {standings.map(row => (
+                  <tr
+                    key={row.player.id}
+                    className="player_classification_row"
+                    id={String(row.player.id)}
+                    onClick={() => {
+                      if (!row.player.id) return
+                      const currentId = String(row.player.id)
+                      if (selectedPlayer1 && selectedPlayer1 !== currentId) {
+                        setSelectedPlayer2(currentId)
+                        setShowComparison(true)
+                      } else if (selectedPlayer1 === currentId) {
+                        setSelectedPlayer1(null)
+                      } else {
+                        setSelectedPlayer1(currentId)
+                      }
+                    }}
+                    style={{
+                      cursor: row.player.id ? 'pointer' : 'default',
+                      background:
+                        selectedPlayer1 === String(row.player.id)
+                          ? 'rgba(6,182,212,0.12)'
+                          : undefined,
+                      boxShadow:
+                        selectedPlayer1 === String(row.player.id)
+                          ? 'inset 3px 0 0 #06b6d4'
+                          : undefined,
+                      transition: 'background 0.2s, box-shadow 0.2s',
+                    }}
+                  >
+                    <td>{row.position}</td>
+                    <td>
+                      <Link
+                        className="c-trigger"
+                        to={row.player.id ? `/players/${row.player.id}` : '#'}
+                      >
+                        <div
+                          className="c-teams__img u-img-cropped u-img-cropped--classification"
+                          style={{ backgroundImage: `url(${row.player.pictureUrl})` }}
+                        />
+                      </Link>
+                    </td>
+                    <td>{row.player.name}</td>
+                    <td>{row.points}</td>
+                    <td>{row.appearances}</td>
+                    <td>{row.wins}</td>
+                    <td>{row.draws}</td>
+                    <td>{row.losts}</td>
+                    <td>{row.gamesWon}</td>
+                    <td>{row.gamesLost}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Matches tab */}

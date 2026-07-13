@@ -99,6 +99,8 @@ export interface StandingsRow {
   draws: number
   losts: number
   appearances: number
+  gamesWon: number
+  gamesLost: number
 }
 
 export interface TournamentsData {
