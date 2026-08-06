@@ -102,6 +102,11 @@ export default function Layout({ children }: Props) {
                 Shuffle
               </Link>
             </li>
+            <li className="c-main-nav__item">
+              <Link className="c-main-nav__link" to="/supercup" title="supercup">
+                Supercup
+              </Link>
+            </li>
             <li className="c-main-nav__item for_login_logout">
               {!user ? (
                 <>

@@ -19,6 +19,8 @@ import ShufflePage from "./pages/Shuffle/ShufflePage";
 import CreateShufflePage from "./pages/Shuffle/CreateShufflePage";
 import CalendarPage from "./pages/CalendarPage";
 import CreateDivisionsPage from "./pages/editions/CreateDivisionsPage";
+import SupercupPage from "./pages/Supercup/SupercupPage";
+import { SupercupProvider } from "./context/SupercupContext";
 import GlobalApiLoader from "./components/GlobalApiLoader";
 
 const queryClient = new QueryClient();
@@ -28,6 +30,7 @@ const App = () => (
     <AuthProvider>
       <TooltipProvider>
         <TournamentProvider>
+          <SupercupProvider>
           <GlobalApiLoader />
           <Toaster />
           <Sonner />
@@ -43,10 +46,12 @@ const App = () => (
               <Route path="/calendar" element={<Layout><CalendarPage /></Layout>} />
               <Route path="/shuffle" element={<Layout><ShufflePage /></Layout>} />
               <Route path="/shuffle/create" element={<Layout><CreateShufflePage /></Layout>} />
+              <Route path="/supercup" element={<Layout><SupercupPage /></Layout>} />
               <Route path="/edition/create_divisions" element={<Layout><CreateDivisionsPage /></Layout>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
+          </SupercupProvider>
         </TournamentProvider>
       </TooltipProvider>
     </AuthProvider>
