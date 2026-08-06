@@ -38,7 +38,7 @@ export default function SupercupPage() {
   const [newPlayerName, setNewPlayerName] = useState('')
   const [editing, setEditing] = useState<Record<string, { s1: string; s2: string }>>({})
   const [openMatchId, setOpenMatchId] = useState<string | null>(null)
-
+  const openMatch = openMatchId ? state.matches.find(m => m.id === openMatchId) ?? null : null
 
   const placements = useMemo(() => getPlacements(), [getPlacements])
   const placementByTeam = useMemo(() => {
