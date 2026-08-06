@@ -579,6 +579,63 @@ export default function SupercupPage() {
           </div>
         </div>
       </div>
+
+      {openMatch && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setOpenMatchId(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15,23,42,.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+            zIndex: 1000,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#fff',
+              borderRadius: '8px',
+              width: '100%',
+              maxWidth: '560px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 10px 40px rgba(0,0,0,.25)',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '12px 16px',
+                borderBottom: '1px solid #ececec',
+              }}
+            >
+              <div style={{ display: 'grid' }}>
+                <strong style={{ fontSize: '1.6rem' }}>{openMatch.label}</strong>
+                <span style={{ fontSize: '1.25rem', opacity: 0.6 }}>
+                  {SUPERCUP_ROUND_LABELS[openMatch.round]}
+                </span>
+              </div>
+              <button
+                onClick={() => setOpenMatchId(null)}
+                aria-label="Fechar"
+                style={{ border: 0, background: 'none', fontSize: '2.2rem', lineHeight: 1, cursor: 'pointer', opacity: 0.5 }}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{ padding: '8px 12px' }}>{renderMatch(openMatch)}</div>
+          </div>
+        </div>
+      )}
     </>
+
   )
 }
