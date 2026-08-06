@@ -83,6 +83,115 @@ export default function SupercupPage() {
     return `Equipa ${team.seed}`
   }
 
+  function teamNames(teamId: string | null): string {
+    const team = getTeamById(teamId)
+    if (!team) return 'A definir'
+    return `${team.players[0].name} / ${team.players[1].name}`
+  }
+
+  function BracketBox({ match }: { match: SupercupMatch }) {
+    const isReady = !!match.team1Id && !!match.team2Id
+    const winner =
+      match.played && match.score1 != null && match.score2 != null
+        ? match.score1 >= match.score2
+          ? 1
+          : 2
+        : null
+
+    const side = (slot: 1 | 2) => {
+      const teamId = slot === 1 ? match.team1Id : match.team2Id
+      const score = slot === 1 ? match.score1 : match.score2
+      const isWinner = winner === slot
+      return (
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '6px 9px',
+            borderTop: slot === 2 ? '1px solid #ececec' : undefined,
+            background: isWinner ? '#f2fbf5' : undefined,
+          }}
+        >
+          <span style={{ display: 'grid', minWidth: 0 }}>
+            <span style={{ fontSize: '1.15rem', opacity: 0.55, textTransform: 'uppercase', letterSpacing: '.03em' }}>
+              {teamLabel(teamId)}
+            </span>
+            <span
+              style={{
+                fontSize: '1.35rem',
+                fontWeight: isWinner ? 700 : 500,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {teamNames(teamId)}
+            </span>
+          </span>
+          <span style={{ fontSize: '1.7rem', fontWeight: 700, opacity: score == null ? 0.25 : 1 }}>
+            {score ?? '–'}
+          </span>
+        </div>
+      )
+    }
+
+    return (
+      <button
+        onClick={() => setOpenMatchId(match.id)}
+        style={{
+          all: 'unset',
+          cursor: 'pointer',
+          display: 'block',
+          width: '100%',
+          background: '#fff',
+          border: '1px solid #e2e2e2',
+          borderLeft: `3px solid ${match.played ? '#16a34a' : isReady ? '#2563eb' : '#cbd5e1'}`,
+          borderRadius: '6px',
+          boxShadow: '0 1px 3px rgba(0,0,0,.06)',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            fontSize: '1.15rem',
+            padding: '4px 9px',
+            background: '#fafafa',
+            borderBottom: '1px solid #ececec',
+            borderRadius: '5px 5px 0 0',
+            opacity: 0.75,
+          }}
+        >
+          <span>{match.label}</span>
+          <span>{match.played ? 'Concluído' : isReady ? 'Por jogar' : 'Aguarda' }</span>
+        </div>
+        {side(1)}
+        {side(2)}
+      </button>
+    )
+  }
+
+  function BracketColumn({ title, matches }: { title: string; matches: SupercupMatch[] }) {
+    if (matches.length === 0) return null
+    return (
+      <div style={{ display: 'grid', gap: '10px', alignContent: 'start', minWidth: '220px', flex: '1 1 220px' }}>
+        <h4 style={{ fontSize: '1.3rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', opacity: 0.6 }}>
+          {title}
+        </h4>
+        {matches.map(m => (
+          <BracketBox key={m.id} match={m} />
+        ))}
+      </div>
+    )
+  }
+
+  function byRound(...rounds: SupercupRound[]) {
+    return state.matches.filter(m => rounds.includes(m.round)).sort((a, b) => a.order - b.order)
+  }
+
+
   function renderMatch(match: SupercupMatch) {
     const draft = editing[match.id]
     const isReady = !!match.team1Id && !!match.team2Id
