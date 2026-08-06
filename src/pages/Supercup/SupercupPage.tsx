@@ -167,7 +167,7 @@ export default function SupercupPage() {
   function BracketColumn({ title, matches }: { title: string; matches: SupercupMatch[] }) {
     if (matches.length === 0) return null
     return (
-      <div style={{ display: 'grid', gap: '10px', alignContent: 'start', minWidth: '220px', flex: '1 1 220px' }}>
+      <div style={{ display: 'grid', gap: '10px', alignContent: 'start', minWidth: '200px', flex: '1 1 0' }}>
         <h4 style={{ fontSize: '1.3rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', opacity: 0.6 }}>
           {title}
         </h4>
