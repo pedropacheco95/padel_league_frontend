@@ -337,19 +337,34 @@ export default function SupercupPage() {
               Ainda não existe quadro. Vai a <strong>Configurar</strong> para adicionar 16 jogadores e gerar o quadro.
             </div>
           ) : (
-            ROUND_ORDER.map(round => {
-              const roundMatches = state.matches.filter(m => m.round === round).sort((a, b) => a.order - b.order)
-              if (roundMatches.length === 0) return null
-              return (
-                <section key={round} style={{ marginBottom: '18px' }}>
-                  <h3 className="c-section__title" style={{ fontSize: '2rem', marginBottom: '8px' }}>
-                    {SUPERCUP_ROUND_LABELS[round]}
-                  </h3>
-                  <div className="l-grid l-grid--tor">{roundMatches.map(renderMatch)}</div>
-                </section>
-              )
-            })
+            <div style={{ display: 'grid', gap: '24px' }}>
+              <section>
+                <h3 className="c-section__title" style={{ fontSize: '2rem', marginBottom: '10px' }}>
+                  Quadro principal
+                </h3>
+                <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '6px' }}>
+                  <BracketColumn title="Quartos de final" matches={byRound('quarter')} />
+                  <BracketColumn title="Meias-finais" matches={byRound('semi')} />
+                  <BracketColumn title="Final · 3.º lugar" matches={byRound('final', 'third')} />
+                </div>
+              </section>
+
+              <section>
+                <h3 className="c-section__title" style={{ fontSize: '2rem', marginBottom: '10px' }}>
+                  Quadro de consolação
+                </h3>
+                <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '6px' }}>
+                  <BracketColumn title="Meias de consolação" matches={byRound('consolation_semi')} />
+                  <BracketColumn title="5.º e 7.º lugar" matches={byRound('fifth', 'seventh')} />
+                </div>
+              </section>
+
+              <p style={{ fontSize: '1.3rem', opacity: 0.65 }}>
+                Clica num jogo para inserir ou editar o resultado.
+              </p>
+            </div>
           )}
+
         </div>
 
         {/* Equipas */}
