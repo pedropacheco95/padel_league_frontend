@@ -7,15 +7,6 @@ type Tab = 'bracket' | 'teams' | 'standings' | 'setup'
 
 const DEFAULT_PLAYER_PICTURE = '/static/images/Player/default_player.jpg'
 
-const ROUND_ORDER: SupercupRound[] = [
-  'quarter',
-  'semi',
-  'consolation_semi',
-  'final',
-  'third',
-  'fifth',
-  'seventh',
-]
 
 const PLACE_BADGE: Record<number, { color: string; bg: string }> = {
   1: { color: '#7a5800', bg: '#fff0b0' },
