@@ -315,6 +315,30 @@
     }
 }
 
+// The hero header is the only --no-image block without --table, so its data boxes get
+// `padding: 0` from _general.scss with nothing to space them apart — "Ranking" and "Pontos"
+// end up touching. The --table variants space themselves via `width: 20%`.
+.c-ranking-header--no-image:not(.c-ranking-header--table) {
+    .l-container--data {
+        @include size-query(mediumUp) {
+            column-gap: 6rem;
+        }
+    }
+}
+
+.c-player__message {
+    font-family: $font-base;
+    font-size: 2rem;
+    color: $color-dark;
+    text-align: center;
+    padding: 8rem 2rem;
+
+    a {
+        color: $color-primary;
+        text-decoration: underline;
+    }
+}
+
 .c-player__data-list {
     display: none;
     margin-bottom: 0;

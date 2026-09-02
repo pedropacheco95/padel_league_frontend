@@ -5,20 +5,45 @@ import { PlayerDetail } from '../../types'
 
 type Tab = 'personal' | 'sports'
 
+const DEFAULT_LARGE_PICTURE =
+  'https://storage.googleapis.com/portopadelleague-storage/images/Player/large_pic_default.jpg'
+
 const PlayerPage = () => {
   const { id } = useParams<{ id: string }>()
   const [player, setPlayer] = useState<PlayerDetail | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
   const [activeTab, setActiveTab] = useState<Tab>('personal')
 
   useEffect(() => {
     if (!id) return
+    setLoading(true)
+    setError(false)
     playersApi.detail(Number(id))
       .then(res => setPlayer(res.data))
+      .catch(() => setError(true))
       .finally(() => setLoading(false))
   }, [id])
 
-  if (loading || !player) return null
+  // Keep the current player on screen while the next one loads, so the prev/next
+  // chevrons swap in place instead of flashing the whole page.
+  if (loading && !player) {
+    return (
+      <div className="l-grid">
+        <p className="c-player__message">A carregar…</p>
+      </div>
+    )
+  }
+
+  if (error || !player) {
+    return (
+      <div className="l-grid">
+        <p className="c-player__message">
+          Não foi possível carregar este jogador. <Link to="/players">Ver todos os jogadores</Link>
+        </p>
+      </div>
+    )
+  }
 
   const {
     matchesPlayed, matchesWon, matchesLost, matchesDrawn, efficiency,
@@ -31,6 +56,12 @@ const PlayerPage = () => {
       <div className="l-grid">
         <div className="c-player">
           <div className="c-player__content">
+            <img
+              className="c-player__img"
+              src={player.largePictureUrl || DEFAULT_LARGE_PICTURE}
+              alt=""
+            />
+
             {previousPlayer && (
               <div className="c-player__prev">
                 <Link to={`/players/${previousPlayer.id}`}>
@@ -216,7 +247,7 @@ const PlayerPage = () => {
               {tournamentHistory.map(row => (
                 <li key={row.divisionId} className="c-flex-table__item">
                   <Link to={`/tournaments/${row.divisionId}`}>
-                    <span className="c-flex-table__item-title">{row.divisionName}</span>
+                    <span>{row.divisionName}</span>
                   </Link>
                 </li>
               ))}
@@ -227,7 +258,7 @@ const PlayerPage = () => {
             <ul className="c-flex-table__list u-list-clean">
               {tournamentHistory.map(row => (
                 <li key={row.divisionId} className="c-flex-table__item">
-                  <span className="c-flex-table__item-title">
+                  <span>
                     {row.endDate
                       ? new Date(row.endDate).toLocaleDateString('pt-PT')
                       : 'Não definido'}
@@ -241,7 +272,7 @@ const PlayerPage = () => {
             <ul className="c-flex-table__list u-list-clean">
               {tournamentHistory.map(row => (
                 <li key={row.divisionId} className="c-flex-table__item">
-                  <span className="c-flex-table__item-title">{row.won}</span>
+                  <span>{row.won}</span>
                 </li>
               ))}
             </ul>
@@ -251,7 +282,7 @@ const PlayerPage = () => {
             <ul className="c-flex-table__list u-list-clean">
               {tournamentHistory.map(row => (
                 <li key={row.divisionId} className="c-flex-table__item">
-                  <span className="c-flex-table__item-title">{row.played}</span>
+                  <span>{row.played}</span>
                 </li>
               ))}
             </ul>
@@ -261,7 +292,7 @@ const PlayerPage = () => {
             <ul className="c-flex-table__list u-list-clean">
               {tournamentHistory.map(row => (
                 <li key={row.divisionId} className="c-flex-table__item">
-                  <span className="c-flex-table__item-title">{row.place}</span>
+                  <span>{row.place}</span>
                 </li>
               ))}
             </ul>
@@ -271,7 +302,7 @@ const PlayerPage = () => {
             <ul className="c-flex-table__list u-list-clean">
               {tournamentHistory.map(row => (
                 <li key={row.divisionId} className="c-flex-table__item">
-                  <span className="c-flex-table__item-title">{row.rankingPoints}</span>
+                  <span>{row.rankingPoints}</span>
                 </li>
               ))}
             </ul>
