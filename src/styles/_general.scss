@@ -1401,6 +1401,15 @@ body:not(.t-tournaments) {
   }
 }
 
+// The player page's tournament history is the one --ranking table laid out as real
+// side-by-side columns (25% + 15% x 5 = 100%), so it opts out of the column stacking
+// that the tournament and shuffle tabs rely on. --blue is used only there.
+.c-flex-table--ranking.c-flex-table--blue {
+  @include size-query(mediumUp) {
+    flex-direction: row;
+  }
+}
+
 .c-flex-table--classification {
   margin: 0 0 6rem;
   border-top: 0.8rem solid $color-primary;
