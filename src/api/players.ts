@@ -1,5 +1,5 @@
 import { api } from '@/api/client'
-import { PlayerRanking, PlayerDetail, PlayerShort } from '../types'
+import { PlayerRanking, PlayerDetail, PlayerShort, User } from '../types'
 import { USE_MOCK, mockResponse, mockPlayersRanking, mockPlayerDetails } from '../data/mockData'
 
 export const playersApi = {
@@ -18,6 +18,9 @@ export const playersApi = {
       ? mockResponse(mockPlayerDetails[id] ?? mockPlayerDetails[7])
       : api.get<PlayerShort>(`/players/${id}`),
   
+  update: (id: number, data: FormData) =>
+    api.put<{ player: PlayerShort; user: User | null }>(`/players/${id}`, data),
+
   players_short: () =>
     USE_MOCK
       ? mockResponse(mockPlayerDetails)

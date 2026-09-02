@@ -8,12 +8,16 @@ import { AuthProvider } from "./context/AuthContext";
 import Index from "./pages/Shuffle/ShufflePage";
 import Home from "./pages/Home";
 import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import VerifyCode from "./pages/auth/VerifyCode";
 import NotFound from "./pages/NotFound";
 import Layout from "./components/layout/Layout";
 import TournamentsPage from "./pages/tournaments/TournamentsPage";
 import TournamentPage from "./pages/tournaments/TournamentPage";
 import PlayersPage from "./pages/players/PlayersPage";
 import PlayerPage from "./pages/players/PlayerPage";
+import EditPlayerPage from "./pages/players/EditPlayerPage";
 import ForEditPage from "./pages/matches/ForEditPage";
 import ShufflePage from "./pages/Shuffle/ShufflePage";
 import CreateShufflePage from "./pages/Shuffle/CreateShufflePage";
@@ -36,9 +40,13 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Layout><Home /></Layout>} />
               <Route path="/login" element={<Layout><Login /></Layout>} />
+              <Route path="/register" element={<Layout><Register /></Layout>} />
+              <Route path="/forgot-password" element={<Layout><ForgotPassword /></Layout>} />
+              <Route path="/verify-code/:user_id" element={<Layout><VerifyCode /></Layout>} />
               <Route path="/tournaments" element={<Layout><TournamentsPage /></Layout>} />
               <Route path="/tournaments/:id" element={<Layout><TournamentPage /></Layout>} />
               <Route path="/players" element={<Layout><PlayersPage /></Layout>} />
+              <Route path="/players/edit/:id" element={<Layout><EditPlayerPage /></Layout>} />
               <Route path="/players/:id" element={<Layout><PlayerPage /></Layout>} />
               <Route path="/matches/for_edit" element={<Layout><ForEditPage /></Layout>} />
               <Route path="/calendar" element={<Layout><CalendarPage /></Layout>} />
