@@ -102,6 +102,11 @@ export default function Layout({ children }: Props) {
                 Shuffle
               </Link>
             </li>
+            <li className="c-main-nav__item">
+              <Link className="c-main-nav__link" to="/chatbot" title="chatbot">
+                Chatbot
+              </Link>
+            </li>
             <li className="c-main-nav__item for_login_logout">
               {!user ? (
                 <>
@@ -143,6 +148,7 @@ export default function Layout({ children }: Props) {
               <li><Link to="/players">Jogadores</Link></li>
               <li><Link to="/calendar">Calendário</Link></li>
               <li><Link to="/shop">Loja</Link></li>
+              <li><Link to="/chatbot">Chatbot</Link></li>
               <li><Link to="/statues">Estatutos</Link></li>
             </ul>
           </div>
