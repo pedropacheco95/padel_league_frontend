@@ -54,7 +54,7 @@ export const competitions = [
   },
 ] satisfies CompetitionCard[]
 
-const rounds = [1, 2, 3, 4, 5, 6, 7].map((n) => ({ id: 900 + n, number: n, date: `2026-09-${String(7 + n * 5).padStart(2, '0')}` }))
+const rounds = [1, 2, 3, 4, 5, 6, 7].map((n) => ({ id: 900 + n, number: n, date: new Date(Date.UTC(2026, 8, 7 + n * 5)).toISOString().slice(0, 10) }))
 
 export const competitionDetails: Record<number, Competition> = {
   25: {

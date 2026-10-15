@@ -2,6 +2,11 @@ import type { Schemas } from '@/api/v2'
 
 type Round = Schemas['Round']
 
+function shortDate(d?: string | null): string {
+  const t = d ? new Date(d) : null
+  return t && !Number.isNaN(t.getTime()) ? ` · ${t.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit' })}` : ''
+}
+
 export default function RoundSelector({ rounds, value, onChange, label = 'Jornada' }: {
   rounds: Round[]
   value: number | null
@@ -25,7 +30,7 @@ export default function RoundSelector({ rounds, value, onChange, label = 'Jornad
       >
         {rounds.map((r) => (
           <option key={r.id} value={r.number}>
-            {label} {r.number}{r.date ? ` · ${new Date(r.date).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit' })}` : ''}
+            {label} {r.number}{shortDate(r.date)}
           </option>
         ))}
       </select>
