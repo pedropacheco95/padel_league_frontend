@@ -1800,7 +1800,10 @@ export interface components {
                 groupId?: number | null;
                 tier?: number | null;
                 place?: number | null;
+                /** @description Ranking points awarded for that stage (null while its group is live) */
                 points?: number | null;
+                /** @description Teams set points in that mini-tournament */
+                setPoints?: number | null;
             }[];
         };
         PlayerRef: {
