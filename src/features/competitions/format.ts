@@ -1,7 +1,8 @@
 import type { CompetitionCard, CompetitionStatus, Format } from '@/api/v2'
 
+// The one place format names are spelled; every page and the admin wizard read it. Keys are the API's.
 export const FORMAT_LABEL: Record<Format, string> = {
-  classica: 'Clássica',
+  classica: 'Classic',
   teams: 'Teams',
   shuffle: 'Shuffle',
   super_cup: 'Super Cup',
@@ -22,8 +23,9 @@ export const STATUS_LABEL: Record<CompetitionStatus, string> = {
 
 const STATUS_ORDER: Record<CompetitionStatus, number> = { live: 0, upcoming: 1, ended: 2 }
 
+// FORMAT_LABEL wins over the API's formatLabel (which still says "Clássica"); unknown formats fall back to it.
 export function formatLabel(c: Pick<CompetitionCard, 'format' | 'formatLabel'>): string {
-  return c.formatLabel || FORMAT_LABEL[c.format] || c.format
+  return FORMAT_LABEL[c.format] || c.formatLabel || c.format
 }
 
 export function formatDate(d?: string | null): string {

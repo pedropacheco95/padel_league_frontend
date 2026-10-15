@@ -1,4 +1,4 @@
-// Home: news, current competitions and the latest Clássica results, all on /api/v2.
+// Home: news, current competitions and the latest Classic results, all on /api/v2.
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQueries, useQuery } from '@tanstack/react-query'
@@ -181,7 +181,7 @@ export default function HomePage() {
   }, [newsList])
 
   const current = (competitions ?? []).filter((c) => c.status !== 'ended')
-  // Latest Clássica with results: the current season's newest, else the newest overall.
+  // Latest Classic with results: the current season's newest, else the newest overall.
   const lastClassica = (competitions ?? [])
     .filter((c) => c.format === 'classica' && c.status !== 'upcoming')
     .sort((a, b) => Number(b.season.isCurrent) - Number(a.season.isCurrent) || (b.startsOn ?? '').localeCompare(a.startsOn ?? ''))[0]

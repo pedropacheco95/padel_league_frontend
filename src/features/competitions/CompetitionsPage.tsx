@@ -1,4 +1,4 @@
-// Torneios: every competition (Clássica, Teams, Shuffle, Super Cup), grouped by season, current season first.
+// Torneios: every competition (Classic, Teams, Shuffle, Super Cup), grouped by season, current season first.
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
