@@ -31,7 +31,7 @@ export const authApi = {
       }
       mockLoginError()
     }
-    return api.post<{ user: User; access_token: string }>('/auth/login', data)
+    return api.post<{ user: User; access_token: string; refresh_token?: string }>('/auth/login', data)
   },
 
   logout: () =>
@@ -51,7 +51,10 @@ export const authApi = {
     api.post<{ user_id: number }>('/auth/forgot_password', { username }),
 
   verifyCode: (user_id: number, generated_code: number) =>
-    api.post<{ player_id: number }>(`/auth/verify_generated_code/${user_id}`, { generated_code }),
+    api.post<{ player_id: number; user: User; access_token: string; refresh_token: string }>(
+      `/auth/verify_generated_code/${user_id}`,
+      { generated_code },
+    ),
 
   generateNewCode: (user_id: number) =>
     api.post(`/auth/generate_new_code/${user_id}`),

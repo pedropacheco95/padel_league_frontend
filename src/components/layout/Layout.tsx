@@ -51,11 +51,9 @@ export default function Layout({ children }: Props) {
                     Log out
                   </a>
                 </div>
-                {user.isAdmin && (
-                  <div className="c-btn-topright">
-                    <Link to="/matches/for_edit">Editar jogos</Link>
-                  </div>
-                )}
+                <div className="c-btn-topright">
+                  <Link to="/matches/for_edit">Editar jogos</Link>
+                </div>
               </>
             )}
           </div>
@@ -98,6 +96,11 @@ export default function Layout({ children }: Props) {
               </Link>
             </li>
             <li className="c-main-nav__item">
+              <Link className="c-main-nav__link" to="/teams" title="teams">
+                Teams
+              </Link>
+            </li>
+            <li className="c-main-nav__item">
               <Link className="c-main-nav__link" to="/shuffle" title="shuffle">
                 Shuffle
               </Link>
@@ -115,11 +118,9 @@ export default function Layout({ children }: Props) {
                 </>
               ) : (
                 <>
-                  {user.isAdmin && (
-                    <Link className="c-main-nav__link" to="/matches/for_edit">
-                      Editar jogos
-                    </Link>
-                  )}
+                  <Link className="c-main-nav__link" to="/matches/for_edit">
+                    Editar jogos
+                  </Link>
                   <a
                     className="c-main-nav__link"
                     onClick={handleLogout}

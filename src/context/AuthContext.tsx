@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { authApi } from '../api/auth'
+import { clearTokens, storeTokens } from '@/api/client'
 import { User } from '@/types'
 
 interface AuthContextType {
@@ -7,6 +8,7 @@ interface AuthContextType {
   loading: boolean
   login: (username: string, password: string) => Promise<void>
   logout: () => Promise<void>
+  signInWithTokens: (user: User, accessToken: string, refreshToken?: string) => void
   setUser: (user: User | null) => void
 }
 
@@ -19,23 +21,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     authApi.me()
       .then(res => setUser(res.data.user))
-      .catch(() => setUser(null))
+      .catch(err => {
+        // A token that could not be renewed is useless; drop it.
+        if ([401, 422].includes(err?.response?.status)) clearTokens()
+        setUser(null)
+      })
       .finally(() => setLoading(false))
   }, [])
 
   const login = async (username: string, password: string) => {
     const res = await authApi.login({ username, password })
-    localStorage.setItem('accessToken', res.data.access_token)
+    storeTokens(res.data.access_token, (res.data as { refresh_token?: string }).refresh_token)
     setUser(res.data.user)
   }
 
+  const signInWithTokens = (user: User, accessToken: string, refreshToken?: string) => {
+    storeTokens(accessToken, refreshToken)
+    setUser(user)
+  }
+
   const logout = async () => {
-    localStorage.removeItem("accessToken");
-    setUser(null);
+    clearTokens()
+    setUser(null)
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, setUser }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, setUser, signInWithTokens }}>
       {children}
     </AuthContext.Provider>
   )

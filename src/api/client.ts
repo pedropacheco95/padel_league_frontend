@@ -47,13 +47,57 @@ api.interceptors.request.use((config) => {
     startRequest();
   }
 
-  const token = localStorage.getItem("accessToken");
+  const token = localStorage.getItem(ACCESS_TOKEN_KEY);
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
+
+export const ACCESS_TOKEN_KEY = "accessToken";
+export const REFRESH_TOKEN_KEY = "refreshToken";
+
+export function storeTokens(accessToken?: string, refreshToken?: string) {
+  if (accessToken) localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  if (refreshToken) localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+}
+
+export function clearTokens() {
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+}
+
+// One renewal at a time: concurrent 401s all wait for the same refresh.
+let refreshing: Promise<string | null> | null = null;
+
+function renewAccessToken(): Promise<string | null> {
+  const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+  if (!refreshToken) return Promise.resolve(null);
+  if (!refreshing) {
+    refreshing = axios
+      .post("/api/v1/auth/refresh", null, {
+        headers: { Authorization: `Bearer ${refreshToken}` },
+      })
+      .then((res) => {
+        storeTokens(res.data.access_token, res.data.refresh_token);
+        return res.data.access_token as string;
+      })
+      .catch(() => {
+        clearTokens();
+        return null;
+      })
+      .finally(() => {
+        refreshing = null;
+      });
+  }
+  return refreshing;
+}
+
+type RetryConfig = InternalAxiosRequestConfig & { __retried?: boolean };
+
+// 401: the access token expired. 422: it no longer verifies (e.g. a new server key).
+const isAuthFailure = (status?: number) => status === 401 || status === 422;
 
 api.interceptors.response.use(
   (response) => {
@@ -64,11 +108,22 @@ api.interceptors.response.use(
     }
     return response;
   },
-  (error) => {
+  async (error) => {
     const trackedConfig = error?.config as LoaderTrackedConfig | undefined;
     if (trackedConfig?.__trackedByGlobalLoader) {
       trackedConfig.__trackedByGlobalLoader = false;
       finishRequest();
+    }
+
+    const config = error?.config as RetryConfig | undefined;
+    const sentToken = !!config?.headers?.Authorization;
+    if (config && sentToken && !config.__retried && isAuthFailure(error.response?.status)) {
+      config.__retried = true;
+      const token = await renewAccessToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+        return api(config);
+      }
     }
     return Promise.reject(error);
   }

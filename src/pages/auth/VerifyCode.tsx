@@ -1,10 +1,12 @@
 import { useState, FormEvent } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { authApi } from '../../api/auth'
+import { useAuth } from '@/context/AuthContext'
 
 export default function VerifyCode() {
   const { user_id } = useParams<{ user_id: string }>()
   const navigate = useNavigate()
+  const { signInWithTokens } = useAuth()
 
   const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -18,8 +20,9 @@ export default function VerifyCode() {
 
     try {
       const res = await authApi.verifyCode(Number(user_id), Number(code))
-      const playerId = res.data?.player_id
-      navigate(`/players/edit/${playerId}`)
+      // The code proves who they are: sign them in so they can set a new password.
+      signInWithTokens(res.data.user, res.data.access_token, res.data.refresh_token)
+      navigate(`/players/edit/${res.data.player_id}?reset=1`)
     } catch (err: any) {
       const msg = err.response?.data?.error ?? 'Código inválido.'
       setError(msg)

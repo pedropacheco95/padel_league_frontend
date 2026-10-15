@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { playersApi } from '../../api/players'
 import { useAuth } from '@/context/AuthContext'
 import PlayerPictureInput from '@/components/auth/PlayerPictureInput'
@@ -9,6 +9,9 @@ const toDateInput = (iso: string | null) => (iso ? iso.slice(0, 10) : '')
 
 export default function EditPlayerPage() {
   const { id } = useParams<{ id: string }>()
+  // Arrived from the forgot-password code: a new password needs no current one.
+  const [searchParams] = useSearchParams()
+  const passwordReset = searchParams.get('reset') === '1'
   const playerId = Number(id)
   const navigate = useNavigate()
   const { user, loading: authLoading, setUser } = useAuth()
@@ -70,7 +73,7 @@ export default function EditPlayerPage() {
     e.preventDefault()
     setError(null)
 
-    if (form.password && !form.current_password && isSelf) {
+    if (form.password && !form.current_password && isSelf && !passwordReset) {
       setError('Para mudar a password tens que escrever a password atual.')
       return
     }
@@ -176,7 +179,7 @@ export default function EditPlayerPage() {
                 />
               </div>
 
-              {isSelf && (
+              {isSelf && !passwordReset && (
                 <div className="form-group optional">
                   <label htmlFor="current_password" style={{ color: 'black' }}>
                     Password atual

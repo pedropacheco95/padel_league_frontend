@@ -174,3 +174,41 @@ export interface ShufflePayload {
   division_multipliers: Record<string, number>;
   players: { player_id: number; order_index: number }[];
 }
+
+export interface TeamsPlayer {
+  id: number
+  name: string
+  fullName: string
+  pictureUrl: string | null
+  rankingPoints: number
+  rankingPosition: number
+  paired: boolean
+  allowedForMe: boolean
+}
+
+export interface TeamsPair {
+  id: number
+  source: 'mutual' | 'auto' | 'admin'
+  players: PlayerShort[]
+  rankingPoints: number
+}
+
+export interface TeamsState {
+  miniTournament: {
+    id: number
+    number: number
+    pairingDeadline: string
+    pairingClosed: boolean
+    pairingOpen: boolean
+  }
+  players: TeamsPlayer[]
+  pairs: TeamsPair[]
+  me: {
+    playerId: number | null
+    inRoster: boolean
+    myChoice: number | null
+    choseMe: number[]
+    pairId: number | null
+    isAdmin: boolean
+  }
+}
