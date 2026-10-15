@@ -72,7 +72,7 @@ export default function CompetitionsPage() {
   return (
     <>
       <div className="l-grid">
-        <div className="flex flex-wrap gap-[8px] justify-center pt-[16px]">
+        <div className="flex flex-wrap gap-[8px] justify-center pt-[16px] px-[16px] w-full box-border">
           {FILTERS.map((f) => (
             <button
               key={f}

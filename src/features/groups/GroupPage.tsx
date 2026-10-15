@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import FormatBadge from '@/components/v2/FormatBadge'
+import PageHeader from '@/components/v2/PageHeader'
 import MatchCard from '@/components/v2/MatchCard'
 import RoundSelector from '@/components/v2/RoundSelector'
 import StandingsTable from '@/components/v2/StandingsTable'
@@ -46,36 +47,19 @@ export default function GroupPage() {
   const c = g.competition
   return (
     <div className="l-grid">
-      <header className="c-tor-header c-tor-header--master">
-        {g.logoImage?.url && (
-          <div className="c-tor-header__poster">
-            <div className="c-tor-header__img-container"><img src={g.logoImage.url} alt="" /></div>
-          </div>
-        )}
-        <div className="flex flex-col items-center gap-[6px] py-[12px] px-[16px] text-center">
-          <Link to={`/competitions/${c.id}`} className="flex items-center gap-[8px] text-[14px]" style={{ color: 'inherit' }}>
+      <PageHeader<Tab>
+        image={g.bannerImage?.url ?? g.logoImage?.url}
+        kicker={
+          <Link to={`/competitions/${c.id}`} className="flex items-center gap-[8px] text-white" style={{ color: '#fff' }}>
             <FormatBadge competition={c} /> <span className="underline">{c.name}</span>
           </Link>
-          <h1 className="c-tor-header__title">{g.name}</h1>
-          <p className="c-tor-header__iandt text-[14px]">
-            De {formatDate(c.startsOn)} a {formatDate(c.endsOn)}
-            {g.hasEnded ? ' · Terminada' : ''}
-          </p>
-        </div>
-        <nav className="flex justify-center gap-[4px] border-b border-gray-200 overflow-x-auto">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setTab(t.key)}
-              className="px-[14px] py-[10px] text-[15px] font-semibold whitespace-nowrap"
-              style={tab === t.key ? { borderBottom: '3px solid #006A71', color: '#006A71' } : { borderBottom: '3px solid transparent', color: '#6b7280' }}
-            >
-              {t.label}
-            </button>
-          ))}
-        </nav>
-      </header>
+        }
+        title={g.name}
+        subtitle={`De ${formatDate(c.startsOn)} a ${formatDate(c.endsOn)}${g.hasEnded ? ' · Terminada' : ''}`}
+        tabs={TABS}
+        active={tab}
+        onTab={(k: Tab) => setTab(k)}
+      />
 
       <div className="px-[16px] py-[16px] max-w-[900px] mx-auto w-full">
         {tab === 'standings' && (

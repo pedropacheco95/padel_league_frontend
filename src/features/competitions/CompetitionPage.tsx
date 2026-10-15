@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom'
 import type { Competition, GroupSummary } from '@/api/v2'
 import FormatBadge from '@/components/v2/FormatBadge'
+import PageHeader from '@/components/v2/PageHeader'
 import { useCompetition } from './api'
 import { STATUS_LABEL, formatDate } from './format'
 import FormatPanel, { hasFormatPanel } from './FormatPanel'
@@ -30,20 +31,12 @@ function GroupCard({ group }: { group: GroupSummary }) {
 
 function Header({ c }: { c: Competition }) {
   return (
-    <header className="c-tor-header c-tor-header--master">
-      {c.bannerImage?.url && (
-        <div className="c-tor-header__poster">
-          <div className="c-tor-header__img-container"><img src={c.bannerImage.url} alt="" /></div>
-        </div>
-      )}
-      <div className="flex flex-col items-center gap-[8px] py-[16px]">
-        <FormatBadge competition={c} />
-        <h1 className="c-tor-header__title text-center">{c.name}</h1>
-        <p className="c-tor-header__iandt text-[14px]">
-          {STATUS_LABEL[c.status]} · De {formatDate(c.startsOn)} a {formatDate(c.endsOn)}
-        </p>
-      </div>
-    </header>
+    <PageHeader
+      image={c.bannerImage?.url}
+      kicker={<FormatBadge competition={c} />}
+      title={c.name}
+      subtitle={`${STATUS_LABEL[c.status]} · De ${formatDate(c.startsOn)} a ${formatDate(c.endsOn)}`}
+    />
   )
 }
 
@@ -75,7 +68,7 @@ export default function CompetitionPage() {
     <div className="l-grid">
       <Header c={c} />
       {stages.map((s) => (
-        <section key={s.id} className="px-[16px] pb-[24px]">
+        <section key={s.id} className="px-[16px] py-[20px] max-w-[1000px] mx-auto w-full">
           {stages.length > 1 && <h2 className="text-[18px] font-semibold mb-[12px]">{s.name || `Fase ${s.number}`}</h2>}
           {s.groups.length === 0 ? (
             <p className="text-[15px] text-gray-500">Grupos ainda não definidos.</p>
