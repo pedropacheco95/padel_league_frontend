@@ -9,68 +9,92 @@ export const mockPlayers: PlayerRef[] = names.map((name, i) => ({ id: 900 + i, n
 const p = (i: number) => mockPlayers[i]
 
 // Teams 2026/27 = competition 27; stage (mini-tournament) 1 has groups 2701, 2702 of 4 pairs each.
-const pairsOf = (groupIdx: number) => [0, 1, 2, 3].map(k => [p(groupIdx * 8 + k * 2), p(groupIdx * 8 + k * 2 + 1)])
+// Any other group id is mocked as a Shuffle group: 4 players, one round, everyone partners everyone.
+const TEAMS_GROUPS = [2701, 2702]
+const isTeams = (groupId: number) => TEAMS_GROUPS.includes(groupId)
+const roundId = (groupId: number, round: number) => (isTeams(groupId) ? 27100 + round : groupId * 100 + round)
 
-function teamsMatches(groupId: number, groupIdx: number): Match[] {
-  const pairs = pairsOf(groupIdx)
-  const fixtures = [[0, 1], [2, 3], [0, 2], [1, 3], [0, 3], [1, 2]]
-  return fixtures.map(([h, a], n) => ({
+type Pair = [PlayerRef, PlayerRef]
+
+function fixture(groupId: number, n: number, round: number, home: Pair, away: Pair, format: 'teams' | 'shuffle'): Match {
+  return {
     id: groupId * 10 + n,
     groupId,
-    groupName: `Divisão ${groupIdx + 1}`,
-    competitionId: 27,
-    format: 'teams',
-    round: Math.floor(n / 2) + 1,
+    competitionId: format === 'teams' ? 27 : undefined,
+    format,
+    round,
     scheduledAt: null,
     court: null,
     status: 'scheduled',
     participants: [
-      ...pairs[h].map((player, s) => ({ side: 'home' as const, slot: (s + 1) as 1 | 2, role: 'member' as const, player })),
-      ...pairs[a].map((player, s) => ({ side: 'away' as const, slot: (s + 1) as 1 | 2, role: 'member' as const, player })),
+      ...home.map((player, s) => ({ side: 'home' as const, slot: (s + 1) as 1 | 2, role: 'member' as const, player })),
+      ...away.map((player, s) => ({ side: 'away' as const, slot: (s + 1) as 1 | 2, role: 'member' as const, player })),
     ],
     sets: [],
     homeScore: null,
     awayScore: null,
     winner: null,
     absences: [],
-  }))
+  }
 }
 
-const matches = new Map<number, Match>(
-  [...teamsMatches(2701, 0), ...teamsMatches(2702, 1)].map(m => [m.id, m]),
-)
+function groupMatches(groupId: number): Match[] {
+  if (isTeams(groupId)) {
+    const idx = TEAMS_GROUPS.indexOf(groupId)
+    const pairs = [0, 1, 2, 3].map(k => [p(idx * 8 + k * 2), p(idx * 8 + k * 2 + 1)] as Pair)
+    return [[0, 1], [2, 3], [0, 2], [1, 3], [0, 3], [1, 2]].map(([h, a], n) =>
+      fixture(groupId, n, Math.floor(n / 2) + 1, pairs[h], pairs[a], 'teams'))
+  }
+  const four = [0, 1, 2, 3].map(k => p((groupId + k) % mockPlayers.length))
+  return [[[0, 1], [2, 3]], [[0, 2], [1, 3]], [[0, 3], [1, 2]]].map(([h, a], n) =>
+    fixture(groupId, n, 1, [four[h[0]], four[h[1]]], [four[a[0]], four[a[1]]], 'shuffle'))
+}
+
+const matches = new Map<number, Match>()
+const seeded = new Set<number>()
+function ensureGroup(groupId: number) {
+  if (seeded.has(groupId)) return
+  seeded.add(groupId)
+  for (const m of groupMatches(groupId)) matches.set(m.id, m)
+}
 const absences: Absence[] = []
 
 // An absence covers the whole round: show it on every match of that group and round.
 function syncAbsences() {
   for (const [id, m] of matches) {
-    const mine = absences.filter(a => a.groupId === m.groupId && a.roundId === 27100 + m.round)
+    const mine = absences.filter(a => a.groupId === m.groupId && a.roundId === roundId(m.groupId, m.round))
     matches.set(id, { ...m, absences: mine })
   }
 }
 
-const rounds = [1, 2, 3].map(n => ({ id: 27100 + n, number: n, date: null }))
-
 export function mockGroup(groupId: number): GroupDetail {
-  const idx = groupId === 2702 ? 1 : 0
+  ensureGroup(groupId)
+  const teams = isTeams(groupId)
+  const idx = teams ? TEAMS_GROUPS.indexOf(groupId) : 0
+  const rounds = (teams ? [1, 2, 3] : [1]).map(n => ({ id: roundId(groupId, n), number: n, date: null }))
+  const members = [...new Map(groupMatches(groupId).flatMap(m => m.participants.map(x => [x.player!.id, x.player!]))).values()]
   return {
     id: groupId,
-    name: `Divisão ${idx + 1}`,
+    name: teams ? `Divisão ${idx + 1}` : `Grupo ${groupId}`,
     tier: idx + 1,
-    rating: idx === 0 ? 500 : 250,
+    rating: teams ? (idx === 0 ? 500 : 250) : null,
     hasEnded: false,
-    competition: { id: 27, name: 'Teams 2026/27', format: 'teams', season: { id: 3, name: '2026/27', isCurrent: true }, status: 'live', groupCount: 2 },
-    stage: { id: 2711, number: 1, name: 'Mini-torneio 1' },
-    members: mockPlayers.slice(idx * 8, idx * 8 + 8),
-    standings: [],
+    competition: teams
+      ? { id: 27, name: 'Teams 2026/27', format: 'teams', season: { id: 3, name: '2026/27', isCurrent: true }, status: 'live', groupCount: 2 }
+      : { id: 0, name: 'Shuffle (mock)', format: 'shuffle', season: { id: 3, name: '2026/27', isCurrent: true }, status: 'live', groupCount: 6 },
+    stage: teams ? { id: 2711, number: 1, name: 'Mini-torneio 1' } : { id: 0, number: 1, name: null },
+    members,
+    standings: members.map((player, i) => ({ place: i + 1, player, points: 9 - i * 3, played: 3, wins: 3 - i, draws: 0, losses: i, gamesWon: 12 - i, gamesLost: 6 + i })),
     rounds,
     currentRound: 1,
   }
 }
 
 export const mockResults = {
-  groupMatches: (groupId: number, round?: number): Match[] =>
-    [...matches.values()].filter(m => m.groupId === groupId && (!round || m.round === round)),
+  groupMatches: (groupId: number, round?: number): Match[] => {
+    ensureGroup(groupId)
+    return [...matches.values()].filter(m => m.groupId === groupId && (!round || m.round === round))
+  },
 
   putResult: (matchId: number, input: ResultInput): Match => {
     const m = matches.get(matchId)
