@@ -668,6 +668,8 @@ export interface paths {
                          * @enum {string}
                          */
                         kind?: "full" | "partial";
+                        /** @description kind=partial: the matches the player misses (required for partial) */
+                        matchIds?: number[];
                     };
                 };
             };
