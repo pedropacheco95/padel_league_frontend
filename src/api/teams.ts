@@ -16,4 +16,8 @@ export const teamsApi = {
   unpair: (pairId: number) => api.delete<TeamsState>(`/teams/pairs/${pairId}`),
 
   closePairing: () => api.post<TeamsState>('/teams/close_pairing'),
+
+  addToRoster: (playerId: number) => api.post<TeamsState>(`/teams/roster/${playerId}`),
+
+  removeFromRoster: (playerId: number) => api.delete<TeamsState>(`/teams/roster/${playerId}`),
 }

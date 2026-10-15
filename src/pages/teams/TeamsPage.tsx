@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { teamsApi } from '@/api/teams'
+import { playersApi } from '@/api/players'
 import { useAuth } from '@/context/AuthContext'
 import { PlayerShort, TeamsPlayer, TeamsState } from '@/types'
 
@@ -42,6 +43,8 @@ export default function TeamsPage() {
   const [busy, setBusy] = useState(false)
   const [confirmClose, setConfirmClose] = useState(false)
   const [manual, setManual] = useState<[string, string]>(['', ''])
+  const [allPlayers, setAllPlayers] = useState<PlayerShort[]>([])
+  const [toAdd, setToAdd] = useState('')
 
   useEffect(() => {
     teamsApi
@@ -51,6 +54,12 @@ export default function TeamsPage() {
         if (err?.response?.status === 404) setNotFound(true)
       })
   }, [user?.id])
+
+  const isAdmin = !!state?.me.isAdmin
+  useEffect(() => {
+    if (!isAdmin) return
+    playersApi.players_short().then(res => setAllPlayers(res.data)).catch(() => {})
+  }, [isAdmin])
 
   const byId = useMemo(
     () => new Map((state?.players ?? []).map(p => [p.id, p])),
@@ -132,7 +141,11 @@ export default function TeamsPage() {
           </div>
         ) : (
           <div className="space-y-[12px]">
-            {myChoice ? (
+            {myChoice?.paired ? (
+              <p className="text-[15px]">
+                <strong>{myChoice.name}</strong> já formou parelha com outra pessoa. Escolhe outro parceiro.
+              </p>
+            ) : myChoice ? (
               <div className="flex flex-wrap items-center justify-between gap-[12px]">
                 <p className="text-[15px]">
                   Escolheste <strong>{myChoice.name}</strong>. À espera que {myChoice.name} te escolha.
@@ -289,6 +302,48 @@ export default function TeamsPage() {
             >
               Formar parelha
             </button>
+          </div>
+
+          <div className="mb-[16px]">
+            <p className="text-[13px] font-semibold">Inscritos na Teams ({state.players.length})</p>
+            <div className="mt-[8px] flex flex-wrap items-center gap-[8px]">
+              <select className="form-select" value={toAdd} onChange={e => setToAdd(e.target.value)}>
+                <option value="">Adicionar jogador…</option>
+                {allPlayers
+                  .filter(p => p.id !== null && !byId.has(p.id))
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map(p => (
+                    <option key={p.id} value={String(p.id)}>{p.name}</option>
+                  ))}
+              </select>
+              <button
+                className="rounded bg-gray-900 px-[12px] py-[6px] text-[13px] font-semibold text-white disabled:opacity-40"
+                disabled={busy || !toAdd}
+                onClick={() =>
+                  run(() => teamsApi.addToRoster(Number(toAdd)), () => {
+                    setToAdd('')
+                    return 'Jogador adicionado.'
+                  })
+                }
+              >
+                Adicionar
+              </button>
+            </div>
+            <ul className="mt-[8px] flex flex-wrap gap-[6px]">
+              {unpaired.map(p => (
+                <li key={p.id} className="flex items-center gap-[4px] rounded-full bg-white px-[10px] py-[4px] text-[13px]">
+                  {p.name}
+                  <button
+                    className="text-red-700"
+                    aria-label={`Retirar ${p.name}`}
+                    disabled={busy}
+                    onClick={() => run(() => teamsApi.removeFromRoster(p.id), () => `${p.name} retirado.`)}
+                  >
+                    ×
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
 
           {confirmClose ? (
