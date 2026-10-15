@@ -10,6 +10,8 @@ ENV VITE_USE_MOCK_DATA=false
 ENV VITE_MOCK_LOGGED_IN=false
 # Never ship typed fixtures, whatever a .env says (S0, 15 Oct).
 ENV VITE_V2_MOCKS=false
+ENV VITE_V2_PUBLIC=true
+ENV VITE_V2_FORMAT_REDIRECTS=true
 
 RUN npm run build
 
