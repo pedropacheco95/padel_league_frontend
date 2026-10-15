@@ -167,10 +167,15 @@ export function mockGet(path: string, params?: Record<string, unknown>): unknown
       ?? competitions.find((c) => c.format === params?.format)
   }
   if ((m = path.match(/^\/competitions\/(\d+)$/))) return competitionDetails[+m[1]] ?? undefined
-  if ((m = path.match(/^\/groups\/(\d+)$/))) return groupDetails[+m[1]]
+  // Any group id answers (live competitions link to real ids): reuse the fixture under the requested id.
+  if ((m = path.match(/^\/groups\/(\d+)$/))) {
+    const id = +m[1]
+    const base = groupDetails[id] ?? groupDetails[81]
+    return { ...base, id, name: groupDetails[id] ? base.name : `Grupo ${id} (mock)`, lastPlayedMatches: base.lastPlayedMatches?.map((x) => ({ ...x, groupId: id })) }
+  }
   if ((m = path.match(/^\/groups\/(\d+)\/matches$/))) {
     const round = num(params?.round)
-    return groupDetails[+m[1]] ? groupMatches.filter((x) => !round || x.round === round) : undefined
+    return groupMatches.filter((x) => !round || x.round === round).map((x) => ({ ...x, groupId: +m![1] }))
   }
   if (path === '/calendar') return groupMatches
   if (path === '/players') return playerSummaries

@@ -65,7 +65,9 @@ export default function CompetitionsPage() {
   if (isLoading) return <div className="loader" />
   if (isError) return <p className="text-center text-[15px] py-[40px]">Não foi possível carregar os torneios.</p>
 
-  const visible = showPast ? seasons : seasons.slice(0, 1)
+  // Default: the current season plus any season still running something (e.g. a live Shuffle filed under last season).
+  const isOpen = (g: (typeof seasons)[number]) => g.isCurrent || g.competitions.some((c) => c.status !== 'ended')
+  const visible = showPast ? seasons : seasons.filter((g, i) => isOpen(g) || (i === 0 && !seasons.some(isOpen)))
 
   return (
     <>
@@ -97,7 +99,7 @@ export default function CompetitionsPage() {
         </section>
       ))}
       {seasons.length === 0 && <p className="text-center text-[15px] py-[40px]">Sem torneios.</p>}
-      {!showPast && seasons.length > 1 && (
+      {!showPast && visible.length < seasons.length && (
         <form className="show_all_tournaments_container" onSubmit={(e) => { e.preventDefault(); setShowPast(true) }}>
           <button type="submit">Épocas anteriores...</button>
         </form>

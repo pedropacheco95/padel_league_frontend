@@ -10,6 +10,7 @@ import { dateRange } from '@/features/competitions/format'
 import { V2NotFound } from '@/features/competitions/v2http'
 import MonthCalendar from '@/features/calendar/MonthCalendar'
 import { useGroup, useGroupMatches } from './api'
+import MatchActionsSlot from './MatchActionsSlot'
 
 type Tab = 'standings' | 'matches' | 'calendar'
 const TABS: { key: Tab; label: string }[] = [
@@ -74,7 +75,15 @@ export default function GroupPage() {
             <RoundSelector rounds={rounds} value={activeRound} onChange={setRound} />
             <div className="flex flex-col gap-[12px]">
               {roundMatches.length === 0 && <p className="text-center text-[15px] text-gray-500">Sem jogos nesta jornada.</p>}
-              {roundMatches.map((m) => <MatchCard key={m.id} match={m} />)}
+              {roundMatches.map((m) => (
+                <MatchCard
+                  key={m.id}
+                  match={m}
+                  actions={c.format === 'teams' || c.format === 'shuffle' ? undefined : (
+                    <MatchActionsSlot match={m} roundId={rounds.find((r) => r.number === m.round && r.id !== r.number)?.id} />
+                  )}
+                />
+              ))}
             </div>
           </>
         )}

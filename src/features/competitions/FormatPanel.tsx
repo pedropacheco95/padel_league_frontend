@@ -31,8 +31,10 @@ export default function FormatPanel({ competition }: PanelProps) {
   const Panel = panelFor(competition.format)
   if (!Panel) return <p className="text-center text-[15px] py-[24px] text-gray-500">Em breve.</p>
   return (
-    <Suspense fallback={<div className="loader" />}>
-      <Panel competition={competition} />
-    </Suspense>
+    <div className="w-full max-w-[1000px] mx-auto px-[16px] py-[16px] box-border">
+      <Suspense fallback={<div className="loader" />}>
+        <Panel competition={competition} />
+      </Suspense>
+    </div>
   )
 }

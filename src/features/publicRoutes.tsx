@@ -14,12 +14,17 @@ import HomePage from './home/HomePage'
 import PlayersPage from './players/PlayersPage'
 import PlayerPage from './players/PlayerPage'
 
-import { V2_PUBLIC } from './v2flag'
-export { V2_PUBLIC }
+import { V2_FORMAT_REDIRECTS, V2_PUBLIC } from './v2flag'
+export { V2_FORMAT_REDIRECTS, V2_PUBLIC }
 
 /** Pick the v2 page when the flag is on, else the old one. */
 export function v2Or(v1: ReactNode, v2: ReactNode): ReactNode {
   return V2_PUBLIC ? v2 : v1
+}
+
+/** Same, for /teams and /shuffle, behind their own flag. */
+export function v2FormatOr(v1: ReactNode, v2: ReactNode): ReactNode {
+  return V2_FORMAT_REDIRECTS ? v2 : v1
 }
 
 export const v2PublicElements = {
