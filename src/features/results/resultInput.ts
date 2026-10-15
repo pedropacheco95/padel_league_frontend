@@ -85,3 +85,21 @@ export function setInProgress(sets: SetDraft[]): number {
   })
   return i === -1 ? TEAMS_SETS - 1 : i
 }
+
+/**
+ * Teams walkover (Pedro's rule): whoever of the losing pair turned up keeps the presence, so the
+ * no-shows must be recorded as absent for the round BEFORE the walkover result. `absent` is one
+ * loser's player id, or 'both'. Players already marked absent are skipped.
+ */
+export function walkoverAbsentees(
+  participants: { side: Side; role: string; player?: { id: number } | null }[],
+  winner: Side,
+  absent: number | 'both',
+  alreadyAbsent: number[] = [],
+): number[] {
+  const losers = participants
+    .filter(p => p.side !== winner && p.role === 'member' && p.player)
+    .map(p => p.player!.id)
+  const ids = absent === 'both' ? losers : losers.filter(id => id === absent)
+  return ids.filter(id => !alreadyAbsent.includes(id))
+}
