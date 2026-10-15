@@ -78,6 +78,7 @@ export default function ResultEntryDialog({
     onSuccess: saved => {
       qc.setQueriesData<Match[]>({ queryKey: groupMatchesKey(match.groupId) }, old => old?.map(m => (m.id === saved.id ? saved : m)))
       qc.invalidateQueries({ queryKey: ['v2', 'groups', match.groupId] })
+      qc.invalidateQueries({ queryKey: ['v2', 'group', match.groupId] }) // S3's group page cache
       qc.invalidateQueries({ predicate: q => q.queryKey[0] === 'v2' && q.queryKey[1] === 'competitions' && q.queryKey[3] === 'standings' })
       toast.success('Resultado guardado.')
       onOpenChange(false)

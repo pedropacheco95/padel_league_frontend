@@ -8,6 +8,9 @@ export interface AbsenceInput {
   playerId: number
   groupId: number
   substitutePlayerId?: number | null
+  /** 'partial' = only the matches in matchIds (required then); 'full' = every match of the round */
+  kind?: 'full' | 'partial'
+  matchIds?: number[]
 }
 
 export const resultsApi = {

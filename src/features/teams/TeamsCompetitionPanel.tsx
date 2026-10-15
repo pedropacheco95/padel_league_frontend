@@ -107,34 +107,19 @@ function StageAdmin({ competition, stage }: { competition: Competition; stage: S
     onSuccess: () => { toast.success('Divisões formadas.'); refresh() },
     onError: err => toast.error(errorMessage(err)),
   })
-  const fixtures = useMutation({
-    mutationFn: () => teamsV2Api.generateFixtures(competition.id, stage.id),
-    onSuccess: () => { toast.success('Jogos gerados.'); refresh() },
-    onError: err => toast.error(errorMessage(err)),
-  })
-  const noGroups = stage.groups.length === 0
-  if (!noGroups && stage.rounds.length > 0) return null
+  // Forming the divisions also creates their fixtures (POST /competitions/{id}/fixtures is Clássica only).
+  if (stage.groups.length > 0) return null
   return (
     <div className="mb-[16px] rounded-lg border border-amber-300 bg-amber-50 p-[12px]">
       <p className="mb-[8px] text-[13px] font-semibold">Organização</p>
-      {noGroups ? (
-        <button
-          className="rounded bg-gray-900 px-[12px] py-[6px] text-[13px] font-semibold text-white disabled:opacity-40"
-          disabled={!stage.pairingClosed || form.isPending}
-          title={stage.pairingClosed ? undefined : 'Fecha primeiro as parelhas'}
-          onClick={() => form.mutate()}
-        >
-          {form.isPending ? 'A formar…' : 'Formar divisões'}
-        </button>
-      ) : (
-        <button
-          className="rounded bg-gray-900 px-[12px] py-[6px] text-[13px] font-semibold text-white disabled:opacity-40"
-          disabled={fixtures.isPending}
-          onClick={() => fixtures.mutate()}
-        >
-          {fixtures.isPending ? 'A gerar…' : 'Gerar jogos'}
-        </button>
-      )}
+      <button
+        className="rounded bg-gray-900 px-[12px] py-[6px] text-[13px] font-semibold text-white disabled:opacity-40"
+        disabled={!stage.pairingClosed || form.isPending}
+        title={stage.pairingClosed ? undefined : 'Fecha primeiro as parelhas'}
+        onClick={() => form.mutate()}
+      >
+        {form.isPending ? 'A formar…' : 'Formar divisões'}
+      </button>
     </div>
   )
 }
