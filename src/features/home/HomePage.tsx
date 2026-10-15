@@ -159,7 +159,7 @@ function CompetitionTile({ c }: { c: CompetitionCard }) {
         <div className="tournament-card__content">
           <div className="tournament-card__tour">{formatLabel(c)}</div>
           <div className="tournament-card__name">{c.title || c.name}</div>
-          <div className="tournament-card__date">{formatDate(c.startsOn)}</div>
+          <div className="tournament-card__date">{c.startsOn ? formatDate(c.startsOn) : ''}</div>
         </div>
       </div>
     </div>
