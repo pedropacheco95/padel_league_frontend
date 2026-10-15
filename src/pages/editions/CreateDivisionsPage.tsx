@@ -172,7 +172,7 @@ function DivisionCard({
       <div style={{ padding: '1rem' }}>
         {/* Name override */}
         <div style={{ marginBottom: '0.8rem' }}>
-          <label style={{ fontSize: '0.8rem', fontWeight: 600 }}>Nome</label>
+          <label style={{ fontSize: '13px', fontWeight: 600 }}>Nome</label>
           <input
             type="text"
             className="form-control"
@@ -184,7 +184,7 @@ function DivisionCard({
 
         {/* Players list */}
         <div>
-          <label style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+          <label style={{ fontSize: '13px', fontWeight: 600 }}>
             Jogadores ({draft.players.length}/8)
           </label>
           <div style={{ maxHeight: '20rem', overflowY: 'auto' }}>
@@ -555,12 +555,12 @@ export default function CreateDivisionsPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' }}>
             {/* Edition */}
             <div>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Edição</label>
+              <label style={{ fontSize: '13px', fontWeight: 600 }}>Edição</label>
               <select
                 className="form-select"
                 value={selectedEditionId ?? ''}
                 onChange={(e) => setSelectedEditionId(Number(e.target.value) || null)}
-                style={{ width: '100%' }}
+                style={{ width: '100%', minHeight: '40px', fontSize: '15px' }}
               >
                 <option value="">Selecionar edição</option>
                 {editions.map((ed) => (
@@ -571,7 +571,7 @@ export default function CreateDivisionsPage() {
 
             {/* Number of divisions */}
             <div>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Nº de divisões</label>
+              <label style={{ fontSize: '13px', fontWeight: 600 }}>Nº de divisões</label>
               <input
                 type="number"
                 className="form-control"
@@ -584,7 +584,7 @@ export default function CreateDivisionsPage() {
 
             {/* Base name */}
             <div>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Nome base</label>
+              <label style={{ fontSize: '13px', fontWeight: 600 }}>Nome base</label>
               <input
                 type="text"
                 className="form-control"
@@ -596,7 +596,7 @@ export default function CreateDivisionsPage() {
 
             {/* Base rating */}
             <div>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Rating 1ª Divisão</label>
+              <label style={{ fontSize: '13px', fontWeight: 600 }}>Rating 1ª Divisão</label>
               <input
                 type="number"
                 className="form-control"
@@ -608,7 +608,7 @@ export default function CreateDivisionsPage() {
 
             {/* Start date */}
             <div>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Data início (dd/mm/aaaa)</label>
+              <label style={{ fontSize: '13px', fontWeight: 600 }}>Data início (dd/mm/aaaa)</label>
               <input
                 type="text"
                 className="form-control"
@@ -620,7 +620,7 @@ export default function CreateDivisionsPage() {
 
             {/* End date (computed) */}
             <div>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Data fim</label>
+              <label style={{ fontSize: '13px', fontWeight: 600 }}>Data fim</label>
               <input
                 type="text"
                 className="form-control"

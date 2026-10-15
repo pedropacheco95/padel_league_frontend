@@ -105,7 +105,7 @@ export default function AbsenceDialog({
                   )}
                 </span>
                 {a.source === 'recorded' && (
-                  <button className="text-[12px] text-red-700 underline" disabled={remove.isPending} onClick={() => remove.mutate(a.id)}>
+                  <button className="min-h-[40px] shrink-0 px-[8px] text-[13px] text-red-700 underline" disabled={remove.isPending} onClick={() => remove.mutate(a.id)}>
                     Anular
                   </button>
                 )}
@@ -123,7 +123,7 @@ export default function AbsenceDialog({
               <button
                 key={id}
                 disabled={done}
-                className={`rounded-full border px-[12px] py-[6px] text-[14px] disabled:opacity-40 ${playerId === id ? 'border-red-700 bg-red-700 text-white' : 'border-gray-300'}`}
+                className={`min-h-[40px] rounded-full border px-[12px] py-[6px] text-[14px] disabled:opacity-40 ${playerId === id ? 'border-red-700 bg-red-700 text-white' : 'border-gray-300'}`}
                 onClick={() => setPlayerId(id)}
               >
                 {participantName(p)}
@@ -132,8 +132,8 @@ export default function AbsenceDialog({
           })}
         </div>
 
-        <label className="mt-[12px] flex items-center gap-[8px] text-[14px]">
-          <input type="checkbox" className="h-[18px] w-[18px]" checked={onlyThisMatch} onChange={e => setOnlyThisMatch(e.target.checked)} />
+        <label className="mt-[12px] flex min-h-[40px] items-center gap-[10px] text-[14px]">
+          <input type="checkbox" className="h-[22px] w-[22px] shrink-0" checked={onlyThisMatch} onChange={e => setOnlyThisMatch(e.target.checked)} />
           Faltou só a este jogo (não à jornada toda)
         </label>
 
@@ -158,9 +158,9 @@ export default function AbsenceDialog({
         {error && <p role="alert" className="mt-[10px] text-[13px] text-red-700">{error}</p>}
 
         <div className="mt-[16px] flex justify-end gap-[8px]">
-          <button className="px-[12px] py-[8px] text-[14px] underline" onClick={() => onOpenChange(false)}>Cancelar</button>
+          <button className="min-h-[40px] px-[12px] py-[8px] text-[14px] underline" onClick={() => onOpenChange(false)}>Cancelar</button>
           <button
-            className="rounded bg-red-700 px-[16px] py-[8px] text-[14px] font-semibold text-white disabled:opacity-40"
+            className="min-h-[40px] rounded bg-red-700 px-[16px] py-[8px] text-[14px] font-semibold text-white disabled:opacity-40"
             disabled={!chosen || !roundId || add.isPending}
             onClick={() => add.mutate()}
           >

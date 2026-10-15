@@ -21,7 +21,7 @@ const SECTIONS: [Section, string][] = [
 ]
 
 const chip = (active: boolean) =>
-  `whitespace-nowrap rounded-full px-[12px] py-[6px] text-[13px] ${active ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`
+  `min-h-[40px] whitespace-nowrap rounded-full px-[12px] py-[6px] text-[13px] ${active ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`
 
 /** `stageNumbers` (edition total): one column per mini-tournament with the points it gave (StandingRow.stages);
  * on phones those replace the set columns. */
@@ -31,7 +31,7 @@ export function TeamsStandings({ rows, stageNumbers }: { rows: StandingRow[]; st
   const setCol = perStage ? 'max-sm:hidden' : ''
   const stageCell = (r: StandingRow, n: number) => {
     const st = r.stages?.find(x => x.stageNumber === n)
-    if (!st || st.points == null) return <span className="text-gray-400">–</span>
+    if (!st || st.points == null) return <span className="text-gray-600">–</span>
     const title = [st.place ? `${st.place}.º` : null, st.tier ? `${st.tier}.ª Divisão` : null].filter(Boolean).join(' · ')
     return <span title={title || undefined}>{formatPoints(st.points)}</span>
   }
@@ -112,7 +112,7 @@ function StageAdmin({ competition, stage }: { competition: Competition; stage: S
     <div className="mb-[16px] rounded-lg border border-amber-300 bg-amber-50 p-[12px]">
       <p className="mb-[8px] text-[13px] font-semibold">Organização</p>
       <button
-        className="rounded bg-gray-900 px-[12px] py-[6px] text-[13px] font-semibold text-white disabled:opacity-40"
+        className="min-h-[40px] rounded bg-gray-900 px-[12px] py-[6px] text-[13px] font-semibold text-white disabled:opacity-40"
         disabled={!stage.pairingClosed || form.isPending}
         title={stage.pairingClosed ? undefined : 'Fecha primeiro as parelhas'}
         onClick={() => form.mutate()}

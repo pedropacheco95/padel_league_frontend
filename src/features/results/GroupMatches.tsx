@@ -19,13 +19,13 @@ export function MatchActions({ match, roundId, groupEnded }: { match: Match; rou
   return (
     <div className="flex gap-[8px]">
       <button
-        className="rounded bg-gray-900 px-[10px] py-[6px] text-[13px] font-semibold text-white"
+        className="min-h-[40px] rounded bg-gray-900 px-[10px] py-[6px] text-[13px] font-semibold text-white"
         onClick={() => setDialog('result')}
       >
         {played ? 'Editar resultado' : 'Resultado'}
       </button>
       {!played && (
-        <button className="rounded border border-gray-300 px-[10px] py-[6px] text-[13px]" onClick={() => setDialog('absence')}>
+        <button className="min-h-[40px] rounded border border-gray-300 px-[10px] py-[6px] text-[13px]" onClick={() => setDialog('absence')}>
           Falta
         </button>
       )}
@@ -44,7 +44,7 @@ function MatchRow({ match, roundId, groupEnded }: { match: Match; roundId?: numb
       <div className="grid grid-cols-[1fr_auto] items-center gap-x-[12px] gap-y-[4px] text-[15px]">
         <span className={`truncate ${match.winner === 'home' ? 'font-semibold' : ''}`}>{home}</span>
         <span className="row-span-2 text-right text-[14px] tabular-nums">
-          {score ?? <span className="text-gray-400">por jogar</span>}
+          {score ?? <span className="text-gray-600">por jogar</span>}
           {points && <span className="block text-[12px] text-gray-500">{points} pts</span>}
         </span>
         <span className={`truncate ${match.winner === 'away' ? 'font-semibold' : ''}`}>{away}</span>
@@ -89,7 +89,7 @@ export default function GroupMatches({ groupId }: { groupId: number }) {
               key={r.id}
               role="tab"
               aria-selected={r.number === round}
-              className={`rounded-full px-[12px] py-[6px] text-[13px] ${r.number === round ? 'bg-gray-900 text-white' : 'bg-gray-100'}`}
+              className={`min-h-[40px] rounded-full px-[12px] py-[6px] text-[13px] ${r.number === round ? 'bg-gray-900 text-white' : 'bg-gray-100'}`}
               onClick={() => setRound(r.number)}
             >
               Jornada {r.number}
