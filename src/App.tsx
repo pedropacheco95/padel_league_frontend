@@ -29,6 +29,7 @@ import NextMatchweekMessagePage from "./pages/editions/NextMatchweekMessagePage"
 import GlobalApiLoader from "./components/GlobalApiLoader";
 // S3 v2 public pages (VITE_V2_PUBLIC switches the old URLs over)
 import { v2Or, v2FormatOr, v2PublicElements as v2, v2PublicRoutes } from "./features/publicRoutes";
+import CompetitionWizard from "./features/admin/CompetitionWizard";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +63,7 @@ const App = () => (
               <Route path="/edition/matchweek_message" element={<Layout><NextMatchweekMessagePage /></Layout>} />
               {/* S3: new v2 public routes */}
               {v2PublicRoutes}
+              <Route path="/admin/competitions/new" element={<Layout><CompetitionWizard /></Layout>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
