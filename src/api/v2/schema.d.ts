@@ -334,6 +334,8 @@ export interface paths {
                 };
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
             };
         };
         /** Shuffle — delete the last (unplayed) round */
@@ -359,6 +361,7 @@ export interface paths {
                 };
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
                 409: components["responses"]["Error"];
             };
         };
