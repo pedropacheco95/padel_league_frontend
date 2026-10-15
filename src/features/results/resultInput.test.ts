@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildGamesResult, buildTeamsResult, buildWalkover, teamsSetPoints, validTeamsSet } from './resultInput'
+import { buildGamesResult, buildTeamsResult, buildWalkover, setInProgress, teamsSetPoints, validTeamsSet } from './resultInput'
 
 const s = (home: string, away: string) => ({ home, away })
 
@@ -53,5 +53,14 @@ describe('buildGamesResult / walkover', () => {
   })
   it('walkover has no sets', () => {
     expect(buildWalkover('away')).toEqual({ sets: [], walkoverWinner: 'away' })
+  })
+})
+
+describe('setInProgress', () => {
+  it('is the first set without a valid finished score', () => {
+    expect(setInProgress([s('6', '3'), s('3', '2'), s('', '')])).toBe(1)
+    expect(setInProgress([s('', ''), s('', ''), s('', '')])).toBe(0)
+    expect(setInProgress([s('6', '3'), s('6', '4'), s('2', '')])).toBe(2)
+    expect(setInProgress([s('6', '3'), s('6', '4'), s('6', '0')])).toBe(2)
   })
 })

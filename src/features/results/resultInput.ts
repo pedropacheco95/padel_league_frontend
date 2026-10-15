@@ -75,3 +75,13 @@ export function teamsSetPoints(input: ResultInput): [number, number] {
   }
   return [h, a]
 }
+
+/** The set being played when time ran out: the first one without a valid finished score. */
+export function setInProgress(sets: SetDraft[]): number {
+  const i = sets.slice(0, TEAMS_SETS).findIndex(s => {
+    const h = toNum(s.home)
+    const a = toNum(s.away)
+    return h === null || a === null || !validTeamsSet(h, a)
+  })
+  return i === -1 ? TEAMS_SETS - 1 : i
+}

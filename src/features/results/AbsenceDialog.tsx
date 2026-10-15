@@ -78,9 +78,9 @@ export default function AbsenceDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[440px] p-[20px]">
+      <DialogContent className="max-w-[440px] border-gray-200 bg-white p-[20px] text-gray-900">
         <DialogHeader>
-          <DialogTitle className="text-[18px]">Falta à jornada {match.round}</DialogTitle>
+          <DialogTitle className="!text-[18px] !text-gray-900">Falta à jornada {match.round}</DialogTitle>
         </DialogHeader>
 
         {(match.absences ?? []).length > 0 && (

@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import type { Match } from '@/api/v2'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { errorMessage, resultsApi } from './api'
-import { buildResult, buildWalkover, teamsSetPoints, TEAMS_SETS, type SetDraft, type Side } from './resultInput'
+import { buildResult, buildWalkover, setInProgress, teamsSetPoints, TEAMS_SETS, type SetDraft, type Side } from './resultInput'
 import { sideNames } from './matchText'
 
 const emptySets = (n: number): SetDraft[] => Array.from({ length: n }, () => ({ home: '', away: '' }))
@@ -87,9 +87,9 @@ export default function ResultEntryDialog({ match, open, onOpenChange }: { match
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[440px] p-[20px]">
+      <DialogContent className="max-w-[440px] border-gray-200 bg-white p-[20px] text-gray-900">
         <DialogHeader>
-          <DialogTitle className="text-[18px]">Resultado</DialogTitle>
+          <DialogTitle className="!text-[18px] !text-gray-900">Resultado</DialogTitle>
         </DialogHeader>
 
         <div className="grid grid-cols-[1fr_56px_56px] items-center gap-x-[8px] gap-y-[10px] text-[14px]">
@@ -129,11 +129,7 @@ export default function ResultEntryDialog({ match, open, onOpenChange }: { match
             {timeoutAt === null ? (
               <button
                 className="rounded border border-amber-600 px-[10px] py-[6px] text-[13px] text-amber-800"
-                onClick={() => {
-                  // The set in progress = first set without both games.
-                  const i = sets.findIndex(s => s.home === '' || s.away === '')
-                  setTimeoutAt(i === -1 ? TEAMS_SETS - 1 : i)
-                }}
+                onClick={() => setTimeoutAt(setInProgress(sets))}
               >
                 Tempo esgotado
               </button>
