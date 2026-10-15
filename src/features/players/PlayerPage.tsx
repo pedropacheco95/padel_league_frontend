@@ -13,7 +13,8 @@ const DEFAULT_LARGE_PICTURE =
   'https://storage.googleapis.com/portopadelleague-storage/images/Player/large_pic_default.jpg'
 const FALLBACK = '/static/images/Player/default_player.jpg'
 
-const num = (v?: number) => (v === undefined || v === null ? '—' : String(v))
+// The API sends unrounded numbers; show at most one decimal (pt-PT).
+const num = (v?: number) => (v === undefined || v === null ? '—' : v.toLocaleString('pt-PT', { maximumFractionDigits: 1 }))
 const pctVal = (v?: number) => (v === undefined || v === null ? '—' : `${Math.round(v)}%`)
 
 function StatBox({ title, children }: { title: string; children: React.ReactNode }) {
@@ -58,7 +59,16 @@ export default function PlayerPage() {
     )
   }
 
-  const s = player.stats ?? {}
+  // Agreed keys (matchesPlayed, ...) with the backend's first names (played, wins, winRate) as fallback.
+  const raw = player.stats ?? {}
+  const s: Record<string, number> = {
+    ...raw,
+    matchesPlayed: raw.matchesPlayed ?? raw.played,
+    matchesWon: raw.matchesWon ?? raw.wins,
+    matchesDrawn: raw.matchesDrawn ?? raw.draws,
+    matchesLost: raw.matchesLost ?? raw.losses,
+    efficiency: raw.efficiency ?? raw.winRate,
+  }
   const history = player.history ?? []
   const name = player.fullName || player.name
 
@@ -201,9 +211,12 @@ export default function PlayerPage() {
               {history.map((row, i) => (
                 <li key={i} className="c-flex-table__item">
                   <Link to={row.groupId ? `/groups/${row.groupId}` : `/competitions/${row.competition?.id}`}>
-                    <span>
-                      {row.competition?.name}
-                      {row.groupName ? ` · ${row.groupName}` : ''}
+                    {/* One line: rows in c-flex-table have a fixed height (the old page showed the division name only). */}
+                    <span
+                      className="block truncate max-w-[160px] sm:max-w-[260px]"
+                      title={[row.competition?.name, row.groupName].filter(Boolean).join(' · ')}
+                    >
+                      {row.groupName || row.competition?.name}
                     </span>
                   </Link>
                 </li>
