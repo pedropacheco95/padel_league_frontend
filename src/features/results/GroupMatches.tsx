@@ -9,10 +9,12 @@ import AbsenceDialog from './AbsenceDialog'
 import ResultEntryDialog, { groupMatchesKey } from './ResultEntryDialog'
 import { scoreText, sideNames } from './matchText'
 
-export function MatchActions({ match, roundId }: { match: Match; roundId?: number }) {
+/** `groupEnded`: an ended group's results belong to the admins (the server 409s anyone else). */
+export function MatchActions({ match, roundId, groupEnded }: { match: Match; roundId?: number; groupEnded?: boolean }) {
   const { user } = useAuth()
   const [dialog, setDialog] = useState<'result' | 'absence' | null>(null)
-  if (!user || match.status === 'cancelled') return null
+  const isAdmin = !!(user?.isAdmin || user?.superAdmin)
+  if (!user || match.status === 'cancelled' || (groupEnded && !isAdmin)) return null
   const played = match.status !== 'scheduled'
   return (
     <div className="flex gap-[8px]">
@@ -33,7 +35,7 @@ export function MatchActions({ match, roundId }: { match: Match; roundId?: numbe
   )
 }
 
-function MatchRow({ match, roundId }: { match: Match; roundId?: number }) {
+function MatchRow({ match, roundId, groupEnded }: { match: Match; roundId?: number; groupEnded?: boolean }) {
   const [home, away] = sideNames(match)
   const score = scoreText(match)
   const points = match.format === 'teams' && match.homeScore != null ? `${match.homeScore}–${match.awayScore}` : null
@@ -53,7 +55,7 @@ function MatchRow({ match, roundId }: { match: Match; roundId?: number }) {
         </p>
       )}
       <div className="mt-[10px]">
-        <MatchActions match={match} roundId={roundId} />
+        <MatchActions match={match} roundId={roundId} groupEnded={groupEnded} />
       </div>
     </li>
   )
@@ -96,7 +98,7 @@ export default function GroupMatches({ groupId }: { groupId: number }) {
         </div>
       )}
       <ul className="space-y-[8px]">
-        {(matches.data ?? []).map(m => <MatchRow key={m.id} match={m} roundId={roundId} />)}
+        {(matches.data ?? []).map(m => <MatchRow key={m.id} match={m} roundId={roundId} groupEnded={group.data?.hasEnded} />)}
         {matches.data?.length === 0 && <li className="text-[14px] text-gray-500">Sem jogos nesta jornada.</li>}
       </ul>
     </div>

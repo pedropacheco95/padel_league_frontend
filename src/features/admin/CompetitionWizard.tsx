@@ -151,7 +151,8 @@ export default function CompetitionWizard() {
     const fail = (m: string) => (setError(m), null)
     if (!name.trim()) return fail('Indica o nome.')
     if (!seasonId) return fail('Escolhe a época.')
-    const body: CompetitionCreate = { format, name: name.trim(), seasonId, startsOn: startsOn || undefined }
+    if (!startsOn) return fail('Indica a data de início.')
+    const body: CompetitionCreate = { format, name: name.trim(), seasonId, startsOn }
     if (format === 'classica') {
       if (!fromId) return fail('Escolhe a edição anterior.')
       return { ...body, fromCompetitionId: fromId, withdrawals, newPlayerIds: newPlayers }
