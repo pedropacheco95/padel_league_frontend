@@ -75,6 +75,8 @@ export default function PairChoice({ competitionId }: { competitionId: number })
       action().then(r => r.data),
     onSuccess: (next, { success }) => {
       qc.setQueryData([...teamsStateKey(competitionId), user?.id ?? null], next)
+      // Closing pairs changes the stage (pairingClosed) that the divisions tab reads.
+      qc.invalidateQueries({ queryKey: ['v2', 'competitions', competitionId], exact: true })
       const message = success?.(next)
       if (message) toast.success(message)
     },

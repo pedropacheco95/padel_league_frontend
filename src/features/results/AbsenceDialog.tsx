@@ -3,11 +3,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { Match } from '@/api/v2'
 import type { PlayerSummary } from '@/api/v2'
+import { useAuth } from '@/context/AuthContext'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { errorMessage, resultsApi } from './api'
 import { participantName } from './matchText'
 
 const UNKNOWN = 'unknown'
+
+const recordedFormat = new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Lisbon' })
 
 /** Mark a player absent for the whole round (every match that week), naming the substitute if known. */
 export default function AbsenceDialog({
@@ -22,6 +25,8 @@ export default function AbsenceDialog({
   onOpenChange: (o: boolean) => void
 }) {
   const qc = useQueryClient()
+  const { user } = useAuth()
+  const isAdmin = !!(user?.isAdmin || user?.superAdmin) // audit is for admins only
   const [playerId, setPlayerId] = useState('')
   const [substitute, setSubstitute] = useState(UNKNOWN)
   const [error, setError] = useState<string | null>(null)
@@ -88,6 +93,12 @@ export default function AbsenceDialog({
                 <span>
                   <strong>{a.player.name}</strong> faltou{a.kind === 'partial' ? ' (parcial)' : ''} · substituto:{' '}
                   {a.substitute?.name ?? 'desconhecido'}
+                  {isAdmin && a.recordedBy && (
+                    <span className="block text-[12px] text-gray-500">
+                      marcada por {a.recordedBy.name}
+                      {a.recordedAt ? ` · ${recordedFormat.format(new Date(a.recordedAt))}` : ''}
+                    </span>
+                  )}
                 </span>
                 {a.source === 'recorded' && (
                   <button className="text-[12px] text-red-700 underline" disabled={remove.isPending} onClick={() => remove.mutate(a.id)}>

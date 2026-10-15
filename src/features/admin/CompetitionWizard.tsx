@@ -118,6 +118,14 @@ export default function CompetitionWizard() {
     if (fromId === null && previous.data?.length) setFromId(previous.data[0].id)
   }, [previous.data, fromId])
 
+  const preview = useMutation({
+    mutationFn: (body: CompetitionCreate) => adminApi.preview(body),
+    onError: err => setError(errorMessage(err, 'Não foi possível pré-visualizar.')),
+  })
+  // Any change to the inputs invalidates a shown preview.
+  const resetPreview = preview.reset
+  useEffect(() => resetPreview(), [format, fromId, withdrawals, newPlayers, roster, resetPreview])
+
   const create = useMutation({
     mutationFn: (body: CompetitionCreate) => adminApi.create(body),
     onSuccess: c => setCreated(c),
@@ -137,20 +145,30 @@ export default function CompetitionWizard() {
     )
   }
 
-  const submit = () => {
+  // Validated request body, or null after showing the problem.
+  const buildBody = (): CompetitionCreate | null => {
     setError(null)
-    if (!name.trim()) return setError('Indica o nome.')
-    if (!seasonId) return setError('Escolhe a época.')
+    const fail = (m: string) => (setError(m), null)
+    if (!name.trim()) return fail('Indica o nome.')
+    if (!seasonId) return fail('Escolhe a época.')
     const body: CompetitionCreate = { format, name: name.trim(), seasonId, startsOn: startsOn || undefined }
     if (format === 'classica') {
-      if (!fromId) return setError('Escolhe a edição anterior.')
-      Object.assign(body, { fromCompetitionId: fromId, withdrawals, newPlayerIds: newPlayers })
-    } else {
-      if (roster.length < 4) return setError('Escolhe pelo menos 4 jogadores.')
-      if (format === 'teams' && roster.length % 2) return setError('A Teams precisa de um número par de jogadores.')
-      body.playerIds = roster
+      if (!fromId) return fail('Escolhe a edição anterior.')
+      return { ...body, fromCompetitionId: fromId, withdrawals, newPlayerIds: newPlayers }
     }
-    create.mutate(body)
+    if (roster.length < 4) return fail('Escolhe pelo menos 4 jogadores.')
+    if (format === 'teams' && roster.length % 2) return fail('A Teams precisa de um número par de jogadores.')
+    return { ...body, playerIds: roster }
+  }
+
+  const submit = () => {
+    const body = buildBody()
+    if (body) create.mutate(body)
+  }
+
+  const showPreview = () => {
+    const body = buildBody()
+    if (body) preview.mutate(body)
   }
 
   const allPlayers = players.data ?? []
@@ -198,7 +216,7 @@ export default function CompetitionWizard() {
             </select>
           </label>
           <p className="text-[13px] text-gray-600">
-            As divisões são calculadas no servidor a partir da classificação final da edição anterior.
+            As divisões são calculadas a partir da classificação final da edição anterior. Usa a pré-visualização antes de criar.
           </p>
           <PlayerList title="Desistências" players={allPlayers} ids={withdrawals} onChange={setWithdrawals} />
           <PlayerList title="Novos jogadores" players={allPlayers} ids={newPlayers} onChange={setNewPlayers} ordered />
@@ -213,14 +231,38 @@ export default function CompetitionWizard() {
         />
       )}
 
+      {preview.data && (
+        <section aria-label="Pré-visualização" className="rounded-lg border border-gray-200 bg-white p-[12px]">
+          <h2 className="mb-[8px] !text-[16px] font-semibold">Pré-visualização (nada foi guardado)</h2>
+          {(preview.data.notes ?? []).map(n => <p key={n} className="text-[13px] text-amber-800">{n}</p>)}
+          <div className="mt-[8px] grid gap-[8px] sm:grid-cols-2">
+            {preview.data.groups.map(g => (
+              <div key={g.tier} className="rounded bg-gray-50 p-[8px] text-[13px]">
+                <p className="font-semibold">{g.name} <span className="font-normal text-gray-500">· {g.rating} pts</span></p>
+                <p className="text-gray-700">{g.players.map(x => x.name).join(', ') || '—'}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {error && <p role="alert" className="text-[14px] text-red-700">{error}</p>}
-      <button
-        className="rounded bg-gray-900 px-[18px] py-[10px] text-[15px] font-semibold text-white disabled:opacity-40"
-        disabled={create.isPending}
-        onClick={submit}
-      >
-        {create.isPending ? 'A criar…' : 'Criar competição'}
-      </button>
+      <div className="flex flex-wrap gap-[8px]">
+        <button
+          className="rounded border border-gray-900 px-[18px] py-[10px] text-[15px] font-semibold disabled:opacity-40"
+          disabled={preview.isPending}
+          onClick={showPreview}
+        >
+          {preview.isPending ? 'A calcular…' : 'Pré-visualizar divisões'}
+        </button>
+        <button
+          className="rounded bg-gray-900 px-[18px] py-[10px] text-[15px] font-semibold text-white disabled:opacity-40"
+          disabled={create.isPending}
+          onClick={submit}
+        >
+          {create.isPending ? 'A criar…' : 'Criar competição'}
+        </button>
+      </div>
     </div>
   )
 }
