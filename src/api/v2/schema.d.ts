@@ -1750,7 +1750,7 @@ export interface components {
         };
         CompetitionCreate: {
             format: components["schemas"]["Format"];
-            name: string;
+            name?: string;
             seasonId: number;
             eventSlot?: string | null;
             /** Format: date */
