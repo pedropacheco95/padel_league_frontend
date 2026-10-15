@@ -1529,6 +1529,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sponsors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Sponsor"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/login": {
         parameters: {
             query?: never;
@@ -1995,6 +2030,15 @@ export interface components {
                 pairId: number | null;
                 isAdmin: boolean;
             };
+        };
+        Sponsor: {
+            id: number;
+            name: string;
+            /** @description The sponsor's site */
+            website: string;
+            /** @description Relative URL of the click-counting redirect (/sponsors/sponsor_click/{id}); link here, not to website */
+            clickUrl: string;
+            image?: components["schemas"]["Image"] | null;
         };
         NewsSummary: {
             id: number;
