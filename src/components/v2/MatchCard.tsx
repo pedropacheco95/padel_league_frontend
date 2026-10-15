@@ -17,9 +17,10 @@ function SideRow({ parts, score, won }: { parts: Participant[]; score?: ReactNod
           const p = parts.find((x) => x.slot === slot)
           return (
             <div key={slot} className="flex items-center gap-[6px] min-w-0">
-              <PlayerAvatar player={p?.player} size={24} withName />
-              {!p?.player && <span className="text-[14px] text-gray-500 italic">{p?.role === 'unknown' ? 'Substituto' : '—'}</span>}
-              {p?.role === 'substitute' && <span className="text-[11px] px-[6px] rounded-full bg-amber-100 text-amber-800">sub</span>}
+              {/* player is null when an unknown substitute played the slot (e.g. after an absence). */}
+              <PlayerAvatar player={p?.player} size={24} withName={!!p?.player} />
+              {!p?.player && <span className="text-[14px] text-gray-500 italic">{p ? 'Substituto' : '—'}</span>}
+              {p?.player && p.role === 'substitute' && <span className="text-[11px] px-[6px] rounded-full bg-amber-100 text-amber-800">sub</span>}
             </div>
           )
         })}

@@ -2,6 +2,7 @@
 // Loaded with import.meta.glob so this builds before S4's branch is merged; renders nothing until then.
 import { Suspense, lazy, type ComponentType } from 'react'
 import type { Match } from '@/api/v2'
+import ChunkBoundary from '@/components/v2/ChunkBoundary'
 
 type Props = { match: Match; roundId?: number }
 const modules = import.meta.glob<{ MatchActions?: ComponentType<Props> }>('/src/features/results/GroupMatches.tsx')
@@ -13,8 +14,10 @@ const Actions = loader
 export default function MatchActionsSlot(props: Props) {
   if (!Actions) return null
   return (
-    <Suspense fallback={null}>
-      <Actions {...props} />
-    </Suspense>
+    <ChunkBoundary>
+      <Suspense fallback={null}>
+        <Actions {...props} />
+      </Suspense>
+    </ChunkBoundary>
   )
 }
