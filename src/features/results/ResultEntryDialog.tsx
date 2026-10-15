@@ -4,7 +4,8 @@ import { toast } from 'sonner'
 import type { Match } from '@/api/v2'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { errorMessage, resultsApi } from './api'
-import { buildResult, buildWalkover, setInProgress, teamsSetPoints, TEAMS_SETS, type SetDraft, type Side } from './resultInput'
+import { buildResult, buildWalkover, setInProgress, teamsSetPoints, TEAMS_SETS, walkoverAbsentees, type SetDraft, type Side } from './resultInput'
+import type { ResultInput } from '@/api/v2'
 import { sideNames } from './matchText'
 
 const emptySets = (n: number): SetDraft[] => Array.from({ length: n }, () => ({ home: '', away: '' }))
@@ -24,12 +25,23 @@ function timeoutFrom(match: Match): number | null {
 
 export const groupMatchesKey = (groupId: number) => ['v2', 'groups', groupId, 'matches'] as const
 
-export default function ResultEntryDialog({ match, open, onOpenChange }: { match: Match; open: boolean; onOpenChange: (o: boolean) => void }) {
+export default function ResultEntryDialog({
+  match,
+  roundId,
+  open,
+  onOpenChange,
+}: {
+  match: Match
+  roundId?: number
+  open: boolean
+  onOpenChange: (o: boolean) => void
+}) {
   const teams = match.format === 'teams'
   const n = teams ? TEAMS_SETS : 1
   const [sets, setSets] = useState<SetDraft[]>(() => draftFrom(match, n))
   const [timeoutAt, setTimeoutAt] = useState<number | null>(() => (teams ? timeoutFrom(match) : null))
   const [walkover, setWalkover] = useState<Side | null>(null)
+  const [woAbsent, setWoAbsent] = useState<number | 'both' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const qc = useQueryClient()
 
@@ -38,13 +50,19 @@ export default function ResultEntryDialog({ match, open, onOpenChange }: { match
     setSets(draftFrom(match, n))
     setTimeoutAt(teams ? timeoutFrom(match) : null)
     setWalkover(match.status === 'walkover' && match.winner !== 'draw' ? (match.winner ?? null) : null)
+    setWoAbsent(null)
     setError(null)
   }, [open, match, n, teams])
 
   const save = useMutation({
-    mutationFn: (input: Parameters<typeof resultsApi.putResult>[1]) => resultsApi.putResult(match.id, input),
+    // A walkover first records the no-shows as absent for the round (they lose the presence; whoever
+    // of the losing pair came keeps it), then the result.
+    mutationFn: async ({ input, absentees }: { input: ResultInput; absentees: number[] }) => {
+      for (const playerId of absentees) await resultsApi.addAbsence(roundId!, { playerId, groupId: match.groupId })
+      return resultsApi.putResult(match.id, input)
+    },
     // Optimistic: the card shows the new result at once; the server copy replaces it on success.
-    onMutate: async input => {
+    onMutate: async ({ input }) => {
       const key = groupMatchesKey(match.groupId)
       await qc.cancelQueries({ queryKey: key })
       const previous = qc.getQueriesData<Match[]>({ queryKey: key })
@@ -80,9 +98,20 @@ export default function ResultEntryDialog({ match, open, onOpenChange }: { match
     setError(null)
   }
 
+  const alreadyAbsent = (match.absences ?? []).map(a => a.player.id)
+  const losers = walkover
+    ? match.participants.filter(p => p.side !== walkover && p.role === 'member' && p.player && !alreadyAbsent.includes(p.player.id))
+    : []
+
   const submit = () => {
     if ('error' in built) return setError(built.error)
-    save.mutate(built.input)
+    let absentees: number[] = []
+    if (walkover && losers.length > 0) {
+      if (woAbsent === null) return setError('Indica quem faltou da dupla que perdeu por falta de comparência.')
+      if (!roundId) return setError('Jornada sem identificador; não é possível registar a falta.')
+      absentees = walkoverAbsentees(match.participants, walkover, woAbsent, alreadyAbsent)
+    }
+    save.mutate({ input: built.input, absentees })
   }
 
   return (
@@ -147,20 +176,42 @@ export default function ResultEntryDialog({ match, open, onOpenChange }: { match
           </div>
         )}
 
-        <details className="mt-[12px] text-[13px]" open={!!walkover}>
+        {/* Only Teams records walkovers (the server rejects them elsewhere). */}
+        {teams && <details className="mt-[12px] text-[13px]" open={!!walkover}>
           <summary className="cursor-pointer text-gray-600">Falta de comparência (W.O.)</summary>
           <div className="mt-[8px] flex flex-wrap gap-[8px]">
             {(['home', 'away'] as const).map(side => (
               <button
                 key={side}
                 className={`rounded border px-[10px] py-[6px] ${walkover === side ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-300'}`}
-                onClick={() => setWalkover(w => (w === side ? null : side))}
+                onClick={() => {
+                  setWalkover(w => (w === side ? null : side))
+                  setWoAbsent(null)
+                }}
               >
                 Vitória {side === 'home' ? 'casa' : 'fora'}
               </button>
             ))}
           </div>
-        </details>
+          {walkover && losers.length > 0 && (
+            <div className="mt-[10px]">
+              <p className="text-gray-700">Quem faltou? Quem veio mantém a presença.</p>
+              <div className="mt-[6px] flex flex-wrap gap-[8px]" role="radiogroup" aria-label="Quem faltou">
+                {[...losers.map(p => [p.player!.id, p.player!.name] as const), ['both', 'Faltaram os dois'] as const].map(([value, name]) => (
+                  <button
+                    key={value}
+                    role="radio"
+                    aria-checked={woAbsent === value}
+                    className={`rounded-full border px-[12px] py-[6px] ${woAbsent === value ? 'border-red-700 bg-red-700 text-white' : 'border-gray-300'}`}
+                    onClick={() => setWoAbsent(value)}
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </details>}
 
         {preview && (
           <p className="mt-[12px] text-[13px] text-gray-700">

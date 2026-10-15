@@ -27,7 +27,7 @@ export function MatchActions({ match, roundId }: { match: Match; roundId?: numbe
           Falta
         </button>
       )}
-      <ResultEntryDialog match={match} open={dialog === 'result'} onOpenChange={o => setDialog(o ? 'result' : null)} />
+      <ResultEntryDialog match={match} roundId={roundId} open={dialog === 'result'} onOpenChange={o => setDialog(o ? 'result' : null)} />
       <AbsenceDialog match={match} roundId={roundId} open={dialog === 'absence'} onOpenChange={o => setDialog(o ? 'absence' : null)} />
     </div>
   )

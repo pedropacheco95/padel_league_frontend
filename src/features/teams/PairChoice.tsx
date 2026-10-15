@@ -6,10 +6,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { AxiosResponse } from 'axios'
 import { toast } from 'sonner'
 import type { PlayerRef, TeamsState } from '@/api/v2'
-import { playersApi } from '@/api/players'
-import type { PlayerShort } from '@/types'
+import type { PlayerSummary } from '@/api/v2'
 import { useAuth } from '@/context/AuthContext'
-import { errorMessage } from '@/features/results/api'
+import { errorMessage, resultsApi } from '@/features/results/api'
 import { teamsApi } from './api'
 
 type TeamsPlayer = TeamsState['players'][number]
@@ -66,8 +65,8 @@ export default function PairChoice({ competitionId }: { competitionId: number })
 
   const isAdmin = !!state?.me.isAdmin
   const allPlayersQuery = useQuery({
-    queryKey: ['v1', 'players_short'],
-    queryFn: async () => (await playersApi.players_short()).data as unknown as PlayerShort[],
+    queryKey: ['v2', 'players'],
+    queryFn: resultsApi.players,
     enabled: isAdmin,
   })
 
@@ -76,6 +75,8 @@ export default function PairChoice({ competitionId }: { competitionId: number })
       action().then(r => r.data),
     onSuccess: (next, { success }) => {
       qc.setQueryData([...teamsStateKey(competitionId), user?.id ?? null], next)
+      // Closing pairs changes the stage (pairingClosed) that the divisions tab reads.
+      qc.invalidateQueries({ queryKey: ['v2', 'competitions', competitionId], exact: true })
       const message = success?.(next)
       if (message) toast.success(message)
     },

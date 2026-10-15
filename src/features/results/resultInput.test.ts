@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildGamesResult, buildTeamsResult, buildWalkover, setInProgress, teamsSetPoints, validTeamsSet } from './resultInput'
+import { buildGamesResult, buildTeamsResult, buildWalkover, setInProgress, teamsSetPoints, validTeamsSet, walkoverAbsentees } from './resultInput'
 
 const s = (home: string, away: string) => ({ home, away })
 
@@ -62,5 +62,24 @@ describe('setInProgress', () => {
     expect(setInProgress([s('', ''), s('', ''), s('', '')])).toBe(0)
     expect(setInProgress([s('6', '3'), s('6', '4'), s('2', '')])).toBe(2)
     expect(setInProgress([s('6', '3'), s('6', '4'), s('6', '0')])).toBe(2)
+  })
+})
+
+describe('walkoverAbsentees', () => {
+  const parts = [
+    { side: 'home' as const, role: 'member', player: { id: 1 } },
+    { side: 'home' as const, role: 'member', player: { id: 2 } },
+    { side: 'away' as const, role: 'member', player: { id: 3 } },
+    { side: 'away' as const, role: 'member', player: { id: 4 } },
+  ]
+  it('marks only the chosen no-show of the losing pair', () => {
+    expect(walkoverAbsentees(parts, 'home', 4)).toEqual([4])
+  })
+  it('marks both losers when neither came, skipping ones already absent', () => {
+    expect(walkoverAbsentees(parts, 'away', 'both')).toEqual([1, 2])
+    expect(walkoverAbsentees(parts, 'away', 'both', [2])).toEqual([1])
+  })
+  it('never marks a winner', () => {
+    expect(walkoverAbsentees(parts, 'home', 1)).toEqual([])
   })
 })

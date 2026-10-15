@@ -1,6 +1,6 @@
 import { api } from '@/api/client'
-import { API_V2_BASE, type Absence, type GroupDetail, type Match, type ResultInput } from '@/api/v2'
-import { mockGroup, mockResults, useMocks } from './mocks'
+import { API_V2_BASE, type Absence, type GroupDetail, type Match, type PlayerSummary, type ResultInput } from '@/api/v2'
+import { mockGroup, mockPlayers, mockResults, useMocks } from './mocks'
 
 const v2 = { baseURL: API_V2_BASE }
 
@@ -11,6 +11,9 @@ export interface AbsenceInput {
 }
 
 export const resultsApi = {
+  players: async (): Promise<PlayerSummary[]> =>
+    useMocks ? mockPlayers : (await api.get('/players', v2)).data,
+
   group: async (groupId: number): Promise<GroupDetail> =>
     useMocks ? mockGroup(groupId) : (await api.get(`/groups/${groupId}`, v2)).data,
 

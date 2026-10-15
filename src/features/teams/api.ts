@@ -5,8 +5,8 @@ import { mockTeams, useMocks } from './mocks'
 
 // Pair choice exists on both APIs with the same TeamsState shape: v1 /teams/* reads and
 // writes the v2 tables already, v2 nests it under the competition. VITE_TEAMS_API=v2
-// switches once /api/v2 is served; v1 ignores the competition id (it is always the current one).
-const useV2 = import.meta.env.VITE_TEAMS_API === 'v2'
+// is the default (launch runs on /api/v2); VITE_TEAMS_API=v1 falls back. v1 ignores the competition id (it is always the current one).
+const useV2 = import.meta.env.VITE_TEAMS_API !== 'v1'
 const v2 = { baseURL: API_V2_BASE }
 
 // Not served yet / nothing ranked yet: show the empty state, not an error.
