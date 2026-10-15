@@ -1969,7 +1969,8 @@ export interface components {
             };
             players: (components["schemas"]["PlayerRef"] & {
                 rankingPoints: number;
-                rankingPosition: number;
+                /** @description null when unranked under the current rule */
+                rankingPosition: number | null;
                 paired: boolean;
                 allowedForMe: boolean;
             })[];
