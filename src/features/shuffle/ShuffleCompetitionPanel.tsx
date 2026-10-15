@@ -35,8 +35,8 @@ export function ShuffleStandings({ rows }: { rows: StandingRow[] }) {
             <th className={num} title="Vitórias">V</th>
             <th className={num} title="Empates">E</th>
             <th className={num} title="Derrotas">D</th>
-            <th className={`${num} hidden sm:table-cell`} title="Jogos ganhos">JG</th>
-            <th className={`${num} hidden sm:table-cell`} title="Jogos perdidos">JP</th>
+            <th className={`${num} max-sm:hidden`} title="Jogos ganhos">JG</th>
+            <th className={`${num} max-sm:hidden`} title="Jogos perdidos">JP</th>
             <th className={num} title="Diferença de jogos">DJ</th>
             <th className={num}>Pts</th>
             <th className={num} title="Grupo na próxima jornada">Próx.</th>
@@ -55,8 +55,8 @@ export function ShuffleStandings({ rows }: { rows: StandingRow[] }) {
               <td className={num}>{r.wins ?? 0}</td>
               <td className={num}>{r.draws ?? 0}</td>
               <td className={num}>{r.losses ?? 0}</td>
-              <td className={`${num} hidden sm:table-cell`}>{r.gamesWon ?? 0}</td>
-              <td className={`${num} hidden sm:table-cell`}>{r.gamesLost ?? 0}</td>
+              <td className={`${num} max-sm:hidden`}>{r.gamesWon ?? 0}</td>
+              <td className={`${num} max-sm:hidden`}>{r.gamesLost ?? 0}</td>
               <td className={num}>{(r.gamesWon ?? 0) - (r.gamesLost ?? 0)}</td>
               <td className={`${num} font-semibold`}>{r.points}</td>
               <td className={num}>{r.nextGroupTier ?? '–'}</td>

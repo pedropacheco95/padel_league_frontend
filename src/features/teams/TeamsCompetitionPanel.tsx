@@ -24,8 +24,18 @@ const chip = (active: boolean) =>
 
 const pointsFormat = new Intl.NumberFormat('pt-PT', { maximumFractionDigits: 1 })
 
-export function TeamsStandings({ rows }: { rows: StandingRow[] }) {
+/** `stageNumbers` (edition total): one column per mini-tournament with the points it gave (StandingRow.stages);
+ * on phones those replace the set columns. */
+export function TeamsStandings({ rows, stageNumbers }: { rows: StandingRow[]; stageNumbers?: number[] }) {
   if (rows.length === 0) return <p className="text-[14px] text-gray-500">Ainda sem classificação.</p>
+  const perStage = !!stageNumbers?.length
+  const setCol = perStage ? 'max-sm:hidden' : ''
+  const stageCell = (r: StandingRow, n: number) => {
+    const st = r.stages?.find(x => x.stageNumber === n)
+    if (!st || st.points == null) return <span className="text-gray-400">–</span>
+    const title = [st.place ? `${st.place}.º` : null, st.tier ? `${st.tier}.ª Divisão` : null].filter(Boolean).join(' · ')
+    return <span title={title || undefined}>{pointsFormat.format(st.points)}</span>
+  }
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-[14px]">
@@ -34,8 +44,11 @@ export function TeamsStandings({ rows }: { rows: StandingRow[] }) {
             <th className="py-[6px] pr-[8px]">#</th>
             <th className="py-[6px] pr-[8px]">Jogador</th>
             <th className="py-[6px] pr-[8px] text-right" title="Jogos">J</th>
-            <th className="py-[6px] pr-[8px] text-right" title="Sets ganhos">SG</th>
-            <th className="py-[6px] pr-[8px] text-right" title="Sets empatados">SE</th>
+            <th className={`py-[6px] pr-[8px] text-right ${setCol}`} title="Sets ganhos">SG</th>
+            <th className={`py-[6px] pr-[8px] text-right ${setCol}`} title="Sets empatados">SE</th>
+            {stageNumbers?.map(n => (
+              <th key={n} className="py-[6px] pr-[8px] text-right" title={`Mini-torneio ${n}`}>M{n}</th>
+            ))}
             <th className="py-[6px] text-right">Pts</th>
           </tr>
         </thead>
@@ -46,12 +59,15 @@ export function TeamsStandings({ rows }: { rows: StandingRow[] }) {
               <td className="py-[6px] pr-[8px]">
                 <span className="flex items-center gap-[8px]">
                   <Avatar player={r.player} size={24} />
-                  <span className="truncate">{r.player.name}</span>
+                  <span className="max-w-[110px] truncate sm:max-w-none">{r.player.name}</span>
                 </span>
               </td>
               <td className="py-[6px] pr-[8px] text-right tabular-nums">{r.played}</td>
-              <td className="py-[6px] pr-[8px] text-right tabular-nums">{r.setsWon ?? '–'}</td>
-              <td className="py-[6px] pr-[8px] text-right tabular-nums">{r.setsDrawn ?? '–'}</td>
+              <td className={`py-[6px] pr-[8px] text-right tabular-nums ${setCol}`}>{r.setsWon ?? '–'}</td>
+              <td className={`py-[6px] pr-[8px] text-right tabular-nums ${setCol}`}>{r.setsDrawn ?? '–'}</td>
+              {stageNumbers?.map(n => (
+                <td key={n} className="py-[6px] pr-[8px] text-right tabular-nums">{stageCell(r, n)}</td>
+              ))}
               <td className="py-[6px] text-right font-semibold tabular-nums">{pointsFormat.format(r.points)}</td>
             </tr>
           ))}
@@ -225,7 +241,7 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
                 <p className="mb-[8px] text-[13px] text-gray-600">
                   Pontos de ranking somados dos mini-torneios fechados; presenças e sets contam todos os jogos.
                 </p>
-                <TeamsStandings rows={standings.data ?? []} />
+                <TeamsStandings rows={standings.data ?? []} stageNumbers={stages.map(s => s.number)} />
               </>
             )
           ) : (
