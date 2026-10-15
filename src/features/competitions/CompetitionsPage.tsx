@@ -1,6 +1,7 @@
 // Torneios: every competition (Clássica, Teams, Shuffle, Super Cup), grouped by season, current season first.
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '@/context/AuthContext'
 import type { CompetitionCard as Card, Format } from '@/api/v2'
 import FormatBadge from '@/components/v2/FormatBadge'
 import { useCompetitions } from './api'
@@ -54,6 +55,7 @@ const FILTERS: (Format | 'all')[] = ['all', 'classica', 'teams', 'shuffle', 'sup
 
 export default function CompetitionsPage() {
   const { data, isLoading, isError } = useCompetitions()
+  const { user } = useAuth()
   const [format, setFormat] = useState<Format | 'all'>('all')
   const [showPast, setShowPast] = useState(false)
 
@@ -72,6 +74,17 @@ export default function CompetitionsPage() {
   return (
     <>
       <div className="l-grid">
+        {user?.isAdmin && (
+          <div className="flex justify-end px-[16px] pt-[16px] w-full box-border">
+            <Link
+              to="/admin/competitions/new"
+              className="rounded-full px-[16px] py-[8px] text-[14px] font-semibold text-white"
+              style={{ background: '#006A71' }}
+            >
+              + Nova competição
+            </Link>
+          </div>
+        )}
         <div className="flex flex-wrap gap-[8px] justify-center pt-[16px] px-[16px] w-full box-border">
           {FILTERS.map((f) => (
             <button
