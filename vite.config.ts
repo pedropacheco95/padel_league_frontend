@@ -9,7 +9,8 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:5000",
+        // VITE_API_TARGET lets parallel worktrees point at their own Flask port.
+        target: process.env.VITE_API_TARGET || "http://127.0.0.1:5000",
         changeOrigin: true,
         secure: false,
       },

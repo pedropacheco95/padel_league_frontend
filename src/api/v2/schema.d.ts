@@ -104,6 +104,62 @@ export interface paths {
                 400: components["responses"]["Error"];
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/competitions/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dry run of POST /competitions — the groups and members it would create, nothing saved */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CompetitionCreate"];
+                };
+            };
+            responses: {
+                /** @description Proposed groups */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            groups: {
+                                name: string;
+                                tier: number;
+                                rating: number;
+                                players: components["schemas"]["PlayerRef"][];
+                            }[];
+                            /** @description Promotion decisions worth showing (withdrawals filled */
+                            notes?: string[];
+                        };
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
             };
         };
         delete?: never;
@@ -278,6 +334,8 @@ export interface paths {
                 };
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
             };
         };
         /** Shuffle — delete the last (unplayed) round */
@@ -303,6 +361,7 @@ export interface paths {
                 };
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
                 409: components["responses"]["Error"];
             };
         };
@@ -341,6 +400,7 @@ export interface paths {
                         "application/json": components["schemas"]["StandingRow"][];
                     };
                 };
+                404: components["responses"]["Error"];
             };
         };
         put?: never;
@@ -425,6 +485,7 @@ export interface paths {
                     };
                 };
                 400: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         put?: never;
@@ -469,6 +530,7 @@ export interface paths {
                 };
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
                 409: components["responses"]["Error"];
             };
         };
@@ -561,6 +623,8 @@ export interface paths {
                 400: components["responses"]["Error"];
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
             };
         };
         post?: never;
@@ -618,6 +682,8 @@ export interface paths {
                 400: components["responses"]["Error"];
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
             };
         };
         delete?: never;
@@ -658,6 +724,8 @@ export interface paths {
                 };
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
             };
         };
         options?: never;
@@ -770,6 +838,7 @@ export interface paths {
                     };
                 };
                 400: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         put?: never;
@@ -852,6 +921,7 @@ export interface paths {
                     };
                 };
                 400: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         put?: never;
@@ -927,6 +997,7 @@ export interface paths {
                         "application/json": components["schemas"]["Ranking"];
                     };
                 };
+                404: components["responses"]["Error"];
             };
         };
         put?: never;
@@ -967,6 +1038,8 @@ export interface paths {
                         "application/json": components["schemas"]["RankingExplanation"];
                     };
                 };
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
             };
         };
         put?: never;
@@ -1058,6 +1131,7 @@ export interface paths {
                 400: components["responses"]["Error"];
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         delete: {
@@ -1082,6 +1156,7 @@ export interface paths {
                 };
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         options?: never;
@@ -1127,8 +1202,10 @@ export interface paths {
                         "application/json": components["schemas"]["TeamsState"];
                     };
                 };
+                400: components["responses"]["Error"];
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         delete?: never;
@@ -1171,8 +1248,10 @@ export interface paths {
                         "application/json": components["schemas"]["TeamsState"];
                     };
                 };
+                400: components["responses"]["Error"];
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         options?: never;
@@ -1212,8 +1291,10 @@ export interface paths {
                         "application/json": components["schemas"]["TeamsState"];
                     };
                 };
+                400: components["responses"]["Error"];
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         delete?: never;
@@ -1255,8 +1336,10 @@ export interface paths {
                         "application/json": components["schemas"]["TeamsState"];
                     };
                 };
+                400: components["responses"]["Error"];
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         delete: {
@@ -1280,8 +1363,10 @@ export interface paths {
                         "application/json": components["schemas"]["TeamsState"];
                     };
                 };
+                400: components["responses"]["Error"];
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         options?: never;
@@ -1323,9 +1408,156 @@ export interface paths {
                 };
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
                 409: components["responses"]["Error"];
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/news": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["NewsSummary"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/news/latest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["NewsDetail"];
+                    };
+                };
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/news/{newsId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                newsId: number;
+            };
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    newsId: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["NewsDetail"];
+                    };
+                };
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sponsors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Sponsor"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1523,6 +1755,10 @@ export interface components {
             fromCompetitionId?: number | null;
             withdrawals?: number[];
             newPlayerIds?: number[];
+            /** @description tier → newcomer ids placed straight into that division (Golden Ticket) */
+            placedNewPlayers?: {
+                [key: string]: number[];
+            };
             /** @description Shuffle / Teams roster */
             playerIds?: number[];
         };
@@ -1593,6 +1829,17 @@ export interface components {
             rankingBonusPoints?: number | null;
             /** @description Shuffle next placement */
             nextGroupTier?: number | null;
+            /** @description Competition standings only — per stage (Teams mini-tournament / Shuffle round) breakdown */
+            stages?: {
+                stageNumber: number;
+                groupId?: number | null;
+                tier?: number | null;
+                place?: number | null;
+                /** @description Ranking points awarded for that stage (null while its group is live) */
+                points?: number | null;
+                /** @description Teams set points in that mini-tournament */
+                setPoints?: number | null;
+            }[];
         };
         PlayerRef: {
             id: number;
@@ -1666,6 +1913,10 @@ export interface components {
             kind: "full" | "partial";
             /** @enum {string} */
             source: "derived" | "recorded";
+            /** @description Who marked it (from audit_events); null for derived history */
+            recordedBy?: components["schemas"]["PlayerRef"] | null;
+            /** Format: date-time */
+            recordedAt?: string | null;
         };
         PlayerSummary: components["schemas"]["PlayerRef"] & {
             rankingPosition?: number | null;
@@ -1756,7 +2007,8 @@ export interface components {
             };
             players: (components["schemas"]["PlayerRef"] & {
                 rankingPoints: number;
-                rankingPosition: number;
+                /** @description null when unranked under the current rule */
+                rankingPosition: number | null;
                 paired: boolean;
                 allowedForMe: boolean;
             })[];
@@ -1778,6 +2030,25 @@ export interface components {
                 pairId: number | null;
                 isAdmin: boolean;
             };
+        };
+        Sponsor: {
+            id: number;
+            name: string;
+            /** @description The sponsor's site */
+            website: string;
+            /** @description Relative URL of the click-counting redirect (/sponsors/sponsor_click/{id}); link here, not to website */
+            clickUrl: string;
+            image?: components["schemas"]["Image"] | null;
+        };
+        NewsSummary: {
+            id: number;
+            title: string;
+            author: string | null;
+            latest: boolean;
+            coverImage: components["schemas"]["Image"] | null;
+        };
+        NewsDetail: components["schemas"]["NewsSummary"] & {
+            text: string;
         };
         User: {
             id: number;

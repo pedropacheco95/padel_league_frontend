@@ -1,4 +1,5 @@
 import { ReactNode, useEffect, useState } from 'react'
+import { V2_FORMAT_REDIRECTS } from '@/features/v2flag'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { mainApi } from '@/api/main'
@@ -95,16 +96,21 @@ export default function Layout({ children }: Props) {
                 Loja
               </Link>
             </li>
-            <li className="c-main-nav__item">
-              <Link className="c-main-nav__link" to="/teams" title="teams">
-                Teams
-              </Link>
-            </li>
-            <li className="c-main-nav__item">
-              <Link className="c-main-nav__link" to="/shuffle" title="shuffle">
-                Shuffle
-              </Link>
-            </li>
+            {/* v2: Teams and Shuffle live under Torneios (S3, Pedro 2026-10-15). */}
+            {!V2_FORMAT_REDIRECTS && (
+              <>
+                <li className="c-main-nav__item">
+                  <Link className="c-main-nav__link" to="/teams" title="teams">
+                    Teams
+                  </Link>
+                </li>
+                <li className="c-main-nav__item">
+                  <Link className="c-main-nav__link" to="/shuffle" title="shuffle">
+                    Shuffle
+                  </Link>
+                </li>
+              </>
+            )}
             <li className="c-main-nav__item">
               <Link className="c-main-nav__link" to="/chatbot" title="chatbot">
                 Chatbot

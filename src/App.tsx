@@ -27,6 +27,9 @@ import TeamsPage from "./pages/teams/TeamsPage";
 import CreateDivisionsPage from "./pages/editions/CreateDivisionsPage";
 import NextMatchweekMessagePage from "./pages/editions/NextMatchweekMessagePage";
 import GlobalApiLoader from "./components/GlobalApiLoader";
+// S3 v2 public pages (VITE_V2_PUBLIC switches the old URLs over)
+import { v2Or, v2FormatOr, v2PublicElements as v2, v2PublicRoutes } from "./features/publicRoutes";
+import CompetitionWizard from "./features/admin/CompetitionWizard";
 
 const queryClient = new QueryClient();
 
@@ -40,24 +43,27 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Layout><Home /></Layout>} />
+              <Route path="/" element={<Layout>{v2Or(<Home />, v2.home)}</Layout>} />
               <Route path="/login" element={<Layout><Login /></Layout>} />
               <Route path="/register" element={<Layout><Register /></Layout>} />
               <Route path="/forgot-password" element={<Layout><ForgotPassword /></Layout>} />
               <Route path="/verify-code/:user_id" element={<Layout><VerifyCode /></Layout>} />
-              <Route path="/tournaments" element={<Layout><TournamentsPage /></Layout>} />
-              <Route path="/tournaments/:id" element={<Layout><TournamentPage /></Layout>} />
-              <Route path="/players" element={<Layout><PlayersPage /></Layout>} />
+              <Route path="/tournaments" element={<Layout>{v2Or(<TournamentsPage />, v2.tournaments)}</Layout>} />
+              <Route path="/tournaments/:id" element={<Layout>{v2Or(<TournamentPage />, v2.tournament)}</Layout>} />
+              <Route path="/players" element={<Layout>{v2Or(<PlayersPage />, v2.players)}</Layout>} />
               <Route path="/players/edit/:id" element={<Layout><EditPlayerPage /></Layout>} />
-              <Route path="/players/:id" element={<Layout><PlayerPage /></Layout>} />
+              <Route path="/players/:id" element={<Layout>{v2Or(<PlayerPage />, v2.player)}</Layout>} />
               <Route path="/matches/for_edit" element={<Layout><ForEditPage /></Layout>} />
-              <Route path="/calendar" element={<Layout><CalendarPage /></Layout>} />
+              <Route path="/calendar" element={<Layout>{v2Or(<CalendarPage />, v2.calendar)}</Layout>} />
               <Route path="/chatbot" element={<Layout><ChatbotPage /></Layout>} />
-              <Route path="/teams" element={<Layout><TeamsPage /></Layout>} />
-              <Route path="/shuffle" element={<Layout><ShufflePage /></Layout>} />
+              <Route path="/teams" element={<Layout>{v2FormatOr(<TeamsPage />, v2.teams)}</Layout>} />
+              <Route path="/shuffle" element={<Layout>{v2FormatOr(<ShufflePage />, v2.shuffle)}</Layout>} />
               <Route path="/shuffle/create" element={<Layout><CreateShufflePage /></Layout>} />
               <Route path="/edition/create_divisions" element={<Layout><CreateDivisionsPage /></Layout>} />
               <Route path="/edition/matchweek_message" element={<Layout><NextMatchweekMessagePage /></Layout>} />
+              {/* S3: new v2 public routes */}
+              {v2PublicRoutes}
+              <Route path="/admin/competitions/new" element={<Layout><CompetitionWizard /></Layout>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
