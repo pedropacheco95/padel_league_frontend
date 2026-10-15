@@ -14,6 +14,7 @@ export default function CloseGroupButton({ groupId, hasEnded }: { groupId: numbe
     onSuccess: g => {
       qc.setQueryData(['v2', 'groups', groupId], g)
       qc.invalidateQueries({ queryKey: ['v2', 'competitions'] })
+      qc.invalidateQueries({ queryKey: ['v2', 'group', groupId] }) // S3's group page cache
       toast.success('Grupo fechado.')
       setConfirm(false)
     },

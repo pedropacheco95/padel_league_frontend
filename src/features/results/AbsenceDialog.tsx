@@ -29,12 +29,14 @@ export default function AbsenceDialog({
   const isAdmin = !!(user?.isAdmin || user?.superAdmin) // audit is for admins only
   const [playerId, setPlayerId] = useState('')
   const [substitute, setSubstitute] = useState(UNKNOWN)
+  const [onlyThisMatch, setOnlyThisMatch] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (open) {
       setPlayerId('')
       setSubstitute(UNKNOWN)
+      setOnlyThisMatch(false)
       setError(null)
     }
   }, [open])
@@ -47,6 +49,7 @@ export default function AbsenceDialog({
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ['v2', 'groups', match.groupId] })
+    qc.invalidateQueries({ queryKey: ['v2', 'group', match.groupId] }) // S3's group page cache
     qc.invalidateQueries({ predicate: q => q.queryKey[0] === 'v2' && q.queryKey[1] === 'competitions' && q.queryKey[3] === 'standings' })
   }
 
@@ -56,6 +59,7 @@ export default function AbsenceDialog({
         playerId: Number(playerId),
         groupId: match.groupId,
         substitutePlayerId: substitute === UNKNOWN ? null : Number(substitute),
+        ...(onlyThisMatch ? { kind: 'partial' as const, matchIds: [match.id] } : {}),
       }),
     onSuccess: () => {
       toast.success('Falta registada.')
@@ -110,7 +114,7 @@ export default function AbsenceDialog({
           </ul>
         )}
 
-        <p className="text-[13px] text-gray-600">Quem faltou? A falta conta para todos os jogos desta jornada.</p>
+        <p className="text-[13px] text-gray-600">Quem faltou? Por omissão a falta conta para todos os jogos desta jornada.</p>
         <div className="mt-[8px] flex flex-wrap gap-[8px]">
           {members.map(p => {
             const id = String(p.player!.id)
@@ -127,6 +131,11 @@ export default function AbsenceDialog({
             )
           })}
         </div>
+
+        <label className="mt-[12px] flex items-center gap-[8px] text-[14px]">
+          <input type="checkbox" className="h-[18px] w-[18px]" checked={onlyThisMatch} onChange={e => setOnlyThisMatch(e.target.checked)} />
+          Faltou só a este jogo (não à jornada toda)
+        </label>
 
         <label className="mt-[14px] block text-[13px] text-gray-600">
           Substituto

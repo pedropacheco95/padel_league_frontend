@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext'
 import { resultsApi } from './api'
 import AbsenceDialog from './AbsenceDialog'
 import ResultEntryDialog, { groupMatchesKey } from './ResultEntryDialog'
-import { scoreText, sideNames } from './matchText'
+import { matchAbsences, scoreText, sideNames } from './matchText'
 
 /** `groupEnded`: an ended group's results belong to the admins (the server 409s anyone else). */
 export function MatchActions({ match, roundId, groupEnded }: { match: Match; roundId?: number; groupEnded?: boolean }) {
@@ -49,9 +49,9 @@ function MatchRow({ match, roundId, groupEnded }: { match: Match; roundId?: numb
         </span>
         <span className={`truncate ${match.winner === 'away' ? 'font-semibold' : ''}`}>{away}</span>
       </div>
-      {(match.absences ?? []).length > 0 && (
+      {matchAbsences(match).length > 0 && (
         <p className="mt-[6px] text-[12px] text-amber-800">
-          Faltas: {match.absences!.map(a => `${a.player.name} (${a.substitute?.name ?? 'substituto desconhecido'})`).join(', ')}
+          Faltas: {matchAbsences(match).map(a => `${a.player.name} (${a.substitute?.name ?? 'substituto desconhecido'})`).join(', ')}
         </p>
       )}
       <div className="mt-[10px]">

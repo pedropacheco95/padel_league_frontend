@@ -83,3 +83,16 @@ describe('walkoverAbsentees', () => {
     expect(walkoverAbsentees(parts, 'home', 1)).toEqual([])
   })
 })
+
+describe('matchAbsences', () => {
+  it('shows a partial absence only where the player is missing', async () => {
+    const { matchAbsences } = await import('./matchText')
+    const abs = (id: number, kind: 'full' | 'partial') => ({ id, roundId: 1, player: { id, name: `P${id}` }, kind, source: 'recorded' as const })
+    const m = {
+      id: 1, groupId: 1, round: 1, status: 'scheduled' as const, sets: [],
+      participants: [{ side: 'home' as const, slot: 1 as const, role: 'member' as const, player: { id: 7, name: 'P7' } }],
+      absences: [abs(7, 'partial'), abs(8, 'partial'), abs(9, 'full')],
+    }
+    expect(matchAbsences(m).map(a => a.player.id)).toEqual([8, 9])
+  })
+})

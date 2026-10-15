@@ -8,6 +8,13 @@ const side = (m: Match, s: 'home' | 'away') =>
 
 export const sideParticipants = (m: Match) => [side(m, 'home'), side(m, 'away')] as const
 
+/** Absences to show on a match: the round's full ones, and a partial one only on the matches the player
+ * misses (the API lists every absence of the round on each of its matches). */
+export function matchAbsences(m: Match) {
+  const playing = new Set(m.participants.map(p => p.player?.id).filter(Boolean))
+  return (m.absences ?? []).filter(a => a.kind !== 'partial' || !playing.has(a.player.id))
+}
+
 export const sideNames = (m: Match) =>
   sideParticipants(m).map(ps => ps.map(participantName).join(' & ')) as [string, string]
 

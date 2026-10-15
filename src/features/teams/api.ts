@@ -65,8 +65,4 @@ export const teamsV2Api = {
       ? mockTeams.formDivisions(stageId)
       : (await api.post(`/stages/${stageId}/divisions`, null, v2)).data,
 
-  generateFixtures: async (competitionId: number, stageId: number, firstRoundDate?: string): Promise<Competition> =>
-    useMocks
-      ? mockTeams.competition(competitionId)
-      : (await api.post(`/competitions/${competitionId}/fixtures`, { stageId, firstRoundDate }, v2)).data,
 }
