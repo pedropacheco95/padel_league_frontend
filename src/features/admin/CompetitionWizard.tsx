@@ -1,4 +1,4 @@
-// Admin: create a competition. Clássica is built from the previous one (promotion/relegation on the
+// Admin: create a competition. Classic is built from the previous one (promotion/relegation on the
 // server, minus withdrawals, plus new players); Shuffle and Teams take a roster (Shuffle order = seed).
 // Route (proposed to S0): /admin/competitions/new.
 import { useEffect, useMemo, useState } from 'react'
@@ -9,13 +9,10 @@ import { formatPoints } from '@/components/v2/PointsValue'
 import { useAuth } from '@/context/AuthContext'
 import { errorMessage, resultsApi } from '@/features/results/api'
 import type { PlayerSummary } from '@/api/v2'
+import { FORMAT_LABEL } from '@/features/competitions/format'
 import { adminApi, type CompetitionCreate } from './api'
 
-const FORMATS: [Format, string][] = [
-  ['classica', 'Clássica'],
-  ['shuffle', 'Shuffle'],
-  ['teams', 'Teams'],
-]
+const FORMATS: [Format, string][] = (['classica', 'shuffle', 'teams'] as const).map(f => [f, FORMAT_LABEL[f]])
 
 const field = 'mt-[4px] block h-[40px] w-full rounded border border-gray-300 px-[8px] text-[15px]'
 const label = 'block text-[13px] font-semibold text-gray-700'
