@@ -101,6 +101,7 @@ export interface paths {
                     };
                 };
                 400: components["responses"]["Error"];
+                401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
             };
         };
@@ -230,6 +231,8 @@ export interface paths {
                         "application/json": components["schemas"]["Competition"];
                     };
                 };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
                 409: components["responses"]["Error"];
             };
         };
@@ -271,6 +274,8 @@ export interface paths {
                         "application/json": components["schemas"]["Competition"];
                     };
                 };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
             };
         };
         /** Shuffle — delete the last (unplayed) round */
@@ -294,6 +299,8 @@ export interface paths {
                         "application/json": components["schemas"]["Competition"];
                     };
                 };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
                 409: components["responses"]["Error"];
             };
         };
@@ -457,6 +464,8 @@ export interface paths {
                         "application/json": components["schemas"]["GroupDetail"];
                     };
                 };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
                 409: components["responses"]["Error"];
             };
         };
@@ -519,7 +528,7 @@ export interface paths {
         /**
          * Record a result (any signed-in player)
          * @description Clássica / Shuffle send one set with the games. Teams send exactly 3 sets,
-         *     each `completed` or `timeout_draw`; a walkover is `walkover` with `walkoverWinner`.
+         *     each `completed`, `timeout_draw` or `not_started`; a walkover sends no sets and `walkoverWinner` (Teams: 3-0).
          *
          */
         put: {
@@ -548,6 +557,7 @@ export interface paths {
                 };
                 400: components["responses"]["Error"];
                 401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
             };
         };
         post?: never;
@@ -603,6 +613,8 @@ export interface paths {
                     };
                 };
                 400: components["responses"]["Error"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
             };
         };
         delete?: never;
@@ -641,6 +653,8 @@ export interface paths {
                     };
                     content?: never;
                 };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
             };
         };
         options?: never;
@@ -867,6 +881,7 @@ export interface paths {
                         "application/json": components["schemas"]["Ranking"];
                     };
                 };
+                404: components["responses"]["Error"];
             };
         };
         put?: never;
@@ -1034,6 +1049,8 @@ export interface paths {
                     };
                 };
                 400: components["responses"]["Error"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
             };
         };
         delete: {
@@ -1056,6 +1073,8 @@ export interface paths {
                         "application/json": components["schemas"]["TeamsState"];
                     };
                 };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
             };
         };
         options?: never;
@@ -1101,6 +1120,8 @@ export interface paths {
                         "application/json": components["schemas"]["TeamsState"];
                     };
                 };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
             };
         };
         delete?: never;
@@ -1143,6 +1164,8 @@ export interface paths {
                         "application/json": components["schemas"]["TeamsState"];
                     };
                 };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
             };
         };
         options?: never;
@@ -1182,6 +1205,8 @@ export interface paths {
                         "application/json": components["schemas"]["TeamsState"];
                     };
                 };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
             };
         };
         delete?: never;
@@ -1223,6 +1248,8 @@ export interface paths {
                         "application/json": components["schemas"]["TeamsState"];
                     };
                 };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
             };
         };
         delete: {
@@ -1246,6 +1273,8 @@ export interface paths {
                         "application/json": components["schemas"]["TeamsState"];
                     };
                 };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
             };
         };
         options?: never;
@@ -1285,6 +1314,8 @@ export interface paths {
                         "application/json": components["schemas"]["Stage"];
                     };
                 };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
                 409: components["responses"]["Error"];
             };
         };
@@ -1401,6 +1432,8 @@ export interface paths {
                         };
                     };
                 };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
             };
         };
         put?: never;
@@ -1574,8 +1607,11 @@ export interface components {
             setNo: number;
             homeGames?: number | null;
             awayGames?: number | null;
-            /** @enum {string} */
-            outcome: "completed" | "timeout_draw" | "not_started_draw" | "walkover";
+            /**
+             * @description completed = played to a winner, games required and different; timeout_draw = in progress at time-out (games optional); not_started = never started. Teams scores timeout_draw and not_started as a drawn set (1 point each).
+             * @enum {string}
+             */
+            outcome: "completed" | "timeout_draw" | "not_started";
         };
         Match: {
             id: number;
@@ -1599,11 +1635,15 @@ export interface components {
             absences?: components["schemas"]["Absence"][];
         };
         ResultInput: {
+            /** @description Teams requires exactly 3 unless walkoverWinner is set; Clássica/Shuffle send one set with the games. */
             sets: {
                 homeGames?: number | null;
                 awayGames?: number | null;
-                /** @enum {string} */
-                outcome: "completed" | "timeout_draw" | "not_started_draw" | "walkover";
+                /**
+                 * @description completed = played to a winner, games required and different; timeout_draw = in progress at time-out (games optional); not_started = never started. Teams scores timeout_draw and not_started as a drawn set (1 point each).
+                 * @enum {string}
+                 */
+                outcome: "completed" | "timeout_draw" | "not_started";
             }[];
             /** @enum {string|null} */
             walkoverWinner?: "home" | "away" | null;
@@ -1700,33 +1740,36 @@ export interface components {
         TeamsState: {
             miniTournament: {
                 /** @description stage id */
-                id?: number;
-                number?: number;
+                id: number;
+                number: number;
                 /** Format: date-time */
-                pairingDeadline?: string;
-                pairingClosed?: boolean;
-                pairingOpen?: boolean;
+                pairingDeadline: string | null;
+                pairingClosed: boolean;
+                pairingOpen: boolean;
             };
             players: (components["schemas"]["PlayerRef"] & {
-                rankingPoints?: number;
-                rankingPosition?: number;
-                paired?: boolean;
-                allowedForMe?: boolean;
+                rankingPoints: number;
+                rankingPosition: number;
+                paired: boolean;
+                allowedForMe: boolean;
             })[];
             pairs: {
-                id?: number;
-                /** @enum {string} */
-                source?: "mutual" | "auto" | "admin";
-                players?: components["schemas"]["PlayerRef"][];
-                rankingPoints?: number;
+                id: number;
+                /**
+                 * @description formed_by mutual→mutual; ranking/draw/rotation→auto; manual→admin
+                 * @enum {string}
+                 */
+                source: "mutual" | "auto" | "admin";
+                players: components["schemas"]["PlayerRef"][];
+                rankingPoints: number;
             }[];
             me: {
-                playerId?: number | null;
-                inRoster?: boolean;
-                myChoice?: number | null;
-                choseMe?: number[];
-                pairId?: number | null;
-                isAdmin?: boolean;
+                playerId: number | null;
+                inRoster: boolean;
+                myChoice: number | null;
+                choseMe: number[];
+                pairId: number | null;
+                isAdmin: boolean;
             };
         };
         User: {

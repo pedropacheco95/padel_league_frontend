@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "gen:api": "openapi-typescript ${SPEC:-../padelleague/docs/v2/api/openapi.yaml} -o src/api/v2/schema.d.ts"
+    "gen:api": "openapi-typescript ${SPEC:-../padelleague-s0/docs/v2/api/openapi.yaml} -o src/api/v2/schema.d.ts"
   },
   "dependencies": {
     "@dnd-kit/sortable": "^10.0.0",
