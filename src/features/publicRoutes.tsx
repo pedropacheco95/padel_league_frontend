@@ -11,6 +11,7 @@ import GroupPage from './groups/GroupPage'
 import CalendarPage from './calendar/CalendarPage'
 import RankingPage from './ranking/RankingPage'
 import HomePage from './home/HomePage'
+import NewsPage from './home/NewsPage'
 import PlayersPage from './players/PlayersPage'
 import PlayerPage from './players/PlayerPage'
 
@@ -44,5 +45,6 @@ export const v2PublicRoutes = (
     <Route path="/competitions/:id" element={<Layout><CompetitionPage /></Layout>} />
     <Route path="/groups/:id" element={<Layout><GroupPage /></Layout>} />
     <Route path="/ranking" element={<Layout><RankingPage /></Layout>} />
+    <Route path="/news/:id" element={<Layout><NewsPage /></Layout>} />
   </>
 )

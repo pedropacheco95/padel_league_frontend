@@ -46,7 +46,7 @@ export default function StandingsTable({ rows, format = 'classica', highlightPla
             <th className="text-left py-[8px] px-[6px] w-[32px]">#</th>
             <th className="text-left py-[8px] px-[6px]">Jogador</th>
             {cols.map((c) => (
-              <th key={c.key} title={c.title} className={`py-[8px] px-[6px] text-center whitespace-nowrap ${c.optional ? 'hidden sm:table-cell' : ''}`}>{c.label}</th>
+              <th key={c.key} title={c.title} className={`py-[8px] px-[6px] text-center whitespace-nowrap ${c.optional ? 'max-sm:hidden' : ''}`}>{c.label}</th>
             ))}
           </tr>
         </thead>
@@ -56,7 +56,7 @@ export default function StandingsTable({ rows, format = 'classica', highlightPla
               <td className="py-[8px] px-[6px] font-semibold">{r.place}º</td>
               <td className="py-[8px] px-[6px] max-w-[180px]"><PlayerAvatar player={r.player} size={28} withName /></td>
               {cols.map((c) => (
-                <td key={c.key} className={`py-[8px] px-[6px] text-center tabular-nums ${c.key === 'pts' ? 'font-bold' : ''} ${c.optional ? 'hidden sm:table-cell' : ''}`}>{c.value(r)}</td>
+                <td key={c.key} className={`py-[8px] px-[6px] text-center tabular-nums ${c.key === 'pts' ? 'font-bold' : ''} ${c.optional ? 'max-sm:hidden' : ''}`}>{c.value(r)}</td>
               ))}
             </tr>
           ))}
