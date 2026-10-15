@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import type { CompetitionCard as Card, Format } from '@/api/v2'
 import FormatBadge from '@/components/v2/FormatBadge'
 import { useCompetitions } from './api'
-import { FORMAT_LABEL, STATUS_LABEL, formatDate, groupBySeason } from './format'
+import { FORMAT_LABEL, STATUS_LABEL, dateRange, groupBySeason } from './format'
 
 function CompetitionCard({ competition: c }: { competition: Card }) {
   const navigate = useNavigate()
@@ -29,9 +29,7 @@ function CompetitionCard({ competition: c }: { competition: Card }) {
                 {STATUS_LABEL[c.status]}
               </span>
             </div>
-            <p className="c-tournaments__date">
-              De {formatDate(c.startsOn)} a {formatDate(c.endsOn)}
-            </p>
+            <p className="c-tournaments__date">{dateRange(c.startsOn, c.endsOn) ?? 'Datas por definir'}</p>
           </header>
           <footer className="c-tournaments__bottom-card">
             <div className="c-tournaments__header">

@@ -6,7 +6,7 @@ import PageHeader from '@/components/v2/PageHeader'
 import MatchCard from '@/components/v2/MatchCard'
 import RoundSelector from '@/components/v2/RoundSelector'
 import StandingsTable from '@/components/v2/StandingsTable'
-import { formatDate } from '@/features/competitions/format'
+import { dateRange } from '@/features/competitions/format'
 import { V2NotFound } from '@/features/competitions/v2http'
 import MonthCalendar from '@/features/calendar/MonthCalendar'
 import { useGroup, useGroupMatches } from './api'
@@ -55,7 +55,7 @@ export default function GroupPage() {
           </Link>
         }
         title={g.name}
-        subtitle={`De ${formatDate(c.startsOn)} a ${formatDate(c.endsOn)}${g.hasEnded ? ' · Terminada' : ''}`}
+        subtitle={[dateRange(c.startsOn, c.endsOn), g.hasEnded ? 'Terminada' : null].filter(Boolean).join(' · ')}
         tabs={TABS}
         active={tab}
         onTab={(k: Tab) => setTab(k)}

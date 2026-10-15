@@ -31,6 +31,13 @@ export function formatDate(d?: string | null): string {
   return new Date(d).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
+/** "De x a y", or a single date, or null when the competition has no dates yet. */
+export function dateRange(from?: string | null, to?: string | null): string | null {
+  if (!from && !to) return null
+  if (from && to && from !== to) return `De ${formatDate(from)} a ${formatDate(to)}`
+  return formatDate(from ?? to)
+}
+
 export interface SeasonGroup {
   seasonId: number
   name: string

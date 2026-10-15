@@ -3,7 +3,7 @@ import type { Competition, GroupSummary } from '@/api/v2'
 import FormatBadge from '@/components/v2/FormatBadge'
 import PageHeader from '@/components/v2/PageHeader'
 import { useCompetition } from './api'
-import { STATUS_LABEL, formatDate } from './format'
+import { STATUS_LABEL, dateRange } from './format'
 import FormatPanel, { hasFormatPanel } from './FormatPanel'
 import { V2NotFound } from './v2http'
 
@@ -35,7 +35,7 @@ function Header({ c }: { c: Competition }) {
       image={c.bannerImage?.url}
       kicker={<FormatBadge competition={c} />}
       title={c.name}
-      subtitle={`${STATUS_LABEL[c.status]} · De ${formatDate(c.startsOn)} a ${formatDate(c.endsOn)}`}
+      subtitle={[STATUS_LABEL[c.status], dateRange(c.startsOn, c.endsOn)].filter(Boolean).join(' · ')}
     />
   )
 }
