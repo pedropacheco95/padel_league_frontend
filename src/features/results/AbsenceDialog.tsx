@@ -44,7 +44,7 @@ export default function AbsenceDialog({
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ['v2', 'groups', match.groupId] })
-    qc.invalidateQueries({ queryKey: ['v2', 'competitions', match.competitionId, 'standings'] })
+    qc.invalidateQueries({ predicate: q => q.queryKey[0] === 'v2' && q.queryKey[1] === 'competitions' && q.queryKey[3] === 'standings' })
   }
 
   const add = useMutation({

@@ -27,6 +27,9 @@ export const resultsApi = {
       ? mockResults.addAbsence(roundId, body)
       : (await api.post(`/rounds/${roundId}/absences`, { kind: 'full', ...body }, v2)).data,
 
+  closeGroup: async (groupId: number): Promise<GroupDetail> =>
+    useMocks ? { ...mockGroup(groupId), hasEnded: true } : (await api.post(`/groups/${groupId}/close`, null, v2)).data,
+
   deleteAbsence: async (absenceId: number): Promise<void> => {
     if (useMocks) return mockResults.deleteAbsence(absenceId)
     await api.delete(`/absences/${absenceId}`, v2)

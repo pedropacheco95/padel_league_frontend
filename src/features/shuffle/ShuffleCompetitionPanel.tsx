@@ -8,6 +8,7 @@ import type { Competition, StandingRow } from '@/api/v2'
 import { useAuth } from '@/context/AuthContext'
 import { errorMessage } from '@/features/results/api'
 import GroupMatches from '@/features/results/GroupMatches'
+import CloseGroupButton from '@/features/results/CloseGroupButton'
 import { Avatar } from '@/features/teams/PairChoice'
 import { shuffleApi } from './api'
 
@@ -183,7 +184,14 @@ export default function ShuffleCompetitionPanel({ competition: initial }: { comp
                   </button>
                 ))}
               </div>
-              {activeGroupId && <GroupMatches key={activeGroupId} groupId={activeGroupId} />}
+              {activeGroupId && (
+                <>
+                  <div className="mb-[10px]">
+                    <CloseGroupButton groupId={activeGroupId} hasEnded={groups.find(g => g.id === activeGroupId)?.hasEnded} />
+                  </div>
+                  <GroupMatches key={activeGroupId} groupId={activeGroupId} />
+                </>
+              )}
             </>
           )}
         </div>

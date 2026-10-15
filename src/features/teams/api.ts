@@ -9,6 +9,12 @@ import { mockTeams, useMocks } from './mocks'
 const useV2 = import.meta.env.VITE_TEAMS_API === 'v2'
 const v2 = { baseURL: API_V2_BASE }
 
+// Not served yet / nothing ranked yet: show the empty state, not an error.
+const emptyOn404 = (err: { response?: { status?: number } }) => {
+  if (err?.response?.status === 404) return []
+  throw err
+}
+
 type Res<T> = Promise<AxiosResponse<T>>
 
 export const teamsApi = {
@@ -52,7 +58,7 @@ export const teamsV2Api = {
     useMocks ? mockTeams.competition(competitionId) : (await api.get(`/competitions/${competitionId}`, v2)).data,
 
   standings: async (competitionId: number): Promise<StandingRow[]> =>
-    useMocks ? mockTeams.standings() : (await api.get(`/competitions/${competitionId}/standings`, v2)).data,
+    useMocks ? mockTeams.standings() : await api.get(`/competitions/${competitionId}/standings`, v2).then(r => r.data, emptyOn404),
 
   formDivisions: async (stageId: number): Promise<Stage> =>
     useMocks

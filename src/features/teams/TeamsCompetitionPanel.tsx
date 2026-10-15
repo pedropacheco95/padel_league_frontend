@@ -7,6 +7,7 @@ import type { Competition, Stage, StandingRow } from '@/api/v2'
 import { useAuth } from '@/context/AuthContext'
 import { errorMessage, resultsApi } from '@/features/results/api'
 import GroupMatches from '@/features/results/GroupMatches'
+import CloseGroupButton from '@/features/results/CloseGroupButton'
 import { teamsV2Api } from './api'
 import PairChoice, { Avatar } from './PairChoice'
 
@@ -73,6 +74,9 @@ function GroupCard({ groupId, showStandings }: { groupId: number; showStandings?
       ) : (
         <p className="text-[14px] text-gray-700">{g.members.map(m => m.name).join(', ')}</p>
       )}
+      <div className="mt-[10px]">
+        <CloseGroupButton groupId={g.id} hasEnded={g.hasEnded} />
+      </div>
     </section>
   )
 }
