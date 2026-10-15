@@ -26,11 +26,11 @@ function CompetitionCard({ competition: c }: { competition: Card }) {
             <div className="c-tournaments__header" style={banner ? { background: `url(${banner})` } : undefined} />
             <div className="flex items-center gap-[8px] flex-wrap" style={{ padding: '0 0 4px' }}>
               <FormatBadge competition={c} />
-              <span className="text-[12px] font-semibold" style={{ color: c.status === 'live' ? '#16a34a' : '#6b7280' }}>
+              <span className="text-[12px] font-semibold" style={{ color: c.status === 'live' ? '#166534' : '#4b5563' }}>
                 {STATUS_LABEL[c.status]}
               </span>
             </div>
-            <p className="c-tournaments__date">{dateRange(c.startsOn, c.endsOn) ?? 'Datas por definir'}</p>
+            <p className="c-tournaments__date" style={{ color: '#004E54' }}>{dateRange(c.startsOn, c.endsOn) ?? 'Datas por definir'}</p>
           </header>
           <footer className="c-tournaments__bottom-card">
             <div className="c-tournaments__header">
@@ -78,7 +78,7 @@ export default function CompetitionsPage() {
           <div className="flex justify-end px-[16px] pt-[16px] w-full box-border">
             <Link
               to="/admin/competitions/new"
-              className="rounded-full px-[16px] py-[8px] text-[14px] font-semibold text-white"
+              className="inline-flex items-center rounded-full px-[16px] min-h-[40px] text-[14px] font-semibold text-white"
               style={{ background: '#006A71' }}
             >
               + Nova competição
@@ -91,7 +91,7 @@ export default function CompetitionsPage() {
               key={f}
               type="button"
               onClick={() => setFormat(f)}
-              className="rounded-full px-[14px] py-[6px] text-[14px] font-semibold border"
+              className="rounded-full px-[14px] min-h-[40px] text-[14px] font-semibold border"
               style={format === f ? { background: '#006A71', color: '#fff', borderColor: '#006A71' } : { background: '#fff', color: '#006A71', borderColor: '#9ACBD0' }}
             >
               {f === 'all' ? 'Todos' : FORMAT_LABEL[f]}
@@ -114,7 +114,7 @@ export default function CompetitionsPage() {
       {seasons.length === 0 && <p className="text-center text-[15px] py-[40px]">Sem torneios.</p>}
       {!showPast && visible.length < seasons.length && (
         <form className="show_all_tournaments_container" onSubmit={(e) => { e.preventDefault(); setShowPast(true) }}>
-          <button type="submit">Épocas anteriores...</button>
+          <button type="submit" style={{ minHeight: 40 }}>Épocas anteriores...</button>
         </form>
       )}
     </>

@@ -111,11 +111,11 @@ export default function MonthCalendar({ groupId, competitionId }: { groupId?: nu
           border: '1px solid rgba(255, 255, 255, .5)',
         }}
       >
-        <button className="c-btn c-btn--small" onClick={() => changeMonth(-1)} style={{ cursor: 'pointer' }}>
+        <button className="c-btn c-btn--small" onClick={() => changeMonth(-1)} style={{ cursor: 'pointer', minWidth: 40, minHeight: 40 }}>
           ←
         </button>
         <div style={{ fontWeight: 700, textTransform: 'capitalize', color: 'white' }}>{monthLabel(month)}</div>
-        <button className="c-btn c-btn--small" onClick={() => changeMonth(1)} style={{ cursor: 'pointer' }}>
+        <button className="c-btn c-btn--small" onClick={() => changeMonth(1)} style={{ cursor: 'pointer', minWidth: 40, minHeight: 40 }}>
           →
         </button>
       </div>
@@ -205,7 +205,7 @@ export default function MonthCalendar({ groupId, competitionId }: { groupId?: nu
               {ev.title}
               {ev.played && ` (${ev.gamesHomeTeam}-${ev.gamesAwayTeam})`}
               {ev.label && (
-                <span data-cal-label style={{ display: 'block', fontSize: 11, opacity: 0.8, marginTop: 2 }}>{ev.label}</span>
+                <span data-cal-label style={{ display: 'block', fontSize: 12, marginTop: 2 }}>{ev.label}</span>
               )}
             </Link>
           ))}

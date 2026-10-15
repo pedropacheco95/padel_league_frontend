@@ -8,11 +8,13 @@ function initials(name?: string | null) {
   return (name ?? '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('')
 }
 
-export default function PlayerAvatar({ player, size = 32, withName = false, link = true }: {
+export default function PlayerAvatar({ player, size = 32, withName = false, link = true, linkClassName = '' }: {
   player?: PlayerRef | null
   size?: number
   withName?: boolean
   link?: boolean
+  /** Extra classes on the link, e.g. a taller tap area in tables. */
+  linkClassName?: string
 }) {
   // pictureUrl → site default picture → initials (the default lives on Flask, absent in mock mode).
   const [stage, setStage] = useState<0 | 1 | 2>(player?.pictureUrl && player.pictureUrl !== FALLBACK ? 0 : 1)
@@ -42,5 +44,5 @@ export default function PlayerAvatar({ player, size = 32, withName = false, link
     </span>
   )
   if (!link || !player) return body
-  return <Link to={`/players/${player.id}`} className="min-w-0" style={{ color: 'inherit' }}>{body}</Link>
+  return <Link to={`/players/${player.id}`} className={`min-w-0 ${linkClassName}`} style={{ color: 'inherit' }}>{body}</Link>
 }

@@ -54,7 +54,7 @@ export default function StandingsTable({ rows, format = 'classica', highlightPla
           {rows.map((r) => (
             <tr key={r.player.id} className={`border-b border-gray-100 ${r.player.id === highlightPlayerId ? 'bg-teal-50' : ''}`}>
               <td className="py-[8px] px-[6px] font-semibold">{r.place}º</td>
-              <td className="py-[8px] px-[6px] max-w-[180px]"><PlayerAvatar player={r.player} size={28} withName /></td>
+              <td className="py-[8px] px-[6px] max-w-[180px]"><PlayerAvatar player={r.player} size={28} withName linkClassName="flex items-center min-h-[40px]" /></td>
               {cols.map((c) => (
                 <td key={c.key} className={`py-[8px] px-[6px] text-center tabular-nums ${c.key === 'pts' ? 'font-bold' : ''} ${c.optional ? 'max-sm:hidden' : ''}`}>{c.value(r)}</td>
               ))}

@@ -10,7 +10,7 @@ function Movement({ position, previous }: { position: number; previous?: number 
   if (!previous || previous === position) return <span className="text-[12px] text-gray-400 w-[24px] text-center">–</span>
   const up = previous > position
   return (
-    <span className="text-[12px] font-semibold w-[24px] text-center" style={{ color: up ? '#16a34a' : '#dc2626' }} title={`Antes: ${previous}º`}>
+    <span className="text-[12px] font-semibold w-[24px] text-center" style={{ color: up ? '#15803d' : '#dc2626' }} title={`Antes: ${previous}º`}>
       {up ? '▲' : '▼'}{Math.abs(previous - position)}
     </span>
   )

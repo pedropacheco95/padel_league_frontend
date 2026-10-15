@@ -150,13 +150,13 @@ export default function Layout({ children }: Props) {
           <div className="c-footer__section c-footer__nav">
             <h4 className="c-footer__title">Navegação</h4>
             <ul className="c-footer__list u-list-clean">
-              <li><Link to="/">Início</Link></li>
-              <li><Link to="/tournaments">Torneios</Link></li>
-              <li><Link to="/players">Jogadores</Link></li>
-              <li><Link to="/calendar">Calendário</Link></li>
-              <li><Link to="/shop">Loja</Link></li>
-              <li><Link to="/chatbot">Chatbot</Link></li>
-              <li><Link to="/statues">Estatutos</Link></li>
+              <li><Link className="inline-flex items-center min-h-[40px]" to="/">Início</Link></li>
+              <li><Link className="inline-flex items-center min-h-[40px]" to="/tournaments">Torneios</Link></li>
+              <li><Link className="inline-flex items-center min-h-[40px]" to="/players">Jogadores</Link></li>
+              <li><Link className="inline-flex items-center min-h-[40px]" to="/calendar">Calendário</Link></li>
+              <li><Link className="inline-flex items-center min-h-[40px]" to="/shop">Loja</Link></li>
+              <li><Link className="inline-flex items-center min-h-[40px]" to="/chatbot">Chatbot</Link></li>
+              <li><Link className="inline-flex items-center min-h-[40px]" to="/statues">Estatutos</Link></li>
             </ul>
           </div>
 

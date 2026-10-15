@@ -19,12 +19,12 @@ export default function RoundSelector({ rounds, value, onChange, label = 'Jornad
     const next = rounds[idx + d]
     if (next) onChange(next.number)
   }
-  const btn = 'w-[36px] h-[36px] rounded-full border border-gray-300 bg-white text-[18px] disabled:opacity-30'
+  const btn = 'w-[40px] h-[40px] rounded-full border border-gray-300 bg-white text-[18px] disabled:opacity-30'
   return (
     <div className="flex items-center justify-center gap-[12px] my-[12px]">
       <button type="button" className={btn} onClick={() => go(-1)} disabled={idx <= 0} aria-label="Anterior">‹</button>
       <select
-        className="text-[15px] font-semibold border border-gray-300 rounded-[8px] px-[10px] py-[6px] bg-white"
+        className="text-[15px] font-semibold border border-gray-300 rounded-[8px] px-[10px] h-[40px] bg-white"
         value={value ?? ''}
         onChange={(e) => onChange(Number(e.target.value))}
       >
