@@ -74,6 +74,7 @@ export interface paths {
                         "application/json": components["schemas"]["CompetitionCard"][];
                     };
                 };
+                400: components["responses"]["Error"];
             };
         };
         put?: never;
@@ -139,6 +140,7 @@ export interface paths {
                         "application/json": components["schemas"]["CompetitionCard"];
                     };
                 };
+                400: components["responses"]["Error"];
                 404: components["responses"]["Error"];
             };
         };
@@ -422,6 +424,7 @@ export interface paths {
                         "application/json": components["schemas"]["Match"][];
                     };
                 };
+                400: components["responses"]["Error"];
             };
         };
         put?: never;
@@ -692,6 +695,7 @@ export interface paths {
                         "application/json": components["schemas"]["Match"][];
                     };
                 };
+                400: components["responses"]["Error"];
             };
         };
         put?: never;
@@ -765,6 +769,7 @@ export interface paths {
                         "application/json": components["schemas"]["PlayerComparison"];
                     };
                 };
+                400: components["responses"]["Error"];
             };
         };
         put?: never;
@@ -846,6 +851,7 @@ export interface paths {
                         "application/json": components["schemas"]["Match"][];
                     };
                 };
+                400: components["responses"]["Error"];
             };
         };
         put?: never;
@@ -1001,6 +1007,7 @@ export interface paths {
                         "application/json": components["schemas"]["TeamsState"];
                     };
                 };
+                404: components["responses"]["Error"];
             };
         };
         put?: never;
