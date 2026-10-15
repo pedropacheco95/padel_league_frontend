@@ -41,6 +41,7 @@ export const mockTeams = {
       played: 3,
       setsWon: 6 - Math.floor(i / 4),
       setsDrawn: 1,
+      stages: [{ stageNumber: 1, tier: 1, place: Math.floor(i / 2) + 1, points: 30 - Math.floor(i / 2) * 3 }],
     })),
 
   formDivisions: (stageId: number): Stage => stages.find(s => s.id === stageId) ?? stages[0],
