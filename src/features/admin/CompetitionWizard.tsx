@@ -5,10 +5,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import type { Competition, Format } from '@/api/v2'
-import { playersApi } from '@/api/players'
 import { useAuth } from '@/context/AuthContext'
-import { errorMessage } from '@/features/results/api'
-import type { PlayerShort } from '@/types'
+import { errorMessage, resultsApi } from '@/features/results/api'
+import type { PlayerSummary } from '@/api/v2'
 import { adminApi, type CompetitionCreate } from './api'
 
 const FORMATS: [Format, string][] = [
@@ -28,7 +27,7 @@ function PlayerList({
   ordered,
 }: {
   title: string
-  players: PlayerShort[]
+  players: PlayerSummary[]
   ids: number[]
   onChange: (ids: number[]) => void
   ordered?: boolean
@@ -106,10 +105,9 @@ export default function CompetitionWizard() {
     queryFn: () => adminApi.competitions('classica'),
     enabled: isAdmin && format === 'classica',
   })
-  // v1 until GET /api/v2/players is served.
   const players = useQuery({
-    queryKey: ['v1', 'players_short'],
-    queryFn: async () => (await playersApi.players_short()).data as unknown as PlayerShort[],
+    queryKey: ['v2', 'players'],
+    queryFn: resultsApi.players,
     enabled: isAdmin,
   })
 

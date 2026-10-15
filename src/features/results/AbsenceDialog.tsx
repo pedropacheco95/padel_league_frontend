@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { Match } from '@/api/v2'
-import { playersApi } from '@/api/players'
-import type { PlayerShort } from '@/types'
+import type { PlayerSummary } from '@/api/v2'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { errorMessage, resultsApi } from './api'
 import { participantName } from './matchText'
@@ -35,10 +34,9 @@ export default function AbsenceDialog({
     }
   }, [open])
 
-  // v1 until GET /api/v2/players is served (tracked as a remaining v1 call).
   const players = useQuery({
-    queryKey: ['v1', 'players_short'],
-    queryFn: async () => (await playersApi.players_short()).data as unknown as PlayerShort[],
+    queryKey: ['v2', 'players'],
+    queryFn: resultsApi.players,
     enabled: open,
   })
 

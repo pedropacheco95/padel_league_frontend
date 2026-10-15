@@ -147,7 +147,8 @@ export default function ResultEntryDialog({ match, open, onOpenChange }: { match
           </div>
         )}
 
-        <details className="mt-[12px] text-[13px]" open={!!walkover}>
+        {/* Only Teams records walkovers (the server rejects them elsewhere). */}
+        {teams && <details className="mt-[12px] text-[13px]" open={!!walkover}>
           <summary className="cursor-pointer text-gray-600">Falta de comparência (W.O.)</summary>
           <div className="mt-[8px] flex flex-wrap gap-[8px]">
             {(['home', 'away'] as const).map(side => (
@@ -160,7 +161,7 @@ export default function ResultEntryDialog({ match, open, onOpenChange }: { match
               </button>
             ))}
           </div>
-        </details>
+        </details>}
 
         {preview && (
           <p className="mt-[12px] text-[13px] text-gray-700">
