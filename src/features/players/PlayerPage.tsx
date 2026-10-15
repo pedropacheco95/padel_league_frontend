@@ -13,7 +13,8 @@ const DEFAULT_LARGE_PICTURE =
   'https://storage.googleapis.com/portopadelleague-storage/images/Player/large_pic_default.jpg'
 const FALLBACK = '/static/images/Player/default_player.jpg'
 
-const num = (v?: number) => (v === undefined || v === null ? '—' : String(v))
+// The API sends unrounded numbers; show at most one decimal (pt-PT).
+const num = (v?: number) => (v === undefined || v === null ? '—' : v.toLocaleString('pt-PT', { maximumFractionDigits: 1 }))
 const pctVal = (v?: number) => (v === undefined || v === null ? '—' : `${Math.round(v)}%`)
 
 function StatBox({ title, children }: { title: string; children: React.ReactNode }) {
