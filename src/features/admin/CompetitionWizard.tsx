@@ -53,7 +53,7 @@ function PlayerList({
           {matches.map(p => (
             <li key={p.id}>
               <button
-                className="block w-full px-[10px] py-[8px] text-left text-[14px] hover:bg-gray-50"
+                className="block min-h-[40px] w-full px-[10px] py-[8px] text-left text-[14px] hover:bg-gray-50"
                 onClick={() => {
                   onChange([...ids, p.id!])
                   setQuery('')
@@ -68,16 +68,16 @@ function PlayerList({
       {ids.length > 0 && (
         <ol className="mt-[8px] space-y-[4px] text-[14px]">
           {ids.map((id, i) => (
-            <li key={id} className="flex items-center gap-[8px] rounded bg-gray-50 px-[8px] py-[4px]">
+            <li key={id} className="flex items-center gap-[8px] rounded bg-gray-50 pl-[8px]">
               {ordered && <span className="w-[24px] text-right tabular-nums text-gray-500">{i + 1}.</span>}
               <span className="flex-1 truncate">{byId.get(id)?.name ?? `#${id}`}</span>
               {ordered && (
                 <>
-                  <button aria-label="Subir" disabled={i === 0} className="px-[6px] disabled:opacity-30" onClick={() => move(i, -1)}>↑</button>
-                  <button aria-label="Descer" disabled={i === ids.length - 1} className="px-[6px] disabled:opacity-30" onClick={() => move(i, 1)}>↓</button>
+                  <button aria-label="Subir" disabled={i === 0} className="h-[40px] w-[36px] disabled:opacity-30" onClick={() => move(i, -1)}>↑</button>
+                  <button aria-label="Descer" disabled={i === ids.length - 1} className="h-[40px] w-[36px] disabled:opacity-30" onClick={() => move(i, 1)}>↓</button>
                 </>
               )}
-              <button aria-label="Remover" className="px-[6px] text-red-700" onClick={() => onChange(ids.filter(x => x !== id))}>×</button>
+              <button aria-label="Remover" className="inline-flex h-[40px] w-[40px] shrink-0 items-center justify-center text-[18px] text-red-700" onClick={() => onChange(ids.filter(x => x !== id))}>×</button>
             </li>
           ))}
         </ol>
@@ -184,7 +184,7 @@ export default function CompetitionWizard() {
             key={f}
             role="radio"
             aria-checked={format === f}
-            className={`rounded-full px-[14px] py-[8px] text-[14px] ${format === f ? 'bg-gray-900 text-white' : 'bg-gray-100'}`}
+            className={`min-h-[40px] rounded-full px-[14px] py-[8px] text-[14px] ${format === f ? 'bg-gray-900 text-white' : 'bg-gray-100'}`}
             onClick={() => setFormat(f)}
           >
             {l}
@@ -251,14 +251,14 @@ export default function CompetitionWizard() {
       {error && <p role="alert" className="text-[14px] text-red-700">{error}</p>}
       <div className="flex flex-wrap gap-[8px]">
         <button
-          className="rounded border border-gray-900 px-[18px] py-[10px] text-[15px] font-semibold disabled:opacity-40"
+          className="min-h-[40px] rounded border border-gray-900 px-[18px] py-[10px] text-[15px] font-semibold disabled:opacity-40"
           disabled={preview.isPending}
           onClick={showPreview}
         >
           {preview.isPending ? 'A calcular…' : 'Pré-visualizar divisões'}
         </button>
         <button
-          className="rounded bg-gray-900 px-[18px] py-[10px] text-[15px] font-semibold text-white disabled:opacity-40"
+          className="min-h-[40px] rounded bg-gray-900 px-[18px] py-[10px] text-[15px] font-semibold text-white disabled:opacity-40"
           disabled={create.isPending}
           onClick={submit}
         >

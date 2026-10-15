@@ -15,7 +15,7 @@ import { shuffleApi } from './api'
 type Section = 'standings' | 'rounds'
 
 const chip = (active: boolean) =>
-  `whitespace-nowrap rounded-full px-[12px] py-[6px] text-[13px] ${active ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`
+  `min-h-[40px] whitespace-nowrap rounded-full px-[12px] py-[6px] text-[13px] ${active ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`
 
 function multipliers(c: Competition): Record<string, number> {
   const m = c.rules?.division_multipliers
@@ -88,7 +88,7 @@ function RoundAdmin({ competition }: { competition: Competition }) {
     onError: err => toast.error(errorMessage(err, 'Não foi possível apagar a jornada.')),
   })
   const busy = generate.isPending || remove.isPending
-  const btn = 'rounded px-[12px] py-[6px] text-[13px] font-semibold disabled:opacity-40'
+  const btn = 'min-h-[40px] rounded px-[12px] py-[6px] text-[13px] font-semibold disabled:opacity-40'
   return (
     <section className="mb-[18px] rounded-lg border border-amber-300 bg-amber-50 p-[12px]">
       <h3 className="mb-[8px] !text-[15px] font-semibold">Organização</h3>
@@ -102,7 +102,7 @@ function RoundAdmin({ competition }: { competition: Competition }) {
             <button className={`${btn} bg-red-700 text-white`} disabled={busy} onClick={() => remove.mutate()}>
               {remove.isPending ? 'A apagar…' : 'Sim, apagar'}
             </button>
-            <button className="text-[13px] underline" onClick={() => setConfirmDelete(false)}>Cancelar</button>
+            <button className="min-h-[40px] px-[8px] text-[13px] underline" onClick={() => setConfirmDelete(false)}>Cancelar</button>
           </>
         ) : (
           <button className={`${btn} border border-red-700 text-red-700`} disabled={busy} onClick={() => setConfirmDelete(true)}>

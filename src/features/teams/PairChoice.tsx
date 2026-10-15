@@ -7,6 +7,7 @@ import type { AxiosResponse } from 'axios'
 import { toast } from 'sonner'
 import type { PlayerRef, TeamsState } from '@/api/v2'
 import type { PlayerSummary } from '@/api/v2'
+import PlayerAvatar from '@/components/v2/PlayerAvatar'
 import { formatPoints } from '@/components/v2/PointsValue'
 import { useAuth } from '@/context/AuthContext'
 import { errorMessage, resultsApi } from '@/features/results/api'
@@ -34,15 +35,9 @@ const SOURCE_LABEL: Record<string, string> = {
   admin: 'organização',
 }
 
+// S3's PlayerAvatar: photo → site default → initials when an image fails to load.
 export function Avatar({ player, size = 36 }: { player: PlayerRef; size?: number }) {
-  const style = { width: size, height: size }
-  return player.pictureUrl ? (
-    <img src={player.pictureUrl} alt="" style={style} className="shrink-0 rounded-full object-cover" />
-  ) : (
-    <div style={style} className="flex shrink-0 items-center justify-center rounded-full bg-gray-200 text-[13px] font-semibold text-gray-600">
-      {player.name.slice(0, 1)}
-    </div>
-  )
+  return <PlayerAvatar player={player} size={size} link={false} />
 }
 
 const httpStatus = (err: unknown) => (err as { response?: { status?: number } } | null)?.response?.status
@@ -96,7 +91,7 @@ export default function PairChoice({ competitionId }: { competitionId: number })
     return (
       <p className="text-[15px] text-red-700">
         Não foi possível carregar as parelhas.{' '}
-        <button className="underline" onClick={() => stateQuery.refetch()}>Tentar outra vez</button>
+        <button className="min-h-[40px] px-[8px] underline" onClick={() => stateQuery.refetch()}>Tentar outra vez</button>
       </p>
     )
   }
@@ -170,7 +165,7 @@ export default function PairChoice({ competitionId }: { competitionId: number })
                 </p>
                 {mt.pairingOpen && (
                   <button
-                    className="rounded border border-gray-300 px-[12px] py-[6px] text-[13px] hover:bg-gray-50"
+                    className="min-h-[40px] rounded border border-gray-300 px-[12px] py-[6px] text-[13px] hover:bg-gray-50"
                     disabled={busy}
                     onClick={() => run(() => teamsApi.withdraw(competitionId), () => 'Escolha cancelada.')}
                   >
@@ -188,7 +183,7 @@ export default function PairChoice({ competitionId }: { competitionId: number })
                   {choseMe.map(p => (
                     <li key={p.id}>
                       <button
-                        className="rounded-full bg-green-600 px-[12px] py-[6px] text-[13px] font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+                        className="min-h-[40px] rounded-full bg-green-600 px-[12px] py-[6px] text-[13px] font-semibold text-white hover:bg-green-700 disabled:opacity-50"
                         disabled={busy || !canChoose}
                         onClick={() => choose(p)}
                       >
@@ -234,7 +229,7 @@ export default function PairChoice({ competitionId }: { competitionId: number })
                     <span className="text-[13px] font-semibold text-gray-600">Escolhido</span>
                   ) : (
                     <button
-                      className="rounded bg-gray-900 px-[12px] py-[6px] text-[13px] font-semibold text-white hover:bg-gray-700 disabled:opacity-40"
+                      className="min-h-[40px] rounded bg-gray-900 px-[12px] py-[6px] text-[13px] font-semibold text-white hover:bg-gray-700 disabled:opacity-40"
                       disabled={busy || p.allowedForMe === false}
                       onClick={() => choose(p)}
                     >
@@ -270,7 +265,7 @@ export default function PairChoice({ competitionId }: { competitionId: number })
                 </div>
                 {me.isAdmin && !mt.pairingClosed && pair.id != null && (
                   <button
-                    className="text-[12px] text-red-700 underline"
+                    className="min-h-[40px] shrink-0 px-[8px] text-[13px] text-red-700 underline"
                     disabled={busy}
                     onClick={() => run(() => teamsApi.unpair(competitionId, pair.id!), () => 'Parelha desfeita.')}
                   >
@@ -298,7 +293,7 @@ export default function PairChoice({ competitionId }: { competitionId: number })
             {[0, 1].map(i => (
               <select
                 key={i}
-                className="form-select"
+                className="form-select min-h-[40px] text-[15px]"
                 value={manual[i]}
                 onChange={e => setManual(m => (i === 0 ? [e.target.value, m[1]] : [m[0], e.target.value]))}
               >
@@ -309,7 +304,7 @@ export default function PairChoice({ competitionId }: { competitionId: number })
               </select>
             ))}
             <button
-              className="rounded bg-gray-900 px-[12px] py-[6px] text-[13px] font-semibold text-white disabled:opacity-40"
+              className="min-h-[40px] rounded bg-gray-900 px-[12px] py-[6px] text-[13px] font-semibold text-white disabled:opacity-40"
               disabled={busy || !manual[0] || !manual[1] || manual[0] === manual[1]}
               onClick={() =>
                 run(() => teamsApi.setPair(competitionId, [Number(manual[0]), Number(manual[1])]), () => {
@@ -325,7 +320,7 @@ export default function PairChoice({ competitionId }: { competitionId: number })
           <div className="mb-[16px]">
             <p className="text-[13px] font-semibold">Inscritos na Teams ({state.players.length})</p>
             <div className="mt-[8px] flex flex-wrap items-center gap-[8px]">
-              <select className="form-select" value={toAdd} onChange={e => setToAdd(e.target.value)}>
+              <select className="form-select min-h-[40px] text-[15px]" value={toAdd} onChange={e => setToAdd(e.target.value)}>
                 <option value="">Adicionar jogador…</option>
                 {(allPlayersQuery.data ?? [])
                   .filter(p => p.id !== null && !byId.has(p.id))
@@ -335,7 +330,7 @@ export default function PairChoice({ competitionId }: { competitionId: number })
                   ))}
               </select>
               <button
-                className="rounded bg-gray-900 px-[12px] py-[6px] text-[13px] font-semibold text-white disabled:opacity-40"
+                className="min-h-[40px] rounded bg-gray-900 px-[12px] py-[6px] text-[13px] font-semibold text-white disabled:opacity-40"
                 disabled={busy || !toAdd}
                 onClick={() =>
                   run(() => teamsApi.addToRoster(competitionId, Number(toAdd)), () => {
@@ -349,10 +344,10 @@ export default function PairChoice({ competitionId }: { competitionId: number })
             </div>
             <ul className="mt-[8px] flex flex-wrap gap-[6px]">
               {unpaired.map(p => (
-                <li key={p.id} className="flex items-center gap-[4px] rounded-full bg-white px-[10px] py-[4px] text-[13px]">
+                <li key={p.id} className="flex items-center rounded-full bg-white pl-[12px] text-[13px]">
                   {p.name}
                   <button
-                    className="text-red-700"
+                    className="inline-flex h-[40px] w-[40px] items-center justify-center text-[18px] text-red-700"
                     aria-label={`Retirar ${p.name}`}
                     disabled={busy}
                     onClick={() => run(() => teamsApi.removeFromRoster(competitionId, p.id), () => `${p.name} retirado.`)}
@@ -368,19 +363,19 @@ export default function PairChoice({ competitionId }: { competitionId: number })
             <div className="flex flex-wrap items-center gap-[8px]">
               <span className="text-[15px]">Emparelhar os restantes {unpaired.length} pelo ranking e fechar as parelhas?</span>
               <button
-                className="rounded bg-red-700 px-[12px] py-[6px] text-[13px] font-semibold text-white disabled:opacity-40"
+                className="min-h-[40px] rounded bg-red-700 px-[12px] py-[6px] text-[13px] font-semibold text-white disabled:opacity-40"
                 disabled={busy}
                 onClick={() => run(() => teamsApi.closePairing(competitionId), () => 'Parelhas fechadas.').then(() => setConfirmClose(false))}
               >
                 Sim, fechar
               </button>
-              <button className="px-[12px] py-[6px] text-[13px] underline" onClick={() => setConfirmClose(false)}>
+              <button className="min-h-[40px] px-[12px] py-[6px] text-[13px] underline" onClick={() => setConfirmClose(false)}>
                 Não
               </button>
             </div>
           ) : (
             <button
-              className="rounded border border-red-700 px-[12px] py-[6px] text-[13px] font-semibold text-red-700"
+              className="min-h-[40px] rounded border border-red-700 px-[12px] py-[6px] text-[13px] font-semibold text-red-700"
               onClick={() => setConfirmClose(true)}
             >
               Fechar parelhas

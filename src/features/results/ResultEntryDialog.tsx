@@ -126,7 +126,7 @@ export default function ResultEntryDialog({
           <span />
           <span className="truncate text-center text-[12px] font-semibold text-gray-600" title={home}>Casa</span>
           <span className="truncate text-center text-[12px] font-semibold text-gray-600" title={away}>Fora</span>
-          <span className="col-span-3 -mt-[6px] text-[12px] text-gray-500">{home} <span className="text-gray-400">vs</span> {away}</span>
+          <span className="col-span-3 -mt-[6px] text-[12px] text-gray-500">{home} <span className="text-gray-600">vs</span> {away}</span>
 
           {!walkover && sets.map((s, i) => {
             const notStarted = timeoutAt !== null && i > timeoutAt
@@ -158,7 +158,7 @@ export default function ResultEntryDialog({
           <div className="mt-[12px] flex flex-wrap items-center gap-[8px]">
             {timeoutAt === null ? (
               <button
-                className="rounded border border-amber-600 px-[10px] py-[6px] text-[13px] text-amber-800"
+                className="min-h-[40px] rounded border border-amber-600 px-[10px] py-[6px] text-[13px] text-amber-800"
                 onClick={() => setTimeoutAt(setInProgress(sets))}
               >
                 Tempo esgotado
@@ -167,11 +167,11 @@ export default function ResultEntryDialog({
               <>
                 <label className="text-[13px] text-gray-700">
                   Tempo esgotado no
-                  <select className="ml-[6px] rounded border border-gray-300 px-[4px] py-[2px]" value={timeoutAt} onChange={e => setTimeoutAt(Number(e.target.value))}>
+                  <select className="ml-[6px] min-h-[40px] rounded border border-gray-300 px-[6px] py-[2px]" value={timeoutAt} onChange={e => setTimeoutAt(Number(e.target.value))}>
                     {Array.from({ length: TEAMS_SETS }, (_, i) => <option key={i} value={i}>set {i + 1}</option>)}
                   </select>
                 </label>
-                <button className="text-[13px] underline" onClick={() => setTimeoutAt(null)}>Anular</button>
+                <button className="min-h-[40px] px-[8px] text-[13px] underline" onClick={() => setTimeoutAt(null)}>Anular</button>
               </>
             )}
           </div>
@@ -184,7 +184,7 @@ export default function ResultEntryDialog({
             {(['home', 'away'] as const).map(side => (
               <button
                 key={side}
-                className={`rounded border px-[10px] py-[6px] ${walkover === side ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-300'}`}
+                className={`min-h-[40px] rounded border px-[10px] py-[6px] ${walkover === side ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-300'}`}
                 onClick={() => {
                   setWalkover(w => (w === side ? null : side))
                   setWoAbsent(null)
@@ -203,7 +203,7 @@ export default function ResultEntryDialog({
                     key={value}
                     role="radio"
                     aria-checked={woAbsent === value}
-                    className={`rounded-full border px-[12px] py-[6px] ${woAbsent === value ? 'border-red-700 bg-red-700 text-white' : 'border-gray-300'}`}
+                    className={`min-h-[40px] rounded-full border px-[12px] py-[6px] ${woAbsent === value ? 'border-red-700 bg-red-700 text-white' : 'border-gray-300'}`}
                     onClick={() => setWoAbsent(value)}
                   >
                     {name}
@@ -222,9 +222,9 @@ export default function ResultEntryDialog({
         {error && <p role="alert" className="mt-[10px] text-[13px] text-red-700">{error}</p>}
 
         <div className="mt-[16px] flex justify-end gap-[8px]">
-          <button className="px-[12px] py-[8px] text-[14px] underline" onClick={() => onOpenChange(false)}>Cancelar</button>
+          <button className="min-h-[40px] px-[12px] py-[8px] text-[14px] underline" onClick={() => onOpenChange(false)}>Cancelar</button>
           <button
-            className="rounded bg-gray-900 px-[16px] py-[8px] text-[14px] font-semibold text-white disabled:opacity-40"
+            className="min-h-[40px] rounded bg-gray-900 px-[16px] py-[8px] text-[14px] font-semibold text-white disabled:opacity-40"
             disabled={save.isPending}
             onClick={submit}
           >
