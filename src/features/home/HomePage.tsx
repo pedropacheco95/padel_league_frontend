@@ -76,7 +76,7 @@ function NewsContainer({ latestNews, allNews }: { latestNews: News | null; allNe
 // ─── Last results ─────────────────────────────────────────────────────────────
 function sideNames(m: Match, side: 'home' | 'away') {
   const ps = m.participants.filter((p) => p.side === side).sort((a, b) => a.slot - b.slot)
-  return [0, 1].map((i) => ps[i]?.player?.name ?? (ps[i]?.role === 'unknown' ? 'Substituto' : '—'))
+  return [0, 1].map((i) => ps[i]?.player?.name ?? (ps[i] ? 'Substituto' : '—'))
 }
 
 function TeamLine({ players, result }: { players: string[]; result?: number | null }) {

@@ -2,6 +2,7 @@
 // file builds before S4's files are merged; once they exist they are picked up with no change here.
 import { Suspense, lazy, type ComponentType } from 'react'
 import type { Competition } from '@/api/v2'
+import ChunkBoundary from '@/components/v2/ChunkBoundary'
 
 type PanelProps = { competition: Competition }
 const modules = import.meta.glob<{ default: ComponentType<PanelProps> }>([
@@ -32,9 +33,13 @@ export default function FormatPanel({ competition }: PanelProps) {
   if (!Panel) return <p className="text-center text-[15px] py-[24px] text-gray-500">Em breve.</p>
   return (
     <div className="w-full max-w-[1000px] mx-auto px-[16px] py-[16px] box-border">
-      <Suspense fallback={<div className="loader" />}>
-        <Panel competition={competition} />
-      </Suspense>
+      <ChunkBoundary
+        fallback={<p className="text-center text-[15px] py-[24px]">Não foi possível carregar esta secção. <button type="button" className="underline" onClick={() => location.reload()}>Recarregar</button></p>}
+      >
+        <Suspense fallback={<div className="loader" />}>
+          <Panel competition={competition} />
+        </Suspense>
+      </ChunkBoundary>
     </div>
   )
 }
