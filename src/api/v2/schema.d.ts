@@ -112,6 +112,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/competitions/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dry run of POST /competitions — the groups and members it would create, nothing saved */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CompetitionCreate"];
+                };
+            };
+            responses: {
+                /** @description Proposed groups */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            groups: {
+                                name: string;
+                                tier: number;
+                                rating: number;
+                                players: components["schemas"]["PlayerRef"][];
+                            }[];
+                            /** @description Promotion decisions worth showing (withdrawals filled */
+                            notes?: string[];
+                        };
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/competitions/current": {
         parameters: {
             query?: never;
@@ -341,6 +393,7 @@ export interface paths {
                         "application/json": components["schemas"]["StandingRow"][];
                     };
                 };
+                404: components["responses"]["Error"];
             };
         };
         put?: never;
@@ -425,6 +478,7 @@ export interface paths {
                     };
                 };
                 400: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         put?: never;
@@ -469,6 +523,7 @@ export interface paths {
                 };
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
                 409: components["responses"]["Error"];
             };
         };
@@ -561,6 +616,8 @@ export interface paths {
                 400: components["responses"]["Error"];
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
             };
         };
         post?: never;
@@ -618,6 +675,8 @@ export interface paths {
                 400: components["responses"]["Error"];
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
             };
         };
         delete?: never;
@@ -658,6 +717,8 @@ export interface paths {
                 };
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
             };
         };
         options?: never;
@@ -770,6 +831,7 @@ export interface paths {
                     };
                 };
                 400: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         put?: never;
@@ -852,6 +914,7 @@ export interface paths {
                     };
                 };
                 400: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         put?: never;
@@ -927,6 +990,7 @@ export interface paths {
                         "application/json": components["schemas"]["Ranking"];
                     };
                 };
+                404: components["responses"]["Error"];
             };
         };
         put?: never;
@@ -967,6 +1031,7 @@ export interface paths {
                         "application/json": components["schemas"]["RankingExplanation"];
                     };
                 };
+                404: components["responses"]["Error"];
             };
         };
         put?: never;
@@ -1058,6 +1123,7 @@ export interface paths {
                 400: components["responses"]["Error"];
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         delete: {
@@ -1082,6 +1148,7 @@ export interface paths {
                 };
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         options?: never;
@@ -1127,8 +1194,10 @@ export interface paths {
                         "application/json": components["schemas"]["TeamsState"];
                     };
                 };
+                400: components["responses"]["Error"];
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         delete?: never;
@@ -1171,8 +1240,10 @@ export interface paths {
                         "application/json": components["schemas"]["TeamsState"];
                     };
                 };
+                400: components["responses"]["Error"];
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         options?: never;
@@ -1212,8 +1283,10 @@ export interface paths {
                         "application/json": components["schemas"]["TeamsState"];
                     };
                 };
+                400: components["responses"]["Error"];
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         delete?: never;
@@ -1255,8 +1328,10 @@ export interface paths {
                         "application/json": components["schemas"]["TeamsState"];
                     };
                 };
+                400: components["responses"]["Error"];
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         delete: {
@@ -1280,8 +1355,10 @@ export interface paths {
                         "application/json": components["schemas"]["TeamsState"];
                     };
                 };
+                400: components["responses"]["Error"];
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         options?: never;
@@ -1666,6 +1743,10 @@ export interface components {
             kind: "full" | "partial";
             /** @enum {string} */
             source: "derived" | "recorded";
+            /** @description Who marked it (from audit_events); null for derived history */
+            recordedBy?: components["schemas"]["PlayerRef"] | null;
+            /** Format: date-time */
+            recordedAt?: string | null;
         };
         PlayerSummary: components["schemas"]["PlayerRef"] & {
             rankingPosition?: number | null;
