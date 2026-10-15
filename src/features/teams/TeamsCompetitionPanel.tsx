@@ -22,6 +22,8 @@ const SECTIONS: [Section, string][] = [
 const chip = (active: boolean) =>
   `whitespace-nowrap rounded-full px-[12px] py-[6px] text-[13px] ${active ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`
 
+const pointsFormat = new Intl.NumberFormat('pt-PT', { maximumFractionDigits: 1 })
+
 export function TeamsStandings({ rows }: { rows: StandingRow[] }) {
   if (rows.length === 0) return <p className="text-[14px] text-gray-500">Ainda sem classificação.</p>
   return (
@@ -50,7 +52,7 @@ export function TeamsStandings({ rows }: { rows: StandingRow[] }) {
               <td className="py-[6px] pr-[8px] text-right tabular-nums">{r.played}</td>
               <td className="py-[6px] pr-[8px] text-right tabular-nums">{r.setsWon ?? '–'}</td>
               <td className="py-[6px] pr-[8px] text-right tabular-nums">{r.setsDrawn ?? '–'}</td>
-              <td className="py-[6px] text-right font-semibold tabular-nums">{r.points}</td>
+              <td className="py-[6px] text-right font-semibold tabular-nums">{pointsFormat.format(r.points)}</td>
             </tr>
           ))}
         </tbody>
@@ -219,7 +221,12 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
             standings.isError ? (
               <p className="text-[14px] text-red-700">Não foi possível carregar a classificação.</p>
             ) : (
-              <TeamsStandings rows={standings.data ?? []} />
+              <>
+                <p className="mb-[8px] text-[13px] text-gray-600">
+                  Pontos de ranking somados dos mini-torneios fechados; presenças e sets contam todos os jogos.
+                </p>
+                <TeamsStandings rows={standings.data ?? []} />
+              </>
             )
           ) : (
             <>
