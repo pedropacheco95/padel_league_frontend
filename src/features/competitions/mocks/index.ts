@@ -185,6 +185,9 @@ export function mockGet(path: string, params?: Record<string, unknown>): unknown
   if (path === '/news') {
     return [1, 2, 3, 4].map((id) => ({ id, title: `Notícia ${id}`, author: 'Direção', latest: id === 1, coverImage: null }))
   }
+  if ((m = path.match(/^\/news\/(\d+)$/))) {
+    return +m[1] <= 4 ? { id: +m[1], title: `Notícia ${m[1]}`, author: 'Direção', latest: +m[1] === 1, coverImage: null, text: '<p>Texto da notícia.</p>' } : undefined
+  }
   if (path === '/rankings/current') return ranking
   if ((m = path.match(/^\/rankings\/players\/(\d+)$/))) return rankingExplanation(+m[1])
   return undefined
