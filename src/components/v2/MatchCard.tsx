@@ -30,6 +30,13 @@ function SideRow({ parts, score, won }: { parts: Participant[]; score?: ReactNod
   )
 }
 
+/** The round's full absences, and a partial one only on matches the player misses
+ * (the API lists every absence of the round on each match). Same rule as S4's matchAbsences. */
+function shownAbsences(m: Match) {
+  const playing = new Set(m.participants.map((p) => p.player?.id).filter(Boolean))
+  return (m.absences ?? []).filter((a) => a.kind !== 'partial' || !playing.has(a.player.id))
+}
+
 export default function MatchCard({ match, actions, showGroup = false }: { match: Match; actions?: ReactNode; showGroup?: boolean }) {
   const home = match.participants.filter((p) => p.side === 'home')
   const away = match.participants.filter((p) => p.side === 'away')
@@ -45,6 +52,7 @@ export default function MatchCard({ match, actions, showGroup = false }: { match
     return <span>{s === 'home' ? match.homeScore ?? '–' : match.awayScore ?? '–'}</span>
   }
   const specialOutcomes = match.sets.filter((s) => s.outcome !== 'completed')
+  const absences = shownAbsences(match)
   const when = match.scheduledAt ? new Date(match.scheduledAt) : null
 
   return (
@@ -73,9 +81,9 @@ export default function MatchCard({ match, actions, showGroup = false }: { match
           {specialOutcomes.map((s) => `Set ${s.setNo}: ${OUTCOME_LABEL[s.outcome] ?? s.outcome}`).join(' · ')}
         </div>
       )}
-      {match.absences && match.absences.length > 0 && (
+      {absences.length > 0 && (
         <div className="text-[12px] text-gray-500 mt-[4px]">
-          Faltas: {match.absences.map((a) => `${a.player.name}${a.substitute ? ` → ${a.substitute.name}` : ''}`).join(', ')}
+          Faltas: {absences.map((a) => `${a.player.name}${a.substitute ? ` → ${a.substitute.name}` : ''}`).join(', ')}
         </div>
       )}
       {actions && <div className="flex flex-wrap gap-[8px] mt-[8px] justify-end">{actions}</div>}
