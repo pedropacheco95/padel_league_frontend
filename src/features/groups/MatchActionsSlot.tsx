@@ -4,7 +4,7 @@ import { Suspense, lazy, type ComponentType } from 'react'
 import type { Match } from '@/api/v2'
 import ChunkBoundary from '@/components/v2/ChunkBoundary'
 
-type Props = { match: Match; roundId?: number }
+type Props = { match: Match; roundId?: number; groupEnded?: boolean }
 const modules = import.meta.glob<{ MatchActions?: ComponentType<Props> }>('/src/features/results/GroupMatches.tsx')
 const loader = modules['/src/features/results/GroupMatches.tsx']
 const Actions = loader

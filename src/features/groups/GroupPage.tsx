@@ -80,7 +80,7 @@ export default function GroupPage() {
                   key={m.id}
                   match={m}
                   actions={c.format === 'teams' || c.format === 'shuffle' ? undefined : (
-                    <MatchActionsSlot match={m} roundId={rounds.find((r) => r.number === m.round && r.id !== r.number)?.id} />
+                    <MatchActionsSlot match={m} roundId={rounds.find((r) => r.number === m.round && r.id !== r.number)?.id} groupEnded={g.hasEnded} />
                   )}
                 />
               ))}
