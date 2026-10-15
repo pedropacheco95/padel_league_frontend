@@ -7,6 +7,7 @@ import type { AxiosResponse } from 'axios'
 import { toast } from 'sonner'
 import type { PlayerRef, TeamsState } from '@/api/v2'
 import type { PlayerSummary } from '@/api/v2'
+import { formatPoints } from '@/components/v2/PointsValue'
 import { useAuth } from '@/context/AuthContext'
 import { errorMessage, resultsApi } from '@/features/results/api'
 import { teamsApi } from './api'
@@ -224,7 +225,7 @@ export default function PairChoice({ competitionId }: { competitionId: number })
                     <p className="text-[15px] truncate font-medium">{p.name}</p>
                     <p className="text-[12px] text-gray-500">
                       {p.rankingPosition ? `${p.rankingPosition}.º · ` : ''}
-                      {p.rankingPoints ?? 0} pts
+                      {formatPoints(p.rankingPoints ?? 0)} pts
                       {choseYou && <span className="ml-2 font-semibold text-green-700">escolheu-te</span>}
                       {p.allowedForMe === false && <span className="ml-2">já jogaram 3 mini-torneios juntos</span>}
                     </p>
@@ -264,7 +265,7 @@ export default function PairChoice({ competitionId }: { competitionId: number })
                 <div className="min-w-0 flex-1">
                   <p className="text-[15px] truncate font-medium">{pairNames(pair.players)}</p>
                   <p className="text-[12px] text-gray-500">
-                    {pair.rankingPoints ?? 0} pts{pair.source ? ` · ${SOURCE_LABEL[pair.source] ?? pair.source}` : ''}
+                    {formatPoints(pair.rankingPoints ?? 0)} pts{pair.source ? ` · ${SOURCE_LABEL[pair.source] ?? pair.source}` : ''}
                   </p>
                 </div>
                 {me.isAdmin && !mt.pairingClosed && pair.id != null && (

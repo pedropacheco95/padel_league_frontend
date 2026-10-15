@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { Competition, Stage, StandingRow } from '@/api/v2'
+import { formatPoints } from '@/components/v2/PointsValue'
 import { useAuth } from '@/context/AuthContext'
 import { errorMessage, resultsApi } from '@/features/results/api'
 import GroupMatches from '@/features/results/GroupMatches'
@@ -22,8 +23,6 @@ const SECTIONS: [Section, string][] = [
 const chip = (active: boolean) =>
   `whitespace-nowrap rounded-full px-[12px] py-[6px] text-[13px] ${active ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`
 
-const pointsFormat = new Intl.NumberFormat('pt-PT', { maximumFractionDigits: 1 })
-
 /** `stageNumbers` (edition total): one column per mini-tournament with the points it gave (StandingRow.stages);
  * on phones those replace the set columns. */
 export function TeamsStandings({ rows, stageNumbers }: { rows: StandingRow[]; stageNumbers?: number[] }) {
@@ -34,7 +33,7 @@ export function TeamsStandings({ rows, stageNumbers }: { rows: StandingRow[]; st
     const st = r.stages?.find(x => x.stageNumber === n)
     if (!st || st.points == null) return <span className="text-gray-400">–</span>
     const title = [st.place ? `${st.place}.º` : null, st.tier ? `${st.tier}.ª Divisão` : null].filter(Boolean).join(' · ')
-    return <span title={title || undefined}>{pointsFormat.format(st.points)}</span>
+    return <span title={title || undefined}>{formatPoints(st.points)}</span>
   }
   return (
     <div className="overflow-x-auto">
@@ -68,7 +67,7 @@ export function TeamsStandings({ rows, stageNumbers }: { rows: StandingRow[]; st
               {stageNumbers?.map(n => (
                 <td key={n} className="py-[6px] pr-[8px] text-right tabular-nums">{stageCell(r, n)}</td>
               ))}
-              <td className="py-[6px] text-right font-semibold tabular-nums">{pointsFormat.format(r.points)}</td>
+              <td className="py-[6px] text-right font-semibold tabular-nums">{formatPoints(r.points)}</td>
             </tr>
           ))}
         </tbody>
@@ -85,7 +84,7 @@ function GroupCard({ groupId, showStandings }: { groupId: number; showStandings?
     <section className="rounded-lg border border-gray-200 bg-white p-[14px]">
       <h4 className="mb-[8px] text-[16px] font-semibold">
         {g.name}
-        {g.rating ? <span className="ml-[8px] text-[12px] font-normal text-gray-500">{g.rating} pts ranking</span> : null}
+        {g.rating ? <span className="ml-[8px] text-[12px] font-normal text-gray-500">{formatPoints(g.rating)} pts ranking</span> : null}
       </h4>
       {showStandings ? (
         <TeamsStandings rows={g.standings} />

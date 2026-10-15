@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import type { Competition, Format } from '@/api/v2'
+import { formatPoints } from '@/components/v2/PointsValue'
 import { useAuth } from '@/context/AuthContext'
 import { errorMessage, resultsApi } from '@/features/results/api'
 import type { PlayerSummary } from '@/api/v2'
@@ -239,7 +240,7 @@ export default function CompetitionWizard() {
           <div className="mt-[8px] grid gap-[8px] sm:grid-cols-2">
             {preview.data.groups.map(g => (
               <div key={g.tier} className="rounded bg-gray-50 p-[8px] text-[13px]">
-                <p className="font-semibold">{g.name} <span className="font-normal text-gray-500">· {g.rating} pts</span></p>
+                <p className="font-semibold">{g.name} <span className="font-normal text-gray-500">· {formatPoints(g.rating)} pts</span></p>
                 <p className="text-gray-700">{g.players.map(x => x.name).join(', ') || '—'}</p>
               </div>
             ))}
