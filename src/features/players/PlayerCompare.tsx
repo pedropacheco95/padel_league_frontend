@@ -47,7 +47,7 @@ export default function PlayerCompare({ a, b }: { a: number; b: number }) {
             <p className="text-center text-[18px] tabular-nums font-bold">
               {aW} – {dr} – {bW}
             </p>
-            <p className="text-center text-[12px] text-gray-500 mb-[8px]">{h.played ?? total} jogos</p>
+            <p className="text-center text-[12px] text-gray-500 mb-[8px]">Todos os jogos entre os dois · {h.played ?? total} jogos</p>
             <div className="flex h-[12px] w-full overflow-hidden rounded-full bg-gray-100">
               <div style={{ width: `${pct(aW)}%`, backgroundColor: '#006A71' }} />
               <div style={{ width: `${pct(dr)}%`, backgroundColor: '#9ca3af' }} />

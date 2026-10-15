@@ -19,12 +19,22 @@ function monthLabel(month: string) {
 }
 
 
-type CalendarEvent = { id: number; title: string; dateHour: string; played: boolean; gamesHomeTeam?: number | null; gamesAwayTeam?: number | null; href: string }
+type CalendarEvent = { id: number; title: string; label: string; dateHour: string; played: boolean; gamesHomeTeam?: number | null; gamesAwayTeam?: number | null; href: string }
+
+// Same title as v1 ("A / B vs C / D", "Substituto" for an empty side); the division and jornada go in a small label.
+function sideNames(m: Match, side: 'home' | 'away') {
+  const names = (m.participants ?? [])
+    .filter((p) => p.side === side && p.player)
+    .sort((x, y) => x.slot - y.slot)
+    .map((p) => p.player!.name)
+  return names.join(' / ') || 'Substituto'
+}
 
 function toEvent(m: Match): CalendarEvent {
   return {
     id: m.id,
-    title: `${m.groupName ?? 'Jogo'} · J${m.round}`,
+    title: `${sideNames(m, 'home')} vs ${sideNames(m, 'away')}`,
+    label: [m.groupName, m.round ? `J${m.round}` : null].filter(Boolean).join(' · '),
     dateHour: m.scheduledAt ?? '',
     played: m.status === 'played' || m.status === 'walkover',
     gamesHomeTeam: m.homeScore,
@@ -194,6 +204,9 @@ export default function MonthCalendar({ groupId, competitionId }: { groupId?: nu
             >
               {ev.title}
               {ev.played && ` (${ev.gamesHomeTeam}-${ev.gamesAwayTeam})`}
+              {ev.label && (
+                <span data-cal-label style={{ display: 'block', fontSize: 11, opacity: 0.8, marginTop: 2 }}>{ev.label}</span>
+              )}
             </Link>
           ))}
         </div>
