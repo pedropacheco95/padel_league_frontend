@@ -1794,6 +1794,14 @@ export interface components {
             rankingBonusPoints?: number | null;
             /** @description Shuffle next placement */
             nextGroupTier?: number | null;
+            /** @description Competition standings only — per stage (Teams mini-tournament / Shuffle round) breakdown */
+            stages?: {
+                stageNumber: number;
+                groupId?: number | null;
+                tier?: number | null;
+                place?: number | null;
+                points?: number | null;
+            }[];
         };
         PlayerRef: {
             id: number;
