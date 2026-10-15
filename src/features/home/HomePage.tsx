@@ -1,13 +1,16 @@
-// Home: news (still v1 — no news endpoint in v2), current competitions and the latest Clássica results (v2).
-import { useEffect, useMemo, useState } from 'react'
+// Home: news, current competitions and the latest Clássica results, all on /api/v2.
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useQueries } from '@tanstack/react-query'
-import { mainApi } from '@/api/main'
-import type { News } from '@/types'
-import type { CompetitionCard, GroupDetail, Match } from '@/api/v2'
+import { useQueries, useQuery } from '@tanstack/react-query'
+import type { CompetitionCard, GroupDetail, Match, Schemas } from '@/api/v2'
+import { v2get } from '@/features/competitions/v2http'
 import { useCompetition, useCompetitions } from '@/features/competitions/api'
 import { formatDate, formatLabel } from '@/features/competitions/format'
 import { groupsApi } from '@/features/groups/api'
+
+// The news cards below were written for the v1 shape; NewsSummary maps onto it.
+type News = { id: number; title: string; author: string | null; coverImageUrl: string | null }
+const toNews = (n: Schemas['NewsSummary']): News => ({ id: n.id, title: n.title, author: n.author, coverImageUrl: n.coverImage?.url ?? null })
 
 // ─── NewsContainer ────────────────────────────────────────────────────────────
 function MainNewsCard({ news }: { news: News }) {
@@ -168,14 +171,14 @@ function CompetitionTile({ c }: { c: CompetitionCard }) {
 
 // ─── Home Page ────────────────────────────────────────────────────────────────
 export default function HomePage() {
-  const [news, setNews] = useState<{ latestNews: News | null; allNews: News[] } | null>(null)
   const { data: competitions } = useCompetitions()
-
-  useEffect(() => {
-    mainApi.index()
-      .then((res) => setNews({ latestNews: res.data.latestNews, allNews: res.data.allNews ?? [] }))
-      .catch(console.error)
-  }, [])
+  const { data: newsList } = useQuery({ queryKey: ['v2', 'news'], queryFn: () => v2get<Schemas['NewsSummary'][]>('/news') })
+  // Same as v1 /main/index: the latest article, then the three newest others.
+  const news = useMemo(() => {
+    const all = newsList ?? []
+    const latest = all.find((n) => n.latest) ?? null
+    return { latestNews: latest ? toNews(latest) : null, allNews: all.filter((n) => n !== latest).slice(0, 3).map(toNews) }
+  }, [newsList])
 
   const current = (competitions ?? []).filter((c) => c.status !== 'ended')
   // Latest Clássica with results: the current season's newest, else the newest overall.
@@ -187,7 +190,7 @@ export default function HomePage() {
     <div className="l-grid">
       <div className="index_container">
         <h1 className="index_title">Notícias</h1>
-        <NewsContainer latestNews={news?.latestNews ?? null} allNews={news?.allNews ?? []} />
+        <NewsContainer latestNews={news.latestNews} allNews={news.allNews} />
 
         {current.length > 0 && (
           <>

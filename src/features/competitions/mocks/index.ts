@@ -182,6 +182,9 @@ export function mockGet(path: string, params?: Record<string, unknown>): unknown
   if (path === '/players/compare') return comparison(num(params?.a) ?? 1, num(params?.b) ?? 2)
   if ((m = path.match(/^\/players\/(\d+)$/))) return playerDetail(+m[1])
   if ((m = path.match(/^\/players\/(\d+)\/matches$/))) return groupMatches.filter((x) => x.participants.some((p) => p.player?.id === +m![1]))
+  if (path === '/news') {
+    return [1, 2, 3, 4].map((id) => ({ id, title: `Notícia ${id}`, author: 'Direção', latest: id === 1, coverImage: null }))
+  }
   if (path === '/rankings/current') return ranking
   if ((m = path.match(/^\/rankings\/players\/(\d+)$/))) return rankingExplanation(+m[1])
   return undefined
