@@ -45,6 +45,8 @@ export function Avatar({ player, size = 36 }: { player: PlayerRef; size?: number
   )
 }
 
+const httpStatus = (err: unknown) => (err as { response?: { status?: number } } | null)?.response?.status
+
 export const teamsStateKey = (competitionId: number) => ['v2', 'teams', competitionId] as const
 
 export default function PairChoice({ competitionId }: { competitionId: number }) {
@@ -58,7 +60,7 @@ export default function PairChoice({ competitionId }: { competitionId: number })
   const stateQuery = useQuery({
     queryKey: [...teamsStateKey(competitionId), user?.id ?? null],
     queryFn: async () => (await teamsApi.state(competitionId)).data,
-    retry: (count, err: any) => err?.response?.status !== 404 && count < 2,
+    retry: (count, err) => httpStatus(err) !== 404 && count < 2,
   })
   const state = stateQuery.data
 
@@ -85,7 +87,7 @@ export default function PairChoice({ competitionId }: { competitionId: number })
 
   const byId = useMemo(() => new Map((state?.players ?? []).map(p => [p.id, p])), [state])
 
-  if ((stateQuery.error as any)?.response?.status === 404) {
+  if (httpStatus(stateQuery.error) === 404) {
     return <p className="text-[15px] text-gray-600">Ainda não há mini-torneios da Teams.</p>
   }
   if (stateQuery.isError) {
