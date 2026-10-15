@@ -104,6 +104,7 @@ export interface paths {
                 400: components["responses"]["Error"];
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
                 409: components["responses"]["Error"];
             };
         };
@@ -157,6 +158,7 @@ export interface paths {
                 400: components["responses"]["Error"];
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
                 409: components["responses"]["Error"];
             };
         };
@@ -1715,6 +1717,10 @@ export interface components {
             fromCompetitionId?: number | null;
             withdrawals?: number[];
             newPlayerIds?: number[];
+            /** @description tier → newcomer ids placed straight into that division (Golden Ticket) */
+            placedNewPlayers?: {
+                [key: string]: number[];
+            };
             /** @description Shuffle / Teams roster */
             playerIds?: number[];
         };
