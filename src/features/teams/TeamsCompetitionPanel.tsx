@@ -11,11 +11,13 @@ import GroupMatches from '@/features/results/GroupMatches'
 import CloseGroupButton from '@/features/results/CloseGroupButton'
 import { teamsV2Api } from './api'
 import PairChoice, { Avatar } from './PairChoice'
+import { DivisionsProjection, PartnerSimulator } from './TeamsProjection'
 
-type Section = 'pairs' | 'divisions' | 'matches' | 'standings'
+type Section = 'pairs' | 'divisions' | 'simulator' | 'matches' | 'standings'
 const SECTIONS: [Section, string][] = [
   ['pairs', 'Parelhas'],
   ['divisions', 'Divisões'],
+  ['simulator', 'Simulador'],
   ['matches', 'Jogos'],
   ['standings', 'Classificação'],
 ]
@@ -140,6 +142,10 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
   const [groupId, setGroupId] = useState<number | null>(null)
   const activeGroupId = stage?.groups.some(g => g.id === groupId) ? groupId : stage?.groups[0]?.id ?? null
   const [standingsScope, setStandingsScope] = useState<'edition' | 'stage'>('edition')
+  // Pair formation for the current mini-tournament: Divisões is the live projection, Simulador appears.
+  const current = stages.find(s => s.id === competition.currentStageId)
+  const forming = !!current && current.groups.length === 0
+  const simulating = forming && !current.pairingClosed
 
   const standings = useQuery({
     queryKey: ['v2', 'competitions', competition.id, 'standings'],
@@ -160,7 +166,7 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
   return (
     <div className="pb-[32px]">
       <nav className="mb-[18px] flex gap-[4px] overflow-x-auto border-b border-gray-200" role="tablist">
-        {SECTIONS.map(([key, label]) => (
+        {SECTIONS.filter(([key]) => key !== 'simulator' || simulating).map(([key, label]) => (
           <button
             key={key}
             role="tab"
@@ -179,7 +185,9 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
         <div>
           {stagePicker}
           {stage && isAdmin && <StageAdmin competition={competition} stage={stage} />}
-          {!stage || stage.groups.length === 0 ? (
+          {forming && stage?.id === current.id ? (
+            <DivisionsProjection competitionId={competition.id} onSimulate={simulating ? () => setSection('simulator') : undefined} />
+          ) : !stage || stage.groups.length === 0 ? (
             <p className="text-[15px] text-gray-600">As divisões são formadas quando as parelhas fecham.</p>
           ) : (
             <div className="grid gap-[12px] md:grid-cols-2">
@@ -188,6 +196,8 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
           )}
         </div>
       )}
+
+      {section === 'simulator' && simulating && <PartnerSimulator competitionId={competition.id} />}
 
       {section === 'matches' && (
         <div>
