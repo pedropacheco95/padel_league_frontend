@@ -2200,14 +2200,15 @@ export interface components {
         NewsDetail: components["schemas"]["NewsSummary"] & {
             text: string;
         };
+        RankedPlayerRef: components["schemas"]["PlayerRef"] & {
+            rankingPoints: number;
+            rankingPosition: number | null;
+        };
         TeamsPairProjection: {
             /** @description 1..4 within the division */
             seed: number;
             pairId: number | null;
-            players: (components["schemas"]["PlayerRef"] & {
-                rankingPoints?: number;
-                rankingPosition?: number | null;
-            })[];
+            players: components["schemas"]["RankedPlayerRef"][];
             sum: number;
             /** @enum {string} */
             formedBy: "mutual" | "manual" | "ranking" | "extra";
@@ -2259,11 +2260,11 @@ export interface components {
                 rating: number;
                 maxPlacePoints: number;
                 maxBonusPoints: number;
-                partner?: Record<string, never>;
+                partner: components["schemas"]["RankedPlayerRef"];
                 sum: number;
                 sumBreakdown: {
-                    player?: components["schemas"]["PlayerRef"];
-                    points?: number;
+                    player: components["schemas"]["PlayerRef"];
+                    points: number;
                 }[];
                 gapUp: number | null;
                 marginDown: number | null;
@@ -2272,11 +2273,11 @@ export interface components {
             baseline: {
                 tier: number;
                 seed: number;
-                partner?: components["schemas"]["PlayerRef"] | null;
+                partner: components["schemas"]["PlayerRef"] | null;
                 sum: number;
             };
             candidates: {
-                player: Record<string, never>;
+                player: components["schemas"]["RankedPlayerRef"];
                 /** @enum {string} */
                 status: "free" | "confirmed" | "declaredYou" | "youDeclared";
                 pairedWith?: components["schemas"]["PlayerRef"] | null;
