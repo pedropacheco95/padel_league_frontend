@@ -2,6 +2,7 @@ import type { AxiosResponse } from 'axios'
 import { api } from '@/api/client'
 import { API_V2_BASE, type Competition, type Stage, type StandingRow, type TeamsState } from '@/api/v2'
 import { mockTeams, useMocks } from './mocks'
+import { MOCK_ME, mockProjection, mockSimulation, type TeamsProjection, type TeamsSimulation } from './projection'
 
 // Pair choice exists on both APIs with the same TeamsState shape: v1 /teams/* reads and
 // writes the v2 tables already, v2 nests it under the competition. VITE_TEAMS_API=v2
@@ -65,4 +66,16 @@ export const teamsV2Api = {
       ? mockTeams.formDivisions(stageId)
       : (await api.post(`/stages/${stageId}/divisions`, null, v2)).data,
 
+  // Live divisions while pairs form: mutual pairs as they are, the rest paired by ranking.
+  projection: async (competitionId: number): Promise<TeamsProjection> =>
+    useMocks ? mockProjection() : (await api.get(`/competitions/${competitionId}/teams/projection`, v2)).data,
+
+  // Where `player` would play with `partner` (null: no declaration, paired by ranking). Read-only.
+  simulate: async (competitionId: number, player: number | null, partner: number | null): Promise<TeamsSimulation> =>
+    useMocks
+      ? mockSimulation(player ?? MOCK_ME, partner)
+      : (await api.get(`/competitions/${competitionId}/teams/simulate`, {
+          ...v2,
+          params: { ...(player ? { player } : {}), ...(partner ? { partner } : {}) },
+        })).data,
 }
