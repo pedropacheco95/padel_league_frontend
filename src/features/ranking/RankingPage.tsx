@@ -54,8 +54,10 @@ function SubsRankingList() {
     <section className="rounded-[12px] overflow-hidden border" style={{ borderColor: SUBS_ACCENT }}>
       <header className="px-[14px] py-[10px]" style={{ background: SUBS_ACCENT, color: '#fff' }}>
         <h2 className="text-[18px] font-bold">Substitutos</h2>
-        {data?.competition && (
-          <p className="text-[12px]" style={{ color: SUBS_BG }}>Pontos de substituto na {data.competition.name}</p>
+        {!!data?.competitions?.length && (
+          <p className="text-[12px]" style={{ color: SUBS_BG }}>
+            Pontos de substituto em {data.competitions.map((c) => c.name).join(', ')}
+          </p>
         )}
       </header>
       {entries.length === 0 && <p className="text-[14px] text-center py-[16px]">Ainda sem substituições.</p>}

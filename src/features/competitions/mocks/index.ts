@@ -146,7 +146,7 @@ export const rankingExplanation = (id: number): RankingExplanation => ({
 
 // Subs: player 3 earned his main points mostly as a sub; 6 and 7 appear only in the subs ranking.
 export const subsRanking = {
-  computedAt: '2026-10-14T09:00:00Z', competition: { id: 25, name: 'Clássica I 2026/27' },
+  computedAt: '2026-10-14T09:00:00Z', competitions: [{ id: 25, name: 'Clássica I 2026/27' }, { id: 19, name: 'Clássica III 2025/26' }, { id: 20, name: 'Super Cup 2025/26' }],
   entries: [6, 3, 7].map((pid, i) => ({ position: i + 1, player: players[pid], points: 120 - i * 35.5, appearances: 5 - i, isExternal: pid === 7 })),
 } satisfies SubsRanking
 
