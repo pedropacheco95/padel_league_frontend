@@ -1132,6 +1132,94 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/competitions/{competitionId}/teams/projection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                competitionId: components["parameters"]["competitionId"];
+            };
+            cookie?: never;
+        };
+        /** Projected divisions for the current mini-tournament (what close + form divisions would produce now) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    competitionId: components["parameters"]["competitionId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TeamsProjection"];
+                    };
+                };
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/competitions/{competitionId}/teams/simulate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                competitionId: components["parameters"]["competitionId"];
+            };
+            cookie?: never;
+        };
+        /** Partner simulator (where would player + partner land) */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description defaults to the signed-in user's player */
+                    player?: number;
+                    /** @description omitted = no declaration (paired by ranking) */
+                    partner?: number;
+                };
+                header?: never;
+                path: {
+                    competitionId: components["parameters"]["competitionId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TeamsSimulation"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/competitions/{competitionId}/partner-requests": {
         parameters: {
             query?: never;
@@ -2111,6 +2199,95 @@ export interface components {
         };
         NewsDetail: components["schemas"]["NewsSummary"] & {
             text: string;
+        };
+        TeamsPairProjection: {
+            /** @description 1..4 within the division */
+            seed: number;
+            pairId: number | null;
+            players: (components["schemas"]["PlayerRef"] & {
+                rankingPoints?: number;
+                rankingPosition?: number | null;
+            })[];
+            sum: number;
+            /** @enum {string} */
+            formedBy: "mutual" | "manual" | "ranking" | "extra";
+            provisional: boolean;
+            unpairedSlots: number[] | null;
+            pending: components["schemas"]["TeamsDeclaration"][];
+            mine: boolean;
+        };
+        TeamsDeclaration: {
+            from: components["schemas"]["PlayerRef"];
+            to: components["schemas"]["PlayerRef"];
+        };
+        TeamsDivisionProjection: {
+            tier: number;
+            name: string;
+            rating: number;
+            minSum: number;
+            maxSum: number;
+            maxPlacePoints: number;
+            maxBonusPoints: number;
+            pairs: components["schemas"]["TeamsPairProjection"][];
+        };
+        TeamsProjection: {
+            stage: {
+                id: number;
+                number: number;
+                /** Format: date-time */
+                pairingDeadline: string | null;
+                pairingOpen: boolean;
+                pairingClosed: boolean;
+            };
+            counts: {
+                players: number;
+                pairsTotal: number;
+                pairsConfirmed: number;
+                unpaired: number;
+                pendingDeclarations: number;
+            };
+            pending: components["schemas"]["TeamsDeclaration"][];
+            divisions: components["schemas"]["TeamsDivisionProjection"][];
+        };
+        TeamsSimulation: components["schemas"]["TeamsProjection"] & {
+            player: components["schemas"]["PlayerRef"];
+            partner: components["schemas"]["PlayerRef"] | null;
+            locked: boolean;
+            result: {
+                tier: number;
+                seed: number;
+                rating: number;
+                maxPlacePoints: number;
+                maxBonusPoints: number;
+                partner?: Record<string, never>;
+                sum: number;
+                sumBreakdown: {
+                    player?: components["schemas"]["PlayerRef"];
+                    points?: number;
+                }[];
+                gapUp: number | null;
+                marginDown: number | null;
+                playedTogether: number[];
+            };
+            baseline: {
+                tier: number;
+                seed: number;
+                partner?: components["schemas"]["PlayerRef"] | null;
+                sum: number;
+            };
+            candidates: {
+                player: Record<string, never>;
+                /** @enum {string} */
+                status: "free" | "confirmed" | "declaredYou" | "youDeclared";
+                pairedWith?: components["schemas"]["PlayerRef"] | null;
+                allowed: boolean;
+                sum: number;
+                tier: number | null;
+                seed: number | null;
+                /** @description baseline tier − tier (positive = moves up) */
+                delta: number | null;
+                playedTogether: number[];
+            }[];
         };
         User: {
             id: number;
