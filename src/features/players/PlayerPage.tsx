@@ -4,7 +4,7 @@ import FormatBadge from '@/components/v2/FormatBadge'
 import MatchCard from '@/components/v2/MatchCard'
 import { formatPoints } from '@/components/v2/PointsValue'
 import { V2NotFound } from '@/features/competitions/v2http'
-import { playedAsSub, type PlayerDetailWithSubs } from '@/features/ranking/subs'
+import { playedAsSub } from '@/features/ranking/subs'
 import PlayerCompare from './PlayerCompare'
 import { byRanking, useV2Player, useV2PlayerMatches, useV2Players } from './api'
 
@@ -29,8 +29,7 @@ function StatBox({ title, children }: { title: string; children: React.ReactNode
 
 export default function PlayerPage() {
   const id = Number(useParams().id)
-  const { data: playerData, isLoading, error } = useV2Player(id)
-  const player = playerData as PlayerDetailWithSubs | undefined
+  const { data: player, isLoading, error } = useV2Player(id)
   const { data: list } = useV2Players()
   const { data: matches } = useV2PlayerMatches(id)
   const [activeTab, setActiveTab] = useState<Tab>('personal')
@@ -41,15 +40,15 @@ export default function PlayerPage() {
   const prev = idx > 0 ? sorted[idx - 1] : null
   const next = idx >= 0 && idx < sorted.length - 1 ? sorted[idx + 1] : null
 
-  // Sub appearances are listed on their own: S2's subsMatches, else the matches where this player had the substitute role.
+  // Sub appearances are listed on their own: substituteMatches, else the matches where this player had the substitute role.
   const { lastMatches, subsMatches } = useMemo(() => {
     const newest = (list: typeof matches) =>
       [...(list ?? [])].sort((x, y) => (y.scheduledAt ? Date.parse(y.scheduledAt) : 0) - (x.scheduledAt ? Date.parse(x.scheduledAt) : 0))
     const all = matches ?? []
-    const subs = player?.subsMatches ?? all.filter((m) => playedAsSub(m, id))
+    const subs = player?.substituteMatches ?? all.filter((m) => playedAsSub(m, id))
     const subIds = new Set(subs.map((m) => m.id))
     return { lastMatches: newest(all.filter((m) => !subIds.has(m.id))).slice(0, 10), subsMatches: newest(subs) }
-  }, [matches, player?.subsMatches, id])
+  }, [matches, player?.substituteMatches, id])
 
   if (isLoading) return <div className="loader" />
   if (error || !player) {

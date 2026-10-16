@@ -15,6 +15,7 @@ import type {
   Season,
   StandingRow,
 } from '@/api/v2'
+import type { SubsRanking } from '@/features/ranking/subs'
 
 const pic = '/static/images/Player/default_player.jpg'
 
@@ -130,7 +131,7 @@ export const playerDetail = (id: number): PlayerDetail | undefined => {
 
 export const ranking = {
   snapshotId: 12, rule: { key: 'last3_plus_current', name: 'Últimas 3 + atual' }, computedAt: '2026-10-14T09:00:00Z',
-  entries: playerSummaries.map((p, i) => ({ position: i + 1, player: p, points: p.rankingPoints ?? 0, previousPosition: i === 0 ? 2 : i === 1 ? 1 : i + 1 })),
+  entries: playerSummaries.map((p, i) => ({ position: i + 1, player: p, points: p.rankingPoints ?? 0, previousPosition: i === 0 ? 2 : i === 1 ? 1 : i + 1, fromSubs: p.id === 3 })),
 } satisfies Ranking
 
 export const rankingExplanation = (id: number): RankingExplanation => ({
@@ -145,9 +146,9 @@ export const rankingExplanation = (id: number): RankingExplanation => ({
 
 // Subs: player 3 earned his main points mostly as a sub; 6 and 7 appear only in the subs ranking.
 export const subsRanking = {
-  snapshotId: 13, rule: { key: 'subs', name: 'Substitutos' }, computedAt: '2026-10-14T09:00:00Z',
-  entries: [6, 3, 7].map((pid, i) => ({ position: i + 1, player: players[pid], points: 120 - i * 35.5, previousPosition: i + 1, appearances: 5 - i })),
-}
+  computedAt: '2026-10-14T09:00:00Z', competition: { id: 25, name: 'Clássica I 2026/27' },
+  entries: [6, 3, 7].map((pid, i) => ({ position: i + 1, player: players[pid], points: 120 - i * 35.5, appearances: 5 - i, isExternal: pid === 7 })),
+} satisfies SubsRanking
 
 export const comparison = (a: number, b: number): PlayerComparison => ({
   a: playerSummaries[a - 1], b: playerSummaries[b - 1],
@@ -188,7 +189,8 @@ export function mockGet(path: string, params?: Record<string, unknown>): unknown
   if (path === '/players/compare') return comparison(num(params?.a) ?? 1, num(params?.b) ?? 2)
   if ((m = path.match(/^\/players\/(\d+)$/))) {
     const d = playerDetail(+m[1])
-    return d && { ...d, subsMatches: +m[1] === 7 ? groupMatches.filter((x) => x.id === 5002) : [] }
+    const subs = +m[1] === 7 ? groupMatches.filter((x) => x.id === 5002) : []
+    return d && { ...d, substituteMatches: subs, stats: { ...d.stats, subsMatches: subs.length } }
   }
   if ((m = path.match(/^\/players\/(\d+)\/matches$/))) return groupMatches.filter((x) => x.participants.some((p) => p.player?.id === +m![1]))
   if (path === '/news') {
@@ -197,7 +199,7 @@ export function mockGet(path: string, params?: Record<string, unknown>): unknown
   if ((m = path.match(/^\/news\/(\d+)$/))) {
     return +m[1] <= 4 ? { id: +m[1], title: `Notícia ${m[1]}`, author: 'Direção', latest: +m[1] === 1, coverImage: null, text: '<p>Texto da notícia.</p>' } : undefined
   }
-  if (path === '/rankings/current') return { ...ranking, entries: ranking.entries.map((e) => ({ ...e, fromSubs: e.player.id === 3 })) }
+  if (path === '/rankings/current') return ranking
   if (path === '/rankings/subs') return subsRanking
   if ((m = path.match(/^\/rankings\/players\/(\d+)$/))) return rankingExplanation(+m[1])
   return undefined

@@ -1,25 +1,21 @@
-// Subs ranking (GET /rankings/subs) and the sub fields S2 is adding to /rankings/current and /players/{id}.
-// The generated types don't have them yet: the shapes live here, so S2's final contract is a one-file change.
+// Subs ranking (GET /rankings/subs) and the sub helpers shared by the ranking and player pages.
 import { useQuery } from '@tanstack/react-query'
-import type { Match, PlayerDetail, Ranking } from '@/api/v2'
-import { v2get } from '@/features/competitions/v2http'
+import type { Match, Schemas } from '@/api/v2'
+import { V2NotFound, v2get } from '@/features/competitions/v2http'
 
-export type RankingEntry = Ranking['entries'][number] & {
-  /** The player's main-ranking points come mostly from sub appearances. */
-  fromSubs?: boolean
-}
+export type SubsRanking = Schemas['SubsRanking']
 
-export type SubsRankingEntry = Ranking['entries'][number] & {
-  /** Sub appearances counted for this ranking. */
-  appearances?: number | null
-}
-
-export type SubsRanking = Omit<Ranking, 'entries'> & { entries: SubsRankingEntry[] }
-
-export type PlayerDetailWithSubs = PlayerDetail & { subsMatches?: Match[] | null }
-
+// The API answers 404 while nobody has subbed yet: that is an empty ranking, not an error.
 export const useSubsRanking = (enabled: boolean) =>
-  useQuery({ queryKey: ['v2', 'ranking', 'subs'], queryFn: () => v2get<SubsRanking>('/rankings/subs'), enabled })
+  useQuery({
+    queryKey: ['v2', 'ranking', 'subs'],
+    queryFn: () =>
+      v2get<SubsRanking>('/rankings/subs').catch((err) => {
+        if (err instanceof V2NotFound) return null
+        throw err
+      }),
+    enabled,
+  })
 
 /** True when this player took part as a substitute (filled someone else's place). */
 export const playedAsSub = (m: Match, playerId: number) =>

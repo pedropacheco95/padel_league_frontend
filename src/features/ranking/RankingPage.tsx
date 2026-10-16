@@ -6,7 +6,7 @@ import FormatBadge from '@/components/v2/FormatBadge'
 import PlayerAvatar from '@/components/v2/PlayerAvatar'
 import PointsValue from '@/components/v2/PointsValue'
 import { useCurrentRanking, useRankingExplanation } from './api'
-import { useSubsRanking, type RankingEntry } from './subs'
+import { useSubsRanking } from './subs'
 
 const SUBS_ACCENT = '#92400e'
 const SUBS_BG = '#fef3c7'
@@ -48,26 +48,27 @@ function ViewToggle({ subs, onChange }: { subs: boolean; onChange: (subs: boolea
 function SubsRankingList() {
   const { data, isLoading, isError } = useSubsRanking(true)
   if (isLoading) return <div className="loader" />
-  if (isError || !data) return <p className="text-center text-[15px] py-[24px]">Não foi possível carregar o ranking de substitutos.</p>
+  if (isError) return <p className="text-center text-[15px] py-[24px]">Não foi possível carregar o ranking de substitutos.</p>
+  const entries = data?.entries ?? []
   return (
     <section className="rounded-[12px] overflow-hidden border" style={{ borderColor: SUBS_ACCENT }}>
       <header className="px-[14px] py-[10px]" style={{ background: SUBS_ACCENT, color: '#fff' }}>
         <h2 className="text-[18px] font-bold">Substitutos</h2>
-        <p className="text-[12px]" style={{ color: SUBS_BG }}>
-          Pontos ganhos a substituir · Atualizado a {new Date(data.computedAt).toLocaleDateString('pt-PT')}
-        </p>
+        {data?.competition && (
+          <p className="text-[12px]" style={{ color: SUBS_BG }}>Pontos de substituto na {data.competition.name}</p>
+        )}
       </header>
-      {data.entries.length === 0 && <p className="text-[14px] text-center py-[16px]">Ainda sem substituições.</p>}
+      {entries.length === 0 && <p className="text-[14px] text-center py-[16px]">Ainda sem substituições.</p>}
       <ol className="u-list-clean flex flex-col" style={{ background: '#fffbeb' }}>
-        {data.entries.map((e) => (
+        {entries.map((e) => (
           <li key={e.player.id} className="border-b last:border-b-0" style={{ borderColor: '#fde68a' }}>
             <Link to={`/players/${e.player.id}`} className="flex items-center gap-[10px] min-h-[52px] px-[10px]" style={{ color: 'inherit' }}>
               <span className="w-[32px] text-[16px] font-bold text-right" style={{ color: SUBS_ACCENT }}>{e.position}º</span>
-              <Movement position={e.position} previous={e.previousPosition} />
               <PlayerAvatar player={e.player} size={36} withName link={false} />
+              {e.isExternal && <span className="text-[11px] text-gray-600 shrink-0">externo</span>}
               <span className="ml-auto flex flex-col items-end">
                 <span className="text-[16px] font-semibold tabular-nums"><PointsValue value={e.points} digits={0} /></span>
-                {e.appearances != null && <span className="text-[12px] text-gray-600">{e.appearances} {e.appearances === 1 ? 'jogo' : 'jogos'}</span>}
+                <span className="text-[12px] text-gray-600">{e.appearances} {e.appearances === 1 ? 'jogo' : 'jogos'}</span>
               </span>
             </Link>
           </li>
@@ -145,7 +146,7 @@ export default function RankingPage() {
 
   if (isLoading) return <div className="loader" />
   if (isError || !data) return <p className="text-center text-[15px] py-[40px]">Não foi possível carregar o ranking.</p>
-  const entries = data.entries as RankingEntry[]
+  const entries = data.entries
   const anyFromSubs = entries.some((e) => e.fromSubs)
 
   return (
