@@ -979,7 +979,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Substitutes ranking (points as a sub in the last completed competition × division multiplier) */
+        /** Substitutes ranking (points as a sub in the ranking window × division multiplier) */
         get: {
             parameters: {
                 query?: never;
@@ -2029,11 +2029,11 @@ export interface components {
         SubsRanking: {
             /** Format: date-time */
             computedAt?: string | null;
-            /** @description The last completed competition the subs points come from */
-            competition?: {
+            /** @description The competitions in the ranking window the subs points come from (same window as the main ranking) */
+            competitions?: {
                 id: number;
                 name: string;
-            } | null;
+            }[];
             entries: {
                 position: number;
                 player: components["schemas"]["PlayerRef"];
