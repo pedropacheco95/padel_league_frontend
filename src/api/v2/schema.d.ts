@@ -2287,6 +2287,8 @@ export interface components {
                 seed: number | null;
                 /** @description baseline tier − tier (positive = moves up) */
                 delta: number | null;
+                /** @description Why the candidate is not allowed (Portuguese) */
+                reason?: string | null;
                 playedTogether: number[];
             }[];
         };
