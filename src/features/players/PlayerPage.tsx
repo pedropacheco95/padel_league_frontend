@@ -4,6 +4,7 @@ import FormatBadge from '@/components/v2/FormatBadge'
 import MatchCard from '@/components/v2/MatchCard'
 import { formatPoints } from '@/components/v2/PointsValue'
 import { V2NotFound } from '@/features/competitions/v2http'
+import { playedAsSub, type PlayerDetailWithSubs } from '@/features/ranking/subs'
 import PlayerCompare from './PlayerCompare'
 import { byRanking, useV2Player, useV2PlayerMatches, useV2Players } from './api'
 
@@ -28,7 +29,8 @@ function StatBox({ title, children }: { title: string; children: React.ReactNode
 
 export default function PlayerPage() {
   const id = Number(useParams().id)
-  const { data: player, isLoading, error } = useV2Player(id)
+  const { data: playerData, isLoading, error } = useV2Player(id)
+  const player = playerData as PlayerDetailWithSubs | undefined
   const { data: list } = useV2Players()
   const { data: matches } = useV2PlayerMatches(id)
   const [activeTab, setActiveTab] = useState<Tab>('personal')
@@ -39,13 +41,15 @@ export default function PlayerPage() {
   const prev = idx > 0 ? sorted[idx - 1] : null
   const next = idx >= 0 && idx < sorted.length - 1 ? sorted[idx + 1] : null
 
-  const lastMatches = useMemo(
-    () =>
-      [...(matches ?? [])]
-        .sort((x, y) => (y.scheduledAt ? Date.parse(y.scheduledAt) : 0) - (x.scheduledAt ? Date.parse(x.scheduledAt) : 0))
-        .slice(0, 10),
-    [matches],
-  )
+  // Sub appearances are listed on their own: S2's subsMatches, else the matches where this player had the substitute role.
+  const { lastMatches, subsMatches } = useMemo(() => {
+    const newest = (list: typeof matches) =>
+      [...(list ?? [])].sort((x, y) => (y.scheduledAt ? Date.parse(y.scheduledAt) : 0) - (x.scheduledAt ? Date.parse(x.scheduledAt) : 0))
+    const all = matches ?? []
+    const subs = player?.subsMatches ?? all.filter((m) => playedAsSub(m, id))
+    const subIds = new Set(subs.map((m) => m.id))
+    return { lastMatches: newest(all.filter((m) => !subIds.has(m.id))).slice(0, 10), subsMatches: newest(subs) }
+  }, [matches, player?.subsMatches, id])
 
   if (isLoading) return <div className="loader" />
   if (error || !player) {
@@ -275,6 +279,21 @@ export default function PlayerPage() {
           {lastMatches.map((m) => <MatchCard key={m.id} match={m} showGroup />)}
         </div>
       </section>
+
+      {subsMatches.length > 0 && (
+        <section className="py-[16px]">
+          <div className="max-w-[700px] mx-auto px-[16px]">
+            <div className="rounded-[12px] overflow-hidden border" style={{ borderColor: '#92400e', background: '#fffbeb' }}>
+              <h2 className="text-[18px] font-semibold px-[14px] py-[10px]" style={{ background: '#92400e', color: '#fff' }}>
+                Como substituto · {subsMatches.length} {subsMatches.length === 1 ? 'jogo' : 'jogos'}
+              </h2>
+              <div className="flex flex-col gap-[12px] p-[12px]">
+                {subsMatches.map((m) => <MatchCard key={m.id} match={m} showGroup />)}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="py-[16px]">
         <h2 className="text-[18px] font-semibold text-center mb-[12px]">Comparar</h2>

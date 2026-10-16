@@ -1,10 +1,81 @@
 // Ranking with "why": tap a player to see each competition's contribution and whether it counts.
+// A toggle (?view=subs) swaps in the substitutes' ranking, drawn in amber so it can't be mistaken for the main one.
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import FormatBadge from '@/components/v2/FormatBadge'
 import PlayerAvatar from '@/components/v2/PlayerAvatar'
 import PointsValue from '@/components/v2/PointsValue'
 import { useCurrentRanking, useRankingExplanation } from './api'
+import { useSubsRanking, type RankingEntry } from './subs'
+
+const SUBS_ACCENT = '#92400e'
+const SUBS_BG = '#fef3c7'
+
+function SubsMarker() {
+  return (
+    <span
+      className="inline-flex items-center justify-center rounded-full text-[11px] font-bold px-[6px] h-[18px] shrink-0"
+      style={{ background: SUBS_BG, color: SUBS_ACCENT }}
+      title="Pontos sobretudo como substituto"
+      aria-label="Pontos sobretudo como substituto"
+    >
+      SUB
+    </span>
+  )
+}
+
+function ViewToggle({ subs, onChange }: { subs: boolean; onChange: (subs: boolean) => void }) {
+  const opt = (on: boolean, label: string, value: boolean, accent: string) => (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={on}
+      onClick={() => onChange(value)}
+      className="flex-1 min-h-[40px] rounded-full text-[14px] font-semibold"
+      style={on ? { background: accent, color: '#fff' } : { background: 'transparent', color: '#374151' }}
+    >
+      {label}
+    </button>
+  )
+  return (
+    <div role="tablist" className="flex gap-[4px] p-[4px] rounded-full bg-gray-100 max-w-[360px] mx-auto mb-[16px]">
+      {opt(!subs, 'Principal', false, '#006A71')}
+      {opt(subs, 'Substitutos', true, SUBS_ACCENT)}
+    </div>
+  )
+}
+
+function SubsRankingList() {
+  const { data, isLoading, isError } = useSubsRanking(true)
+  if (isLoading) return <div className="loader" />
+  if (isError || !data) return <p className="text-center text-[15px] py-[24px]">Não foi possível carregar o ranking de substitutos.</p>
+  return (
+    <section className="rounded-[12px] overflow-hidden border" style={{ borderColor: SUBS_ACCENT }}>
+      <header className="px-[14px] py-[10px]" style={{ background: SUBS_ACCENT, color: '#fff' }}>
+        <h2 className="text-[18px] font-bold">Substitutos</h2>
+        <p className="text-[12px]" style={{ color: SUBS_BG }}>
+          Pontos ganhos a substituir · Atualizado a {new Date(data.computedAt).toLocaleDateString('pt-PT')}
+        </p>
+      </header>
+      {data.entries.length === 0 && <p className="text-[14px] text-center py-[16px]">Ainda sem substituições.</p>}
+      <ol className="u-list-clean flex flex-col" style={{ background: '#fffbeb' }}>
+        {data.entries.map((e) => (
+          <li key={e.player.id} className="border-b last:border-b-0" style={{ borderColor: '#fde68a' }}>
+            <Link to={`/players/${e.player.id}`} className="flex items-center gap-[10px] min-h-[52px] px-[10px]" style={{ color: 'inherit' }}>
+              <span className="w-[32px] text-[16px] font-bold text-right" style={{ color: SUBS_ACCENT }}>{e.position}º</span>
+              <Movement position={e.position} previous={e.previousPosition} />
+              <PlayerAvatar player={e.player} size={36} withName link={false} />
+              <span className="ml-auto flex flex-col items-end">
+                <span className="text-[16px] font-semibold tabular-nums"><PointsValue value={e.points} digits={0} /></span>
+                {e.appearances != null && <span className="text-[12px] text-gray-600">{e.appearances} {e.appearances === 1 ? 'jogo' : 'jogos'}</span>}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ol>
+    </section>
+  )
+}
 
 function Movement({ position, previous }: { position: number; previous?: number | null }) {
   if (!previous || previous === position) return <span className="text-[12px] text-gray-400 w-[24px] text-center">–</span>
@@ -54,21 +125,44 @@ function Explanation({ playerId }: { playerId: number }) {
 }
 
 export default function RankingPage() {
+  const [params, setParams] = useSearchParams()
+  const subs = params.get('view') === 'subs'
   const { data, isLoading, isError } = useCurrentRanking()
   const [open, setOpen] = useState<number | null>(null)
+  const setSubs = (on: boolean) => setParams(on ? { view: 'subs' } : {}, { replace: true })
+
+  if (subs) {
+    return (
+      <div className="l-grid">
+        <div className="max-w-[700px] mx-auto w-full px-[16px] py-[16px]">
+          <h1 className="text-[24px] font-bold text-center mb-[12px]">Ranking</h1>
+          <ViewToggle subs onChange={setSubs} />
+          <SubsRankingList />
+        </div>
+      </div>
+    )
+  }
 
   if (isLoading) return <div className="loader" />
   if (isError || !data) return <p className="text-center text-[15px] py-[40px]">Não foi possível carregar o ranking.</p>
+  const entries = data.entries as RankingEntry[]
+  const anyFromSubs = entries.some((e) => e.fromSubs)
 
   return (
     <div className="l-grid">
       <div className="max-w-[700px] mx-auto w-full px-[16px] py-[16px]">
-        <h1 className="text-[24px] font-bold text-center">Ranking</h1>
+        <h1 className="text-[24px] font-bold text-center mb-[12px]">Ranking</h1>
+        <ViewToggle subs={false} onChange={setSubs} />
         <p className="text-[13px] text-gray-500 text-center mb-[16px]">
           {data.rule?.name ?? ''}{data.rule?.name ? ' · ' : ''}Atualizado a {new Date(data.computedAt).toLocaleDateString('pt-PT')}
         </p>
+        {anyFromSubs && (
+          <p className="text-[12px] text-gray-600 text-center mb-[12px] flex items-center justify-center gap-[6px]">
+            <SubsMarker /> pontos sobretudo como substituto
+          </p>
+        )}
         <ol className="u-list-clean flex flex-col">
-          {data.entries.map((e) => (
+          {entries.map((e) => (
             <li key={e.player.id} className="border-b border-gray-100">
               <button
                 type="button"
@@ -79,6 +173,7 @@ export default function RankingPage() {
                 <span className="w-[32px] text-[16px] font-bold text-right">{e.position}º</span>
                 <Movement position={e.position} previous={e.previousPosition} />
                 <PlayerAvatar player={e.player} size={36} withName link={false} />
+                {e.fromSubs && <SubsMarker />}
                 <span className="ml-auto text-[16px] font-semibold tabular-nums"><PointsValue value={e.points} digits={0} /></span>
                 <span className="text-[12px] text-gray-400 w-[14px]">{open === e.player.id ? '▾' : '▸'}</span>
               </button>

@@ -143,6 +143,12 @@ export const rankingExplanation = (id: number): RankingExplanation => ({
   ],
 })
 
+// Subs: player 3 earned his main points mostly as a sub; 6 and 7 appear only in the subs ranking.
+export const subsRanking = {
+  snapshotId: 13, rule: { key: 'subs', name: 'Substitutos' }, computedAt: '2026-10-14T09:00:00Z',
+  entries: [6, 3, 7].map((pid, i) => ({ position: i + 1, player: players[pid], points: 120 - i * 35.5, previousPosition: i + 1, appearances: 5 - i })),
+}
+
 export const comparison = (a: number, b: number): PlayerComparison => ({
   a: playerSummaries[a - 1], b: playerSummaries[b - 1],
   headToHead: { played: 4, aWins: 2, bWins: 1, draws: 1 },
@@ -180,7 +186,10 @@ export function mockGet(path: string, params?: Record<string, unknown>): unknown
   if (path === '/calendar') return groupMatches
   if (path === '/players') return playerSummaries
   if (path === '/players/compare') return comparison(num(params?.a) ?? 1, num(params?.b) ?? 2)
-  if ((m = path.match(/^\/players\/(\d+)$/))) return playerDetail(+m[1])
+  if ((m = path.match(/^\/players\/(\d+)$/))) {
+    const d = playerDetail(+m[1])
+    return d && { ...d, subsMatches: +m[1] === 7 ? groupMatches.filter((x) => x.id === 5002) : [] }
+  }
   if ((m = path.match(/^\/players\/(\d+)\/matches$/))) return groupMatches.filter((x) => x.participants.some((p) => p.player?.id === +m![1]))
   if (path === '/news') {
     return [1, 2, 3, 4].map((id) => ({ id, title: `Notícia ${id}`, author: 'Direção', latest: id === 1, coverImage: null }))
@@ -188,7 +197,8 @@ export function mockGet(path: string, params?: Record<string, unknown>): unknown
   if ((m = path.match(/^\/news\/(\d+)$/))) {
     return +m[1] <= 4 ? { id: +m[1], title: `Notícia ${m[1]}`, author: 'Direção', latest: +m[1] === 1, coverImage: null, text: '<p>Texto da notícia.</p>' } : undefined
   }
-  if (path === '/rankings/current') return ranking
+  if (path === '/rankings/current') return { ...ranking, entries: ranking.entries.map((e) => ({ ...e, fromSubs: e.player.id === 3 })) }
+  if (path === '/rankings/subs') return subsRanking
   if ((m = path.match(/^\/rankings\/players\/(\d+)$/))) return rankingExplanation(+m[1])
   return undefined
 }
