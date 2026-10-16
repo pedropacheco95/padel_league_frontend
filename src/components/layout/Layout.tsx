@@ -91,11 +91,6 @@ export default function Layout({ children }: Props) {
                 Calendário
               </Link>
             </li>
-            <li className="c-main-nav__item">
-              <Link className="c-main-nav__link" to="/shop" title="shop">
-                Loja
-              </Link>
-            </li>
             {/* v2: Teams and Shuffle live under Torneios (S3, Pedro 2026-10-15). */}
             {!V2_FORMAT_REDIRECTS && (
               <>
@@ -154,7 +149,6 @@ export default function Layout({ children }: Props) {
               <li><Link className="inline-flex items-center min-h-[40px]" to="/tournaments">Torneios</Link></li>
               <li><Link className="inline-flex items-center min-h-[40px]" to="/players">Jogadores</Link></li>
               <li><Link className="inline-flex items-center min-h-[40px]" to="/calendar">Calendário</Link></li>
-              <li><Link className="inline-flex items-center min-h-[40px]" to="/shop">Loja</Link></li>
               <li><Link className="inline-flex items-center min-h-[40px]" to="/chatbot">Chatbot</Link></li>
               <li><Link className="inline-flex items-center min-h-[40px]" to="/statues">Estatutos</Link></li>
             </ul>

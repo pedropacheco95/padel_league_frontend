@@ -5,13 +5,14 @@ import { useAuth } from '@/context/AuthContext'
 import type { CompetitionCard as Card, Format } from '@/api/v2'
 import FormatBadge from '@/components/v2/FormatBadge'
 import { useCompetitions } from './api'
-import { FORMAT_LABEL, STATUS_LABEL, dateRange, groupBySeason } from './format'
+import { FORMAT_COLOR, FORMAT_LABEL, STATUS_LABEL, dateRange, groupBySeason } from './format'
 
 function CompetitionCard({ competition: c }: { competition: Card }) {
   const navigate = useNavigate()
   const to = `/competitions/${c.id}`
   const poster = c.coverImage?.url
-  const banner = c.bannerImage?.url
+  // The top strip uses the banner, else the cover (the poster column is hidden on phones), else a format-coloured band.
+  const banner = c.bannerImage?.url ?? poster
   return (
     <div className="c-tournaments c-tournaments--new c-tournaments--fixed tournament__container" onClick={() => navigate(to)}>
       <div className="c-tournaments__container">
@@ -23,7 +24,16 @@ function CompetitionCard({ competition: c }: { competition: Card }) {
         </div>
         <div className="c-tournaments__content">
           <header className="c-tournaments__top-card">
-            <div className="c-tournaments__header" style={banner ? { background: `url(${banner})` } : undefined} />
+            {banner ? (
+              <div className="c-tournaments__header" style={{ backgroundImage: `url(${banner})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+            ) : (
+              <div
+                className="c-tournaments__header flex items-center justify-center"
+                style={{ padding: 0, background: `linear-gradient(135deg, ${FORMAT_COLOR[c.format] ?? '#006A71'}, #48A6A7)` }}
+              >
+                <span className="text-[32px] font-bold uppercase tracking-[2px] text-white">{FORMAT_LABEL[c.format] ?? c.format}</span>
+              </div>
+            )}
             <div className="flex items-center gap-[8px] flex-wrap" style={{ padding: '0 0 4px' }}>
               <FormatBadge competition={c} />
               <span className="text-[12px] font-semibold" style={{ color: c.status === 'live' ? '#166534' : '#4b5563' }}>
@@ -73,18 +83,8 @@ export default function CompetitionsPage() {
 
   return (
     <>
-      <div className="l-grid">
-        {user?.isAdmin && (
-          <div className="flex justify-end px-[16px] pt-[16px] w-full box-border">
-            <Link
-              to="/admin/competitions/new"
-              className="inline-flex items-center rounded-full px-[16px] min-h-[40px] text-[14px] font-semibold text-white"
-              style={{ background: '#006A71' }}
-            >
-              + Nova competição
-            </Link>
-          </div>
-        )}
+      {/* .l-grid adds 50px bottom padding and .c-section__title 40px margins: tightened here for the list. */}
+      <div className="l-grid" style={{ paddingBottom: 0 }}>
         <div className="flex flex-wrap gap-[8px] justify-center pt-[16px] px-[16px] w-full box-border">
           {FILTERS.map((f) => (
             <button
@@ -97,14 +97,23 @@ export default function CompetitionsPage() {
               {f === 'all' ? 'Todos' : FORMAT_LABEL[f]}
             </button>
           ))}
+          {user?.isAdmin && (
+            <Link
+              to="/admin/competitions/new"
+              className="inline-flex items-center rounded-full px-[14px] min-h-[40px] text-[14px] font-semibold text-white"
+              style={{ background: '#92400e' }}
+            >
+              + Nova competição
+            </Link>
+          )}
         </div>
       </div>
       {visible.map((s) => (
         <section className="c-section" key={s.seasonId}>
           <div className="c-section__bg" />
-          <div className="l-grid">
-            <span className="c-section__line" />
-            <h2 className="c-section__title">Época {s.name}</h2>
+          <div className="l-grid" style={{ paddingBottom: 0 }}>
+            <span className="c-section__line" style={{ marginTop: 34 }} />
+            <h2 className="c-section__title" style={{ marginTop: 24, marginBottom: 16 }}>Época {s.name}</h2>
           </div>
           <div className="l-grid l-grid--flex l-grid--flex-centered tournaments_grid">
             {s.competitions.map((c) => <CompetitionCard key={c.id} competition={c} />)}
@@ -113,7 +122,7 @@ export default function CompetitionsPage() {
       ))}
       {seasons.length === 0 && <p className="text-center text-[15px] py-[40px]">Sem torneios.</p>}
       {!showPast && visible.length < seasons.length && (
-        <form className="show_all_tournaments_container" onSubmit={(e) => { e.preventDefault(); setShowPast(true) }}>
+        <form className="show_all_tournaments_container" style={{ paddingTop: 0 }} onSubmit={(e) => { e.preventDefault(); setShowPast(true) }}>
           <button type="submit" style={{ minHeight: 40 }}>Épocas anteriores...</button>
         </form>
       )}
