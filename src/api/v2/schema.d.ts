@@ -972,6 +972,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/rankings/subs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Substitutes ranking (points as a sub in the last completed competition × division multiplier) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SubsRanking"];
+                    };
+                };
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/rankings/{snapshotId}": {
         parameters: {
             query?: never;
@@ -1935,6 +1972,8 @@ export interface components {
             height?: number | null;
             /** Format: date */
             birthDate?: string | null;
+            /** @description Matches played as a substitute, newest first (not counted in member stats) */
+            substituteMatches?: components["schemas"]["Match"][];
             /** @description One row per competition entry, newest first */
             history?: {
                 competition?: components["schemas"]["CompetitionCard"];
@@ -1983,6 +2022,28 @@ export interface components {
                 /** @description Unrounded */
                 points: number;
                 previousPosition?: number | null;
+                /**
+                 * @description Art. 12: a new player whose points come from substitute appearances
+                 * @default false
+                 */
+                fromSubs: boolean;
+            }[];
+        };
+        SubsRanking: {
+            /** Format: date-time */
+            computedAt?: string | null;
+            /** @description The last completed competition the subs points come from */
+            competition?: {
+                id: number;
+                name: string;
+            } | null;
+            entries: {
+                position: number;
+                player: components["schemas"]["PlayerRef"];
+                /** @description Sum of substitute points × division multiplier (1ª×10 … 6ª×3) */
+                points: number;
+                appearances: number;
+                isExternal: boolean;
             }[];
         };
         RankingExplanation: {
