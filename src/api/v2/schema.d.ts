@@ -2022,11 +2022,8 @@ export interface components {
                 /** @description Unrounded */
                 points: number;
                 previousPosition?: number | null;
-                /**
-                 * @description Art. 12: a new player whose points come from substitute appearances
-                 * @default false
-                 */
-                fromSubs: boolean;
+                /** @description Art. 12: a new player whose points come from substitute appearances */
+                fromSubs?: boolean;
             }[];
         };
         SubsRanking: {
