@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react'
-import { useNavigate, useParams, Link } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { authApi } from '../../api/auth'
 import { useAuth } from '@/context/AuthContext'
 
@@ -8,10 +8,12 @@ export default function VerifyCode() {
   const navigate = useNavigate()
   const { signInWithTokens } = useAuth()
 
-  const [code, setCode] = useState('')
+  const [searchParams] = useSearchParams()
+  // The admin's WhatsApp link carries the code (?code=12345); a fresh request says so (?requested=1).
+  const [code, setCode] = useState(searchParams.get('code') ?? '')
+  const requested = searchParams.get('requested') === '1'
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [resending, setResending] = useState(false)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -31,23 +33,18 @@ export default function VerifyCode() {
     }
   }
 
-  const handleResend = async () => {
-    setResending(true)
-    try {
-      await authApi.generateNewCode(Number(user_id))
-    } catch {
-      setError('Erro ao reenviar código.')
-    } finally {
-      setResending(false)
-    }
-  }
-
   return (
     <div className="l-grid">
       <div className="login_container">
         <div className="inner_login_container">
 
           <h1>Verificar Código</h1>
+
+          <p style={{ color: 'black', marginBottom: 12 }}>
+            {requested
+              ? 'Pedido enviado! O Pedro ou a Dudas vão enviar-te o código por WhatsApp. Abre o link que te mandarem, ou escreve o código aqui.'
+              : 'Escreve o código que o Pedro ou a Dudas te enviaram por WhatsApp.'}
+          </p>
 
           {error && (
             <div className="alert alert-danger">
@@ -59,7 +56,10 @@ export default function VerifyCode() {
             <div className="form-group">
               <input
                 className="form-control"
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="one-time-code"
                 name="generated_code"
                 placeholder="Código"
                 autoFocus
@@ -77,16 +77,6 @@ export default function VerifyCode() {
               {loading ? 'A verificar...' : 'Verificar'}
             </button>
           </form>
-
-          <div className="forgot_password_container">
-            <button
-              className="btn btn-secondary"
-              onClick={handleResend}
-              disabled={resending}
-            >
-              {resending ? 'A reenviar...' : 'Reenviar Código'}
-            </button>
-          </div>
 
         </div>
       </div>

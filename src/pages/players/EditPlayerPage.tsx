@@ -197,6 +197,11 @@ export default function EditPlayerPage() {
                 </div>
               )}
 
+              {passwordReset && (
+                <p style={{ color: 'black', fontWeight: 'bold', marginBottom: 8 }}>
+                  Código aceite. Escreve a tua nova password e carrega em Submeter, no fim da página.
+                </p>
+              )}
               <div className="form-group optional">
                 <label htmlFor="password" style={{ color: 'black' }}>Nova password</label>
                 <input
@@ -205,7 +210,8 @@ export default function EditPlayerPage() {
                   name="password"
                   type="password"
                   autoComplete="new-password"
-                  placeholder="Deixa em branco para manter"
+                  placeholder={passwordReset ? 'Nova password' : 'Deixa em branco para manter'}
+                  autoFocus={passwordReset}
                   value={form.password}
                   onChange={handleChange}
                 />

@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { mainApi } from '@/api/main'
 import { Sponsor } from '@/types'
+import AdminPasswordsLink from '@/features/passwords/AdminPasswordsLink'
 
 
 interface Props {
@@ -55,6 +56,11 @@ export default function Layout({ children }: Props) {
                 <div className="c-btn-topright">
                   <Link to="/matches/for_edit">Editar jogos</Link>
                 </div>
+                {(user.isAdmin || user.superAdmin) && (
+                  <div className="c-btn-topright">
+                    <AdminPasswordsLink />
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -122,6 +128,7 @@ export default function Layout({ children }: Props) {
                   <Link className="c-main-nav__link" to="/matches/for_edit">
                     Editar jogos
                   </Link>
+                  <AdminPasswordsLink className="c-main-nav__link" />
                   <a
                     className="c-main-nav__link"
                     onClick={handleLogout}

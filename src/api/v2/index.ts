@@ -27,6 +27,7 @@ export type TeamsState = Schemas['TeamsState']
 export type Format = Schemas['Format']
 export type CompetitionStatus = Schemas['CompetitionStatus']
 export type ApiError = Schemas['Error']
+export type PasswordCode = Schemas['PasswordCode']
 
 // The v2 API lives beside v1 on the same host.
 export const API_V2_BASE = '/api/v2'

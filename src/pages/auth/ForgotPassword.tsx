@@ -17,9 +17,9 @@ export default function ForgotPassword() {
     try {
       const res = await authApi.forgotPassword(username)
       const userId = res.data?.user_id
-      navigate(`/verify-code/${userId}`)
+      navigate(`/verify-code/${userId}?requested=1`)
     } catch (err: any) {
-      const msg = err.response?.data?.error ?? 'Erro ao enviar código.'
+      const msg = err.response?.data?.error ?? 'Erro ao pedir o código.'
       setError(msg)
     } finally {
       setLoading(false)
@@ -35,6 +35,10 @@ export default function ForgotPassword() {
               {error}
             </div>
           )}
+
+          <p style={{ color: 'black', marginBottom: 12 }}>
+            Escreve o teu username e pede um código. O Pedro ou a Dudas enviam-to por WhatsApp.
+          </p>
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">
@@ -56,7 +60,7 @@ export default function ForgotPassword() {
               type="submit"
               disabled={loading}
             >
-              {loading ? 'A enviar...' : 'Enviar Código'}
+              {loading ? 'A pedir...' : 'Pedir código'}
             </button>
           </form>
 

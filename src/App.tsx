@@ -1,4 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
+import PasswordCodesPage from '@/features/passwords/PasswordCodesPage'
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -63,6 +64,7 @@ const App = () => (
               <Route path="/edition/matchweek_message" element={<Layout><NextMatchweekMessagePage /></Layout>} />
               {/* S3: new v2 public routes */}
               {v2PublicRoutes}
+              <Route path="/admin/passwords" element={<Layout><PasswordCodesPage /></Layout>} />
               <Route path="/admin/competitions/new" element={<Layout><CompetitionWizard /></Layout>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
