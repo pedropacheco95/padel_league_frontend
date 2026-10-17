@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { errorMessage, resultsApi } from './api'
 import { buildResult, buildWalkover, setInProgress, teamsSetPoints, TEAMS_SETS, walkoverAbsentees, type SetDraft, type Side } from './resultInput'
 import type { ResultInput } from '@/api/v2'
-import { sideNames } from './matchText'
+import { participantName, sideNames, sideParticipants } from './matchText'
 
 const emptySets = (n: number): SetDraft[] => Array.from({ length: n }, () => ({ home: '', away: '' }))
 
@@ -117,42 +117,53 @@ export default function ResultEntryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[440px] border-gray-200 bg-white p-[20px] text-gray-900">
+      {/* On phones the dialog sits at the top so the keyboard never covers the score inputs or Guardar. */}
+      <DialogContent className="top-[max(12px,env(safe-area-inset-top))] max-h-[calc(100dvh-24px)] w-[calc(100%-24px)] max-w-[440px] translate-y-0 overflow-y-auto rounded-lg border-gray-200 bg-white p-[16px] text-gray-900 sm:top-[50%] sm:translate-y-[-50%] sm:p-[20px]">
         <DialogHeader>
-          <DialogTitle className="!text-[18px] !text-gray-900">Resultado</DialogTitle>
+          <DialogTitle className="!text-left !text-[18px] !text-gray-900">Resultado</DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-[1fr_56px_56px] items-center gap-x-[8px] gap-y-[10px] text-[14px]">
-          <span />
-          <span className="truncate text-center text-[12px] font-semibold text-gray-600" title={home}>Casa</span>
-          <span className="truncate text-center text-[12px] font-semibold text-gray-600" title={away}>Fora</span>
-          <span className="col-span-3 -mt-[6px] text-[12px] text-gray-500">{home} <span className="text-gray-600">vs</span> {away}</span>
-
-          {!walkover && sets.map((s, i) => {
-            const notStarted = timeoutAt !== null && i > timeoutAt
-            const isTimeout = timeoutAt === i
-            return (
-              <div key={i} className="contents">
-                <span className="text-[14px]">
-                  {teams ? `Set ${i + 1}` : 'Jogos'}
-                  {isTimeout && <span className="ml-[6px] text-[12px] text-amber-700">tempo esgotado</span>}
-                  {notStarted && <span className="ml-[6px] text-[12px] text-gray-500">não jogado</span>}
-                </span>
-                {(['home', 'away'] as const).map(side => (
-                  <input
-                    key={side}
-                    aria-label={`${teams ? `Set ${i + 1}` : 'Jogos'} ${side === 'home' ? 'casa' : 'fora'}`}
-                    inputMode="numeric"
-                    className="h-[40px] w-full rounded border border-gray-300 text-center text-[16px] disabled:bg-gray-100"
-                    value={notStarted ? '' : s[side]}
-                    disabled={notStarted}
-                    onChange={e => setGame(i, side, e.target.value)}
-                  />
-                ))}
+        {/* A scoreboard: one row per pair (names on the left), one column per set. */}
+        {!walkover && (
+          <div className="grid items-center gap-x-[8px] gap-y-[8px]" style={{ gridTemplateColumns: `minmax(0,1fr) repeat(${n}, 52px)` }}>
+            <span />
+            {sets.map((_, i) => (
+              <span key={i} className="text-center text-[12px] font-semibold leading-tight text-gray-600">
+                {teams ? `Set ${i + 1}` : 'Jogos'}
+                {timeoutAt === i && <span className="block text-[11px] font-normal text-amber-700">tempo esg.</span>}
+                {timeoutAt !== null && i > timeoutAt && <span className="block text-[11px] font-normal text-gray-500">não jogado</span>}
+              </span>
+            ))}
+            {(['home', 'away'] as const).map((side, k) => (
+              <div key={side} className="contents">
+                <div className="min-w-0 text-[14px] leading-snug">
+                  {sideParticipants(match)[k].map(p => (
+                    <span key={p.slot} className="block truncate">{participantName(p)}</span>
+                  ))}
+                </div>
+                {sets.map((s, i) => {
+                  const notStarted = timeoutAt !== null && i > timeoutAt
+                  return (
+                    <input
+                      key={i}
+                      aria-label={`${teams ? `Set ${i + 1}` : 'Jogos'} ${side === 'home' ? 'casa' : 'fora'}`}
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      enterKeyHint={k === 0 ? 'next' : 'done'}
+                      autoFocus={k === 0 && i === 0}
+                      onFocus={e => e.currentTarget.select()}
+                      className="h-[48px] w-full rounded border border-gray-300 text-center text-[20px] font-semibold disabled:bg-gray-100"
+                      value={notStarted ? '' : s[side]}
+                      disabled={notStarted}
+                      onChange={e => setGame(i, side, e.target.value)}
+                    />
+                  )
+                })}
               </div>
-            )
-          })}
-        </div>
+            ))}
+          </div>
+        )}
+        {walkover && <p className="text-[14px] text-gray-700">{home} <span className="text-gray-500">vs</span> {away}</p>}
 
         {teams && !walkover && (
           <div className="mt-[12px] flex flex-wrap items-center gap-[8px]">
