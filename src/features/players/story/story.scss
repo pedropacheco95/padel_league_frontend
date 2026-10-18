@@ -96,6 +96,8 @@
   .rec .d { color: #ffb0b0; }
   .card-d .line { font-size: 14px; line-height: 1.2; color: var(--secondary-light); margin-top: 6px; }
   .card-d .big { font-size: 34px; font-weight: 800; line-height: 1; color: var(--coral); margin-top: 6px; }
+  .card-d .big-s { font-size: 24px; margin-top: 4px; }
+  .card-d .cap-s { font-size: 12px; margin-top: 2px; }
   .carrasco { border-color: rgba(255, 107, 107, .55); }
   .carrasco .lab { color: var(--coral); }
   .cliente .lab { color: var(--yellow); }
@@ -201,8 +203,6 @@
   .cmp select { margin-top: 10px; width: 100%; border: 1px solid #c9d6d8; border-radius: 10px; background: #fff; padding: 10px 12px 8px; font-size: 16px; font-family: inherit; }
   .cmp .res { margin-top: 16px; }
 
-  .preview-note { background: #fff3c4; color: #8a6500; text-align: center; font-size: 13px; padding: 6px 12px; }
-  .preview-note a { color: inherit; text-decoration: underline; }
 
   /* conquistas */
   .badges-card { margin: 26px 16px 0; background: #fff; border-radius: 16px; box-shadow: 0 1px 2px rgba(0, 0, 0, .08); padding: 14px 12px 12px; border-top: 5px solid var(--primary); }

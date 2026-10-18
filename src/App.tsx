@@ -31,7 +31,7 @@ import GlobalApiLoader from "./components/GlobalApiLoader";
 // S3 v2 public pages (VITE_V2_PUBLIC switches the old URLs over)
 import { v2Or, v2FormatOr, v2PublicElements as v2, v2PublicRoutes } from "./features/publicRoutes";
 import CompetitionWizard from "./features/admin/CompetitionWizard";
-import PlayerStoryPage from "./features/players/story/PlayerStoryPage";
+import PlayerStoryPage, { RedirectToPlayer } from "./features/players/story/PlayerStoryPage";
 import { BadgeDetailPage, BadgesCataloguePage } from "./features/players/story/Badges";
 
 const queryClient = new QueryClient();
@@ -55,8 +55,10 @@ const App = () => (
               <Route path="/tournaments/:id" element={<Layout>{v2Or(<TournamentPage />, v2.tournament)}</Layout>} />
               <Route path="/players" element={<Layout>{v2Or(<PlayersPage />, v2.players)}</Layout>} />
               <Route path="/players/edit/:id" element={<Layout><EditPlayerPage /></Layout>} />
-              <Route path="/players/:id" element={<Layout>{v2Or(<PlayerPage />, v2.player)}</Layout>} />
-              <Route path="/players/:id/novo" element={<Layout><PlayerStoryPage /></Layout>} />
+              {/* The story page is the player page (Pedro, 2026-10-18); the previous page stays at /antigo for a while. */}
+              <Route path="/players/:id" element={<Layout><PlayerStoryPage /></Layout>} />
+              <Route path="/players/:id/antigo" element={<Layout>{v2Or(<PlayerPage />, v2.player)}</Layout>} />
+              <Route path="/players/:id/novo" element={<RedirectToPlayer />} />
               <Route path="/conquistas" element={<Layout><BadgesCataloguePage /></Layout>} />
               <Route path="/conquistas/:key" element={<Layout><BadgeDetailPage /></Layout>} />
               <Route path="/matches/for_edit" element={<Layout><ForEditPage /></Layout>} />

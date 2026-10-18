@@ -118,7 +118,7 @@ export function BadgeDetailPage() {
           ) : (
             <ul className="bd-list">
               {data.holders.map((p) => (
-                <li key={p.id}><Link to={`/players/${p.id}/novo`}><PlayerAvatar player={p} size={28} link={false} /> {p.name}</Link></li>
+                <li key={p.id}><Link to={`/players/${p.id}`}><PlayerAvatar player={p} size={28} link={false} /> {p.name}</Link></li>
               ))}
             </ul>
           )}
@@ -128,7 +128,7 @@ export function BadgeDetailPage() {
               <ul className="bd-list">
                 {data.closest.map((c) => (
                   <li key={c.player.id}>
-                    <Link to={`/players/${c.player.id}/novo`}><PlayerAvatar player={c.player} size={28} link={false} /> {c.player.name}</Link>
+                    <Link to={`/players/${c.player.id}`}><PlayerAvatar player={c.player} size={28} link={false} /> {c.player.name}</Link>
                     <span>{c.progress?.text}</span>
                   </li>
                 ))}

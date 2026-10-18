@@ -2385,6 +2385,9 @@ export interface components {
             /** @description games won minus lost against them */
             diff: number;
             lossStreak?: number;
+            /** @description games won against them (walkovers and corrupt scores left out */
+            gamesFor?: number;
+            gamesAgainst?: number;
             gamesLine?: components["schemas"]["StoryLine"];
         };
         Badge: {

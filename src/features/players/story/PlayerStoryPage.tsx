@@ -1,9 +1,9 @@
 // New player page, Proposta A ("Uma página, uma história"): the player's career as one PPL night,
-// J1–J7, then the ficha (últimos jogos, todos os torneios, comparar). Preview route /players/:id/novo.
+// J1–J7, then the ficha (últimos jogos, todos os torneios, comparar). Route /players/:id (/novo redirects here).
 // Every sentence comes from the backend copy catalogue (padel_league/services/player_story.py);
 // this file only lays it out. Blocks the backend sends as null are hidden.
 import { useMemo, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, Navigate, useParams } from 'react-router-dom'
 import MatchCard from '@/components/v2/MatchCard'
 import PlayerAvatar from '@/components/v2/PlayerAvatar'
 import { formatPoints } from '@/components/v2/PointsValue'
@@ -46,6 +46,25 @@ function Record({ w, d, l }: { w: number; d: number; l: number }) {
       <span className="d">{l}D</span>
     </div>
   )
+}
+
+type Opp = NonNullable<NonNullable<PlayerStory['people']>['carrasco']>
+
+/** Games won–lost against them as the headline, coloured by sign, with the catalogue caption. */
+function Games({ o, small = false }: { o: Opp; small?: boolean }) {
+  const gf = o.gamesFor ?? 0
+  const ga = o.gamesAgainst ?? 0
+  const color = gf < ga ? C.coral : gf > ga ? C.yellow : '#fff'
+  return (
+    <>
+      <div className={small ? 'big big-s' : 'big'} style={{ color }}>{gf}–{ga}</div>
+      {o.gamesLine && <div className="line cap-s">{o.gamesLine.text}</div>}
+    </>
+  )
+}
+
+export function RedirectToPlayer() {
+  return <Navigate to={`/players/${useParams().id}`} replace />
 }
 
 function Hero({ story, player }: { story: PlayerStory; player: NonNullable<ReturnType<typeof useV2Player>['data']> }) {
@@ -144,13 +163,12 @@ function People({ data }: { data: NonNullable<PlayerStory['people']> }) {
           <div className="lab">O carrasco</div>
           {k ? (
             <>
-              <Link to={`/players/${k.player.id}/novo`} className="who">
+              <Link to={`/players/${k.player.id}`} className="who">
                 <PlayerAvatar player={k.player} size={34} link={false} />
                 <b>{k.player.name}</b>
               </Link>
               <Record w={k.wins} d={k.draws} l={k.losses} />
-              <div className="big">{signed(k.diff)}</div>
-              {k.gamesLine && <div className="line">{k.gamesLine.text}</div>}
+              <Games o={k} />
             </>
           ) : null}
           {data.carrascoLine && <div className="line" style={{ color: '#fff' }}>{data.carrascoLine.text}</div>}
@@ -160,18 +178,19 @@ function People({ data }: { data: NonNullable<PlayerStory['people']> }) {
           {data.clientes.length > 0 && (
             <div className="cl-list">
               {data.clientes.map((c) => (
-                <Link key={c.player.id} to={`/players/${c.player.id}/novo`} className="cl-row">
+                <div key={c.player.id}>
+                <Link to={`/players/${c.player.id}`} className="cl-row">
                   <PlayerAvatar player={c.player} size={34} link={false} />
                   <div style={{ minWidth: 0 }}>
                     <div className="nm">{c.player.name}</div>
                     <div className="sm">{c.wins}V {c.draws}E {c.losses}D</div>
                   </div>
-                  <span className="pm">{signed(c.diff)}</span>
                 </Link>
+                <Games o={c} small />
+                </div>
               ))}
             </div>
           )}
-          {data.clientes.length > 0 && <div className="line" style={{ marginTop: 10 }}>diferença de jogos.</div>}
           {data.clientesLine && <div className="line" style={{ color: '#fff' }}>{data.clientesLine.text}</div>}
         </div>
       </div>
@@ -198,7 +217,7 @@ function Constellation({ data, name }: { data: NonNullable<PlayerStory['constell
           <ul>
             {data.strangers.list!.map((s) => (
               <li key={s.player!.id}>
-                <Link to={`/players/${s.player!.id}/novo`}>{s.player!.name}</Link>
+                <Link to={`/players/${s.player!.id}`}>{s.player!.name}</Link>
                 <span>{s.line?.text}</span>
               </li>
             ))}
@@ -385,9 +404,6 @@ export default function PlayerStoryPage() {
 
   return (
     <div className="pstory">
-      <div className="preview-note">
-        Pré-visualização da nova página. <Link to={`/players/${id}`}>Ver a página atual</Link>
-      </div>
       {s ? <Hero story={s} player={player} /> : <div className="loader" />}
 
       {s?.mountain && (
