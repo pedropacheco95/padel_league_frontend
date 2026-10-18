@@ -31,6 +31,7 @@ import GlobalApiLoader from "./components/GlobalApiLoader";
 // S3 v2 public pages (VITE_V2_PUBLIC switches the old URLs over)
 import { v2Or, v2FormatOr, v2PublicElements as v2, v2PublicRoutes } from "./features/publicRoutes";
 import CompetitionWizard from "./features/admin/CompetitionWizard";
+import PlayerStoryPage from "./features/players/story/PlayerStoryPage";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="/players" element={<Layout>{v2Or(<PlayersPage />, v2.players)}</Layout>} />
               <Route path="/players/edit/:id" element={<Layout><EditPlayerPage /></Layout>} />
               <Route path="/players/:id" element={<Layout>{v2Or(<PlayerPage />, v2.player)}</Layout>} />
+              <Route path="/players/:id/novo" element={<Layout><PlayerStoryPage /></Layout>} />
               <Route path="/matches/for_edit" element={<Layout><ForEditPage /></Layout>} />
               <Route path="/calendar" element={<Layout>{v2Or(<CalendarPage />, v2.calendar)}</Layout>} />
               <Route path="/chatbot" element={<Layout><ChatbotPage /></Layout>} />

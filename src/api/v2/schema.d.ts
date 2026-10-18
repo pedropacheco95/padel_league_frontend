@@ -936,6 +936,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/players/{playerId}/story": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                playerId: components["parameters"]["playerId"];
+            };
+            cookie?: never;
+        };
+        /** The new player page's blocks (J1-J7) computed live; every sentence is a fixed template (services/player_story.py) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    playerId: components["parameters"]["playerId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlayerStory"];
+                    };
+                };
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/rankings/current": {
         parameters: {
             query?: never;
@@ -2199,6 +2240,192 @@ export interface components {
             stats?: {
                 [key: string]: number;
             };
+        };
+        /** @description One sentence from the copy catalogue (key) filled with live numbers (text) */
+        StoryLine: {
+            key: string;
+            text: string;
+        };
+        StoryRecord: {
+            played: number;
+            wins: number;
+            draws: number;
+            losses: number;
+        };
+        /** @description One fingerprint ring = one edition; matches are [margin, matchId] in game order (corrupt scores and walkovers left out) */
+        StoryRing: {
+            competitionId: number;
+            edition: string;
+            format: string;
+            tier?: number | null;
+            place?: number | null;
+            title: boolean;
+            matches: number[][];
+        };
+        StoryOpponent: components["schemas"]["StoryRecord"] & {
+            player: components["schemas"]["PlayerRef"];
+            /** @description games won minus lost against them */
+            diff: number;
+            lossStreak?: number;
+        };
+        PlayerStory: {
+            playerId: number;
+            /** Format: date */
+            today: string;
+            hero: {
+                /** Format: date */
+                since?: string | null;
+                editions: number;
+                titles: number;
+                line?: components["schemas"]["StoryLine"] | null;
+                tableNote?: components["schemas"]["StoryLine"] | null;
+            };
+            /** @description key/name null until the player has the minimum number of matches (line says how many are missing) */
+            archetype?: {
+                key?: string | null;
+                name?: string | null;
+                line: components["schemas"]["StoryLine"];
+                matches: number;
+                /** @description 21 counts of margins -10..+10 (clipped) */
+                skyline: number[];
+                traits: {
+                    tight?: {
+                        won?: number;
+                        total?: number;
+                        pct?: number | null;
+                    };
+                    diesel?: number[] | null;
+                    perfectNights?: number;
+                    comebacks?: number;
+                    nightsOfThree?: number;
+                    bigWins?: number;
+                };
+            } | null;
+            fingerprint?: {
+                rings: components["schemas"]["StoryRing"][];
+                excluded: number;
+                next?: {
+                    edition?: string;
+                    label?: string;
+                } | null;
+                note?: components["schemas"]["StoryLine"];
+                caption?: components["schemas"]["StoryLine"];
+            } | null;
+            mountain?: {
+                title: components["schemas"]["StoryLine"];
+                lede: components["schemas"]["StoryLine"];
+                ups?: number;
+                downs?: number;
+                next?: {
+                    edition?: string;
+                    label?: string;
+                } | null;
+                points: {
+                    competitionId: number;
+                    edition: string;
+                    label: string;
+                    format: string;
+                    tier?: number | null;
+                    place?: number | null;
+                    /** @description members of the higher divisions of that edition + place */
+                    position?: number | null;
+                    /** @description members of the 1ª Divisão that edition */
+                    topSize?: number | null;
+                    title?: boolean;
+                    /** @enum {string|null} */
+                    change?: "up" | "down" | null;
+                }[];
+            } | null;
+            people?: {
+                title: components["schemas"]["StoryLine"];
+                carrasco?: components["schemas"]["StoryOpponent"] | null;
+                clientes: components["schemas"]["StoryOpponent"][];
+                carrascoLine?: components["schemas"]["StoryLine"] | null;
+                clientesLine?: components["schemas"]["StoryLine"] | null;
+                paradox?: components["schemas"]["StoryLine"] | null;
+            } | null;
+            constellation?: {
+                title: components["schemas"]["StoryLine"];
+                lede: components["schemas"]["StoryLine"];
+                partners: {
+                    player: components["schemas"]["PlayerRef"];
+                    together: number;
+                    /** @description win% together minus the player's overall win% (0 below the minimum) */
+                    chemistry: number;
+                }[];
+                opponents: {
+                    player: components["schemas"]["PlayerRef"];
+                    met: number;
+                }[];
+                strangers?: {
+                    count?: number;
+                    competitionLabel?: string;
+                    lede?: components["schemas"]["StoryLine"];
+                    list?: {
+                        player?: components["schemas"]["PlayerRef"];
+                        matches?: number;
+                        bridge?: components["schemas"]["PlayerRef"] | null;
+                    }[];
+                } | null;
+                met: number;
+                total: number;
+                degree2: number;
+                degree3: number;
+                rivalId?: number | null;
+                carrascoId?: number | null;
+            } | null;
+            rival?: null | (components["schemas"]["StoryRecord"] & {
+                player: components["schemas"]["PlayerRef"];
+                title: components["schemas"]["StoryLine"];
+                together: components["schemas"]["StoryRecord"];
+                togetherLine?: components["schemas"]["StoryLine"] | null;
+                rings: components["schemas"]["StoryRing"][];
+                titles: number;
+                caption?: components["schemas"]["StoryLine"];
+            });
+            nights?: {
+                title: components["schemas"]["StoryLine"];
+                lede: components["schemas"]["StoryLine"];
+                played: number;
+                missed: number;
+                cells: {
+                    /** Format: date */
+                    date: string;
+                    net?: number | null;
+                    played: boolean;
+                    estimated: boolean;
+                    competitionId: number;
+                    round: number;
+                }[];
+                best?: {
+                    /** Format: date */
+                    date?: string;
+                    net?: number;
+                    label?: string;
+                    scores?: string[];
+                    line?: components["schemas"]["StoryLine"];
+                } | null;
+                next?: {
+                    /** Format: date */
+                    date?: string;
+                    competitionId?: number;
+                    line?: components["schemas"]["StoryLine"];
+                } | null;
+                estimatedNote?: components["schemas"]["StoryLine"] | null;
+            } | null;
+            streaks?: {
+                title: components["schemas"]["StoryLine"];
+                items: {
+                    /** @enum {string} */
+                    key: "podiums" | "wins" | "nights";
+                    label: string;
+                    current: number;
+                    best: number;
+                    record: number;
+                    alive: boolean;
+                    line: components["schemas"]["StoryLine"];
+                }[];
+            } | null;
         };
         PlayerComparison: {
             a?: components["schemas"]["PlayerSummary"];
