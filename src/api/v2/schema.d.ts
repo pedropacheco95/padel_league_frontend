@@ -2267,6 +2267,7 @@ export interface components {
             /** @description games won minus lost against them */
             diff: number;
             lossStreak?: number;
+            gamesLine?: components["schemas"]["StoryLine"];
         };
         PlayerStory: {
             playerId: number;
@@ -2279,6 +2280,7 @@ export interface components {
                 titles: number;
                 line?: components["schemas"]["StoryLine"] | null;
                 tableNote?: components["schemas"]["StoryLine"] | null;
+                pointsLine?: components["schemas"]["StoryLine"] | null;
             };
             /** @description key/name null until the player has the minimum number of matches (line says how many are missing) */
             archetype?: {
@@ -2293,6 +2295,7 @@ export interface components {
                         won?: number;
                         total?: number;
                         pct?: number | null;
+                        line?: components["schemas"]["StoryLine"];
                     };
                     diesel?: number[] | null;
                     perfectNights?: number;
@@ -2360,15 +2363,18 @@ export interface components {
                 strangers?: {
                     count?: number;
                     competitionLabel?: string;
+                    title?: components["schemas"]["StoryLine"];
                     lede?: components["schemas"]["StoryLine"];
                     list?: {
                         player?: components["schemas"]["PlayerRef"];
                         matches?: number;
                         bridge?: components["schemas"]["PlayerRef"] | null;
+                        line?: components["schemas"]["StoryLine"];
                     }[];
                 } | null;
                 met: number;
                 total: number;
+                totalLine?: components["schemas"]["StoryLine"];
                 degree2: number;
                 degree3: number;
                 rivalId?: number | null;
@@ -2379,6 +2385,8 @@ export interface components {
                 title: components["schemas"]["StoryLine"];
                 together: components["schemas"]["StoryRecord"];
                 togetherLine?: components["schemas"]["StoryLine"] | null;
+                /** @description wins, draws · played, losses */
+                split?: components["schemas"]["StoryLine"][];
                 rings: components["schemas"]["StoryRing"][];
                 titles: number;
                 caption?: components["schemas"]["StoryLine"];

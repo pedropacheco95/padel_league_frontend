@@ -91,7 +91,7 @@ function Hero({ story, player }: { story: PlayerStory; player: NonNullable<Retur
         </div>
         {parts.length > 0 && (
           <div className="brk">
-            <div className="cap">De onde vêm os {formatPoints(player.rankingPoints, 0)}</div>
+            {story.hero.pointsLine && <div className="cap">{story.hero.pointsLine.text}</div>}
             <div className="bar">
               {parts.map((p, i) => <i key={p.id} style={{ flex: Math.max(p.points, 1), background: segColor(p.format, i) }} />)}
             </div>
@@ -149,7 +149,7 @@ function People({ data }: { data: NonNullable<PlayerStory['people']> }) {
               </Link>
               <Record w={k.wins} d={k.draws} l={k.losses} />
               <div className="big">{signed(k.diff)}</div>
-              <div className="line">jogos em {k.played} encontros.</div>
+              {k.gamesLine && <div className="line">{k.gamesLine.text}</div>}
             </>
           ) : null}
           {data.carrascoLine && <div className="line" style={{ color: '#fff' }}>{data.carrascoLine.text}</div>}
@@ -187,18 +187,18 @@ function Constellation({ data, name }: { data: NonNullable<PlayerStory['constell
       <p className="lede">{data.lede.text}{data.strangers ? ` ${data.strangers.lede?.text ?? ''}` : ''}</p>
       <ConstellationMap data={data} initials={initials(name)} />
       <div className="const-stats">
-        <div><strong>{data.met}</strong><small>de {data.total} jogadores</small></div>
+        <div><strong>{data.met}</strong><small>{data.totalLine?.text}</small></div>
         <div><strong>{data.degree2}</strong><small>a 2 graus</small></div>
         <div><strong>{data.degree3}</strong><small>a 3 graus</small></div>
       </div>
       {data.strangers && (data.strangers.list?.length ?? 0) > 0 && (
         <div className="never">
-          <div className="t">Inscritos que nunca defrontou · {data.strangers.count}</div>
+          <div className="t">{data.strangers.title?.text}</div>
           <ul>
             {data.strangers.list!.map((s) => (
               <li key={s.player!.id}>
                 <Link to={`/players/${s.player!.id}/novo`}>{s.player!.name}</Link>
-                <span>{s.matches} jogos{s.bridge ? ` · ponte: ${s.bridge.name}` : ''}</span>
+                <span>{s.line?.text}</span>
               </li>
             ))}
           </ul>
@@ -229,9 +229,7 @@ function Rival({ data, me, story, onCompare }: {
         <i style={{ flex: data.losses, background: C.coral }} />
       </div>
       <div className="split-l">
-        <span>{data.wins} vitórias</span>
-        <span>{data.draws} empates · {data.played} jogos</span>
-        <span>{data.losses} derrotas</span>
+        {(data.split ?? []).map((l) => <span key={l.key}>{l.text}</span>)}
       </div>
       <div className="twins">
         <div className="twin">
@@ -311,7 +309,7 @@ function Signature({ data }: { data: NonNullable<PlayerStory['archetype']> }) {
           <div className="trait">
             <div className="k">Sangue-frio</div>
             <div className="v">{t.tight?.pct ?? '—'}{t.tight?.pct != null ? '%' : ''}</div>
-            <div className="d">ganhos nos jogos decididos por 1–2 ({t.tight?.won} de {t.tight?.total})</div>
+            <div className="d">{t.tight?.line?.text}</div>
           </div>
           <div className="trait">
             <div className="k">Diesel</div>
