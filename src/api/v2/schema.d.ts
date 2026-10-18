@@ -1953,8 +1953,12 @@ export interface components {
         CompetitionCard: {
             id: number;
             name: string;
-            /** @description Short display title */
+            /** @description Tournament name when it is not a Classic's season, e.g. Shuffle 2026 */
             title?: string | null;
+            /** @description The running edition number across every format (null for the 2022 Play Off); lists sort on it */
+            editionNumber: number | null;
+            /** @description The display name: <Nª Edição> - <tournament>, no sponsor */
+            label: string;
             format: components["schemas"]["Format"];
             formatLabel?: string;
             /** @description Recurring event key */
@@ -2176,9 +2180,12 @@ export interface components {
             birthDate?: string | null;
             /** @description Matches played as a substitute, newest first (not counted in member stats) */
             substituteMatches?: components["schemas"]["Match"][];
-            /** @description One row per competition entry, newest first */
+            /** @description One row per competition entry, newest edition first */
             history?: {
-                competition?: components["schemas"]["CompetitionCard"];
+                competition: components["schemas"]["CompetitionCard"];
+                /** @description Classic: the edition and division; other formats: the competition label */
+                label: string;
+                /** @description The Classic division (null for Shuffle/Teams rows */
                 groupId?: number | null;
                 groupName?: string | null;
                 place?: number | null;
@@ -2231,10 +2238,11 @@ export interface components {
         SubsRanking: {
             /** Format: date-time */
             computedAt?: string | null;
-            /** @description The competitions in the ranking window the subs points come from (same window as the main ranking) */
+            /** @description The competitions in the ranking window the subs points come from (same window as the main ranking), newest edition first */
             competitions?: {
                 id: number;
                 name: string;
+                label: string;
             }[];
             entries: {
                 position: number;

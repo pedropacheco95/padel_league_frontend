@@ -44,7 +44,7 @@ function CompetitionCard({ competition: c }: { competition: Card }) {
           </header>
           <footer className="c-tournaments__bottom-card">
             <div className="c-tournaments__header">
-              <h3 className="c-tournaments__title">{c.title || c.name}</h3>
+              <h3 className="c-tournaments__title">{c.label}</h3>
               <p className="c-tournaments__cat">
                 {c.groupCount > 0 ? `${c.groupCount} ${c.groupCount === 1 ? 'grupo' : c.format === 'classica' ? 'divisões' : 'grupos'}` : ''}
                 {c.groupCount > 0 && c.playerCount ? ' · ' : ''}

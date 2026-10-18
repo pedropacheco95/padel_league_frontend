@@ -47,7 +47,12 @@ export interface SeasonGroup {
   competitions: CompetitionCard[]
 }
 
-// Current season first, then newest season first. Inside a season: live, upcoming, ended, then newest start.
+// Newest edition first (the Shuffle has no start date), then newest start. Use it for every competition list.
+export function byEdition(a: CompetitionCard, b: CompetitionCard): number {
+  return (b.editionNumber ?? 0) - (a.editionNumber ?? 0) || (b.startsOn ?? '').localeCompare(a.startsOn ?? '') || b.id - a.id
+}
+
+// Current season first, then newest season first. Inside a season: live, upcoming, ended, then newest edition.
 // "Current" comes from season.isCurrent, never from status: a fully played competition can still be this season's.
 export function groupBySeason(cards: CompetitionCard[]): SeasonGroup[] {
   const bySeason = new Map<number, SeasonGroup & { start: string }>()
@@ -63,9 +68,7 @@ export function groupBySeason(cards: CompetitionCard[]): SeasonGroup[] {
   for (const g of groups) {
     g.competitions.sort(
       (a, b) =>
-        STATUS_ORDER[a.status] - STATUS_ORDER[b.status] ||
-        (b.startsOn ?? '').localeCompare(a.startsOn ?? '') ||
-        b.id - a.id,
+        STATUS_ORDER[a.status] - STATUS_ORDER[b.status] || byEdition(a, b),
     )
     if (!g.start) g.start = g.competitions.map((c) => c.startsOn ?? '').sort()[0] ?? ''
   }

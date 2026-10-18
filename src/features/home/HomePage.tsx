@@ -5,7 +5,7 @@ import { useQueries, useQuery } from '@tanstack/react-query'
 import type { CompetitionCard, GroupDetail, Match, Schemas } from '@/api/v2'
 import { v2get } from '@/features/competitions/v2http'
 import { useCompetition, useCompetitions } from '@/features/competitions/api'
-import { formatDate, formatLabel } from '@/features/competitions/format'
+import { byEdition, formatDate, formatLabel } from '@/features/competitions/format'
 import { groupsApi } from '@/features/groups/api'
 
 // The news cards below were written for the v1 shape; NewsSummary maps onto it.
@@ -126,7 +126,7 @@ function LastResults({ competition }: { competition: CompetitionCard }) {
     <div className="edition_container index_item">
       <div className="main_edition_container">
         <div className="edition_dates">{formatDate(competition.startsOn)}</div>
-        <div className="edition_name">{competition.name}</div>
+        <div className="edition_name">{competition.label}</div>
       </div>
       <div className="edition_results_container">
         <div className="division_results_wrapper">
@@ -161,7 +161,7 @@ function CompetitionTile({ c }: { c: CompetitionCard }) {
       >
         <div className="tournament-card__content">
           <div className="tournament-card__tour">{formatLabel(c)}</div>
-          <div className="tournament-card__name">{c.title || c.name}</div>
+          <div className="tournament-card__name">{c.label}</div>
           <div className="tournament-card__date">{c.startsOn ? formatDate(c.startsOn) : ''}</div>
         </div>
       </div>
@@ -184,7 +184,7 @@ export default function HomePage() {
   // Latest Classic with results: the current season's newest, else the newest overall.
   const lastClassica = (competitions ?? [])
     .filter((c) => c.format === 'classica' && c.status !== 'upcoming')
-    .sort((a, b) => Number(b.season.isCurrent) - Number(a.season.isCurrent) || (b.startsOn ?? '').localeCompare(a.startsOn ?? ''))[0]
+    .sort((a, b) => Number(b.season.isCurrent) - Number(a.season.isCurrent) || byEdition(a, b))[0]
 
   return (
     <div className="l-grid">

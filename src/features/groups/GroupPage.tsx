@@ -52,7 +52,7 @@ export default function GroupPage() {
         image={g.bannerImage?.url ?? g.logoImage?.url}
         kicker={
           <Link to={`/competitions/${c.id}`} className="flex items-center gap-[8px] text-white" style={{ color: '#fff' }}>
-            <FormatBadge competition={c} /> <span className="underline">{c.name}</span>
+            <FormatBadge competition={c} /> <span className="underline">{c.label}</span>
           </Link>
         }
         title={g.name}

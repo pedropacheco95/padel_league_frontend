@@ -56,7 +56,7 @@ function SubsRankingList() {
         <h2 className="text-[18px] font-bold">Substitutos</h2>
         {!!data?.competitions?.length && (
           <p className="text-[12px]" style={{ color: SUBS_BG }}>
-            Pontos de substituto em {data.competitions.map((c) => c.name).join(', ')}
+            Pontos de substituto em {data.competitions.map((c) => c.label).join(', ')}
           </p>
         )}
       </header>
@@ -105,7 +105,7 @@ function Explanation({ playerId }: { playerId: number }) {
               {l.competition && <FormatBadge competition={l.competition} />}
               {l.competition ? (
                 <Link to={`/competitions/${l.competition.id}`} className="text-[14px] truncate underline" style={{ color: 'inherit' }}>
-                  {l.competition.name}{l.stageNumber && l.competition.format === 'teams' ? ` · MT${l.stageNumber}` : ''}
+                  {l.competition.label}{l.stageNumber && l.competition.format === 'teams' ? ` · MT${l.stageNumber}` : ''}
                 </Link>
               ) : null}
             </div>

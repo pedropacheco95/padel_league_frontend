@@ -17,6 +17,8 @@ export const mockShuffle = {
   competition: (id: number): Competition => ({
     id,
     name: 'Shuffle (mock)',
+    label: 'Shuffle (mock)',
+    editionNumber: null,
     format: 'shuffle',
     formatLabel: 'Shuffle',
     season: { id: 3, name: '2026/27', isCurrent: true },

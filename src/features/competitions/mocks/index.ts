@@ -29,27 +29,27 @@ export const players: PlayerRef[] = NAMES.map((name, i) => ({ id: i + 1, name, f
 
 export const competitions = [
   {
-    id: 27, name: 'Teams 2026/27', title: 'Teams', format: 'teams', formatLabel: 'Teams', season: seasons[0],
+    id: 27, name: '23ª Edição', title: 'Teams 2026/27', label: '23ª Edição - Teams 2026/27', editionNumber: 23, format: 'teams', formatLabel: 'Teams', season: seasons[0],
     status: 'live', startsOn: '2026-10-19', endsOn: '2026-12-14', groupCount: 0, playerCount: 32,
     coverImage: null, bannerImage: null, legacyEditionId: null,
   },
   {
-    id: 26, name: 'Shuffle Outubro', format: 'shuffle', formatLabel: 'Shuffle', season: seasons[0],
+    id: 26, name: '20ª Edição', title: 'Shuffle 2026', label: '20ª Edição - Shuffle 2026', editionNumber: 20, format: 'shuffle', formatLabel: 'Shuffle', season: seasons[0],
     status: 'upcoming', startsOn: '2026-10-25', endsOn: '2026-10-25', groupCount: 3, playerCount: 12,
     coverImage: null, bannerImage: null,
   },
   {
-    id: 25, name: 'Clássica I 2026/27', title: 'Clássica I', format: 'classica', formatLabel: 'Clássica', season: seasons[0],
+    id: 25, name: '22ª Edição', label: '22ª Edição - Outono 2026', editionNumber: 22, format: 'classica', formatLabel: 'Clássica', season: seasons[0],
     status: 'ended', startsOn: '2026-09-08', endsOn: '2026-10-13', groupCount: 9, playerCount: 72,
     coverImage: null, bannerImage: null, legacyEditionId: 24,
   },
   {
-    id: 20, name: 'Super Cup 2025/26', format: 'super_cup', formatLabel: 'Super Cup', season: seasons[1],
+    id: 20, name: 'Super Cup 2025/26', label: 'Super Cup 2025/26', editionNumber: null, format: 'super_cup', formatLabel: 'Super Cup', season: seasons[1],
     status: 'ended', startsOn: '2026-06-20', endsOn: '2026-06-21', groupCount: 1, playerCount: 8,
     coverImage: null, bannerImage: null,
   },
   {
-    id: 19, name: 'Clássica III 2025/26', format: 'classica', formatLabel: 'Clássica', season: seasons[1],
+    id: 19, name: '21ª Edição', label: '21ª Edição - Primavera 2026', editionNumber: 21, format: 'classica', formatLabel: 'Clássica', season: seasons[1],
     status: 'ended', startsOn: '2026-03-02', endsOn: '2026-05-25', groupCount: 9, playerCount: 72,
     coverImage: null, bannerImage: null, legacyEditionId: 22,
   },
@@ -122,8 +122,8 @@ export const playerDetail = (id: number): PlayerDetail | undefined => {
   return {
     ...s, largePictureUrl: pic, preferredHand: 'Direita', preferredPosition: 'Esquerda', height: 180, birthDate: '1995-04-02',
     history: [
-      { competition: competitions[2], groupId: 81, groupName: 'Divisão 1', place: id, points: 40 - id * 4, played: 21, wins: 12, draws: 2, losses: 7, awardPoints: 200 - id * 20 },
-      { competition: competitions[4], groupId: 71, groupName: 'Divisão 2', place: 2, points: 35, played: 21, wins: 10, draws: 3, losses: 8, awardPoints: 150 },
+      { competition: competitions[2], label: '22ª Edição - Outono 2026 - 1ª Divisão', groupId: 81, groupName: 'Divisão 1', place: id, points: 40 - id * 4, played: 21, wins: 12, draws: 2, losses: 7, awardPoints: 200 - id * 20 },
+      { competition: competitions[4], label: '21ª Edição - Primavera 2026 - 2ª Divisão', groupId: 71, groupName: 'Divisão 2', place: 2, points: 35, played: 21, wins: 10, draws: 3, losses: 8, awardPoints: 150 },
     ],
     stats: { matchesPlayed: 42, matchesWon: 22, matchesDrawn: 5, matchesLost: 15, gamesWon: 230, gamesLost: 190, titles: 1 },
   }
@@ -146,7 +146,7 @@ export const rankingExplanation = (id: number): RankingExplanation => ({
 
 // Subs: player 3 earned his main points mostly as a sub; 6 and 7 appear only in the subs ranking.
 export const subsRanking = {
-  computedAt: '2026-10-14T09:00:00Z', competitions: [{ id: 25, name: 'Clássica I 2026/27' }, { id: 19, name: 'Clássica III 2025/26' }, { id: 20, name: 'Super Cup 2025/26' }],
+  computedAt: '2026-10-14T09:00:00Z', competitions: [{ id: 25, name: '22ª Edição', label: '22ª Edição - Outono 2026' }, { id: 19, name: '21ª Edição', label: '21ª Edição - Primavera 2026' }, { id: 20, name: 'Super Cup 2025/26', label: 'Super Cup 2025/26' }],
   entries: [6, 3, 7].map((pid, i) => ({ position: i + 1, player: players[pid], points: 120 - i * 35.5, appearances: 5 - i, isExternal: pid === 7 })),
 } satisfies SubsRanking
 

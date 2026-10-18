@@ -80,8 +80,8 @@ export function mockGroup(groupId: number): GroupDetail {
     rating: teams ? (idx === 0 ? 500 : 250) : null,
     hasEnded: false,
     competition: teams
-      ? { id: 27, name: 'Teams 2026/27', format: 'teams', season: { id: 3, name: '2026/27', isCurrent: true }, status: 'live', groupCount: 2 }
-      : { id: 0, name: 'Shuffle (mock)', format: 'shuffle', season: { id: 3, name: '2026/27', isCurrent: true }, status: 'live', groupCount: 6 },
+      ? { id: 27, name: '23ª Edição', label: '23ª Edição - Teams 2026/27', editionNumber: 23, format: 'teams', season: { id: 3, name: '2026/27', isCurrent: true }, status: 'live', groupCount: 2 }
+      : { id: 0, name: 'Shuffle (mock)', label: 'Shuffle (mock)', editionNumber: null, format: 'shuffle', season: { id: 3, name: '2026/27', isCurrent: true }, status: 'live', groupCount: 6 },
     stage: teams ? { id: 2711, number: 1, name: 'Mini-torneio 1' } : { id: 0, number: 1, name: null },
     members,
     standings: members.map((player, i) => ({ place: i + 1, player, points: 9 - i * 3, played: 3, wins: 3 - i, draws: 0, losses: i, gamesWon: 12 - i, gamesLost: 6 + i })),

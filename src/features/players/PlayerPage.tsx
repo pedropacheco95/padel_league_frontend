@@ -217,9 +217,9 @@ export default function PlayerPage() {
                     {/* One line: rows in c-flex-table have a fixed height (the old page showed the division name only). */}
                     <span
                       className="block truncate max-w-[160px] sm:max-w-[260px]"
-                      title={[row.competition?.name, row.groupName].filter(Boolean).join(' · ')}
+                      title={row.label}
                     >
-                      {row.groupName || row.competition?.name}
+                      {row.label}
                     </span>
                   </Link>
                 </li>

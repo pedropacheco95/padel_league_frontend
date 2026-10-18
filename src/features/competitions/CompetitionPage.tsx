@@ -34,7 +34,7 @@ function Header({ c }: { c: Competition }) {
     <PageHeader
       image={c.bannerImage?.url}
       kicker={<FormatBadge competition={c} />}
-      title={c.name}
+      title={c.label}
       subtitle={[STATUS_LABEL[c.status], dateRange(c.startsOn, c.endsOn)].filter(Boolean).join(' · ')}
     />
   )

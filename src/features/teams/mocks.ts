@@ -22,7 +22,10 @@ const stages: Stage[] = [1, 2, 3, 4].map(n => ({
 export const mockTeams = {
   competition: (id: number): Competition => ({
     id,
-    name: 'Teams 2026/27',
+    name: '23ª Edição',
+    title: 'Teams 2026/27',
+    label: '23ª Edição - Teams 2026/27',
+    editionNumber: 23,
     format: 'teams',
     formatLabel: 'Teams',
     season: { id: 3, name: '2026/27', isCurrent: true },
