@@ -203,4 +203,38 @@
 
   .preview-note { background: #fff3c4; color: #8a6500; text-align: center; font-size: 13px; padding: 6px 12px; }
   .preview-note a { color: inherit; text-decoration: underline; }
+
+  /* conquistas */
+  .badges-card { margin: 26px 16px 0; background: #fff; border-radius: 16px; box-shadow: 0 1px 2px rgba(0, 0, 0, .08); padding: 14px 12px 12px; border-top: 5px solid var(--primary); }
+  .badges-hd { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .badges-hd h3 { font-family: inherit; font-size: 22px; font-weight: 800; text-transform: uppercase; color: var(--primary); }
+  .badges-hd h3 small { font-size: 15px; color: var(--grey-dark); font-weight: 600; margin-left: 6px; text-transform: none; }
+  .info-btn { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--primary); color: var(--primary); background: #fff; font-weight: 800; font-family: Georgia, serif; font-style: italic; cursor: pointer; line-height: 1; }
+  .info-btn[aria-expanded="true"] { background: var(--primary); color: #fff; }
+  .badges-info { font-size: 14px; line-height: 1.25; color: var(--grey-dark); background: var(--bg-muted); border-radius: 10px; padding: 8px 10px; margin-top: 8px; }
+  .badges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+  .badge { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; padding: 8px 4px; border-radius: 12px; background: var(--bg-muted); color: var(--ink); min-width: 0; }
+  .badge b { font-size: 14px; line-height: 1.05; font-weight: 700; }
+  .badge .tier { font-size: 11px; letter-spacing: .04em; color: var(--primary); font-weight: 600; }
+  .badge.locked b { color: #8a9799; }
+  .badge .bar { width: 80%; height: 4px; border-radius: 2px; background: #dfe6e7; overflow: hidden; margin-top: 2px; }
+  .badge .bar i { display: block; height: 100%; background: var(--primary-light); }
+  .badge .prog { font-size: 11px; color: var(--grey-dark); line-height: 1.1; }
+  .cat { display: flex; flex-direction: column; gap: 8px; margin: 0 16px; }
+  .cat-row { display: flex; gap: 10px; align-items: flex-start; background: #fff; border-radius: 14px; padding: 10px 12px; box-shadow: 0 1px 2px rgba(0, 0, 0, .08); color: var(--ink); }
+  .cat-main { flex: 1; min-width: 0; }
+  .cat-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .cat-top b { font-size: 18px; }
+  .pilltier { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; border-radius: 999px; padding: 2px 8px 1px; color: var(--primary-dark); }
+  .cat-rule { font-size: 14px; color: var(--grey-dark); line-height: 1.2; margin-top: 2px; }
+  .cat-meta { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--primary); margin-top: 4px; flex-wrap: wrap; }
+  .cat-avs { display: inline-flex; gap: 2px; }
+  .back { display: inline-block; margin: 0 16px 8px; color: var(--primary); font-weight: 700; }
+  .bd-hd { display: flex; align-items: center; gap: 12px; margin: 0 16px 8px; }
+  .bd-h { font-family: inherit; font-size: 18px; font-weight: 800; text-transform: uppercase; color: var(--primary); margin: 14px 16px 6px; }
+  .bd-list { margin: 0 16px; background: #fff; border-radius: 12px; padding: 4px 12px; }
+  .bd-list li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 15px; }
+  .bd-list li:first-child { border-top: none; }
+  .bd-list li a { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); }
+  .bd-list li span { font-size: 13px; color: var(--grey-dark); }
 }

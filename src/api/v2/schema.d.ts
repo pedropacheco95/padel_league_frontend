@@ -977,6 +977,124 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/players/{playerId}/badges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                playerId: components["parameters"]["playerId"];
+            };
+            cookie?: never;
+        };
+        /** The player's conquistas (earned rarest first, then locked with progress); null for a player without games */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    playerId: components["parameters"]["playerId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlayerBadges"] | null;
+                    };
+                };
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/badges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every conquista with its rule, rarity and holders, rarest first (registry in services/badges.py) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BadgeCatalogue"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/badges/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        /** One conquista with its holders and the players closest to earning it */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    key: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BadgeDetail"];
+                    };
+                };
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/rankings/current": {
         parameters: {
             query?: never;
@@ -2269,6 +2387,50 @@ export interface components {
             lossStreak?: number;
             gamesLine?: components["schemas"]["StoryLine"];
         };
+        Badge: {
+            key: string;
+            name: string;
+            rule: string;
+            /** @enum {string} */
+            kind: "at_least" | "at_most" | "leader";
+            target?: number | null;
+            holdersCount: number;
+            /** @description share of players with at least one game who own it */
+            rarityPct: number;
+            /** @enum {string} */
+            tier: "comum" | "rara" | "epica" | "lendaria";
+            tierLabel: string;
+            rarityLine: components["schemas"]["StoryLine"];
+            holdersLine?: components["schemas"]["StoryLine"];
+        };
+        PlayerBadge: components["schemas"]["Badge"] & {
+            earned: boolean;
+            value?: number | null;
+            /** @description progress 0..1 for count badges */
+            fraction?: number | null;
+            progress?: components["schemas"]["StoryLine"] | null;
+        };
+        PlayerBadges: {
+            earned: number;
+            total: number;
+            countLine: components["schemas"]["StoryLine"];
+            info: components["schemas"]["StoryLine"];
+            items: components["schemas"]["PlayerBadge"][];
+        };
+        BadgeCatalogue: {
+            playersCount: number;
+            info: components["schemas"]["StoryLine"];
+            badges: (components["schemas"]["Badge"] & {
+                holders: components["schemas"]["PlayerRef"][];
+            })[];
+        };
+        BadgeDetail: components["schemas"]["Badge"] & {
+            playersCount: number;
+            holders: components["schemas"]["PlayerRef"][];
+            closest: (components["schemas"]["PlayerBadge"] & {
+                player: components["schemas"]["PlayerRef"];
+            })[];
+        };
         PlayerStory: {
             playerId: number;
             /** Format: date */
@@ -2421,6 +2583,7 @@ export interface components {
                 } | null;
                 estimatedNote?: components["schemas"]["StoryLine"] | null;
             } | null;
+            badges?: components["schemas"]["PlayerBadges"] | null;
             streaks?: {
                 title: components["schemas"]["StoryLine"];
                 items: {

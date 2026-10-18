@@ -32,6 +32,7 @@ import GlobalApiLoader from "./components/GlobalApiLoader";
 import { v2Or, v2FormatOr, v2PublicElements as v2, v2PublicRoutes } from "./features/publicRoutes";
 import CompetitionWizard from "./features/admin/CompetitionWizard";
 import PlayerStoryPage from "./features/players/story/PlayerStoryPage";
+import { BadgeDetailPage, BadgesCataloguePage } from "./features/players/story/Badges";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,8 @@ const App = () => (
               <Route path="/players/edit/:id" element={<Layout><EditPlayerPage /></Layout>} />
               <Route path="/players/:id" element={<Layout>{v2Or(<PlayerPage />, v2.player)}</Layout>} />
               <Route path="/players/:id/novo" element={<Layout><PlayerStoryPage /></Layout>} />
+              <Route path="/conquistas" element={<Layout><BadgesCataloguePage /></Layout>} />
+              <Route path="/conquistas/:key" element={<Layout><BadgeDetailPage /></Layout>} />
               <Route path="/matches/for_edit" element={<Layout><ForEditPage /></Layout>} />
               <Route path="/calendar" element={<Layout>{v2Or(<CalendarPage />, v2.calendar)}</Layout>} />
               <Route path="/chatbot" element={<Layout><ChatbotPage /></Layout>} />

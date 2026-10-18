@@ -18,6 +18,7 @@ import {
   C, ConstellationMap, Fingerprint, Flame, HERO_STYLE, Mountain, NightsGrid, Skyline, TWIN_A, TWIN_B,
   type PlayerStory,
 } from './art'
+import { BadgesBlock } from './Badges'
 import './story.scss'
 
 const FALLBACK = '/static/images/Player/default_player.jpg'
@@ -417,12 +418,13 @@ export default function PlayerStoryPage() {
         <div className="seam"><div className="spill">{s.nights.next.line.text}</div></div>
       )}
 
-      {s && (s.streaks || s.archetype) && (
+      {s && (s.streaks || s.archetype || s.badges) && (
         <section className="light on-light">
           <div className="wrap">
             <Kick j="J7" name="Sequências e assinatura" />
             {s.streaks && <Streaks data={s.streaks} />}
             {s.archetype && <Signature data={s.archetype} />}
+            {s.badges && <BadgesBlock data={s.badges} />}
           </div>
         </section>
       )}
