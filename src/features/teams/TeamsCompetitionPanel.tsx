@@ -9,6 +9,7 @@ import { useAuth } from '@/context/AuthContext'
 import { errorMessage, resultsApi } from '@/features/results/api'
 import GroupMatches from '@/features/results/GroupMatches'
 import CloseGroupButton from '@/features/results/CloseGroupButton'
+import { buildTeamsShareMessage, nextRoundToPlay, type TeamsDivisionRound } from '@/lib/teamsShareMessage'
 import { teamsV2Api } from './api'
 import PairChoice, { Avatar } from './PairChoice'
 import { DivisionsProjection, PartnerSimulator } from './TeamsProjection'
@@ -125,6 +126,82 @@ function StageAdmin({ competition, stage }: { competition: Competition; stage: S
   )
 }
 
+/**
+ * The next round's call sheet, ready to paste into WhatsApp — what Shuffle and
+ * Clássica already give whoever runs the matchweek. Admin only, and fetched
+ * only once asked for: it reads every division's matches.
+ */
+function RoundMessage({ competition, stage }: { competition: Competition; stage: Stage }) {
+  const [open, setOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const message = useQuery({
+    queryKey: ['v2', 'stages', stage.id, 'roundMessage'],
+    enabled: open,
+    queryFn: async () => {
+      const divisions = await Promise.all(
+        stage.groups.map(async (group): Promise<TeamsDivisionRound | null> => {
+          const next = nextRoundToPlay(await resultsApi.groupMatches(group.id))
+          return next && { tier: group.tier, name: group.name, round: next.round, matches: next.matches }
+        }),
+      )
+      const title = competition.title || competition.label || competition.name
+      return buildTeamsShareMessage(title, divisions.filter((d): d is TeamsDivisionRound => !!d))
+    },
+  })
+
+  async function copy() {
+    if (!message.data) return
+    await navigator.clipboard.writeText(message.data)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  if (!open) {
+    return (
+      <button
+        className="mb-[16px] min-h-[40px] rounded border border-gray-300 px-[12px] py-[6px] text-[13px] font-semibold"
+        onClick={() => setOpen(true)}
+      >
+        Mensagem da jornada
+      </button>
+    )
+  }
+
+  return (
+    <div className="mb-[16px] rounded-lg border border-gray-200 bg-white p-[12px]">
+      <div className="mb-[8px] flex items-center justify-between gap-[8px]">
+        <strong className="text-[14px]">Mensagem da jornada</strong>
+        <span className="flex gap-[8px]">
+          <button
+            className="min-h-[40px] rounded bg-gray-900 px-[12px] py-[6px] text-[13px] font-semibold text-white disabled:opacity-40"
+            disabled={!message.data}
+            onClick={copy}
+          >
+            {copied ? 'Copiado' : 'Copiar'}
+          </button>
+          <button className="min-h-[40px] px-[8px] text-[13px] text-gray-600 underline" onClick={() => setOpen(false)}>
+            Fechar
+          </button>
+        </span>
+      </div>
+      {message.isPending ? (
+        <div className="loader" />
+      ) : message.isError ? (
+        <p className="text-[14px] text-red-700">Não foi possível montar a mensagem.</p>
+      ) : message.data ? (
+        <textarea
+          readOnly
+          value={message.data}
+          rows={16}
+          className="w-full rounded border border-gray-300 p-[8px] text-[13px] leading-[1.35]"
+        />
+      ) : (
+        <p className="text-[14px] text-gray-600">Não há jornada por jogar neste mini-torneio.</p>
+      )}
+    </div>
+  )
+}
+
 export default function TeamsCompetitionPanel({ competition: initial }: { competition: Competition }) {
   const { user } = useAuth()
   const isAdmin = !!(user?.isAdmin || user?.superAdmin)
@@ -202,6 +279,7 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
       {section === 'matches' && (
         <div>
           {stagePicker}
+          {stage && isAdmin && stage.groups.length > 0 && <RoundMessage competition={competition} stage={stage} />}
           {!stage || stage.groups.length === 0 ? (
             <p className="text-[15px] text-gray-600">Ainda não há jogos neste mini-torneio.</p>
           ) : (
