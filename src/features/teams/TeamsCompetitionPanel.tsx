@@ -1,5 +1,6 @@
 // Teams competition page body, embedded by S3's /competitions/:id under its header
-// (contract: default export, props { competition }). Sections: pairs, divisions, matches, standings.
+// (contract: default export, props { competition }). Sections: standings (per mini-tournament; before it
+// starts, the projected/closed pairings), matches, pairs, ranking points won this edition, simulator.
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -13,13 +14,13 @@ import { teamsV2Api } from './api'
 import PairChoice, { Avatar } from './PairChoice'
 import { DivisionsProjection, PartnerSimulator } from './TeamsProjection'
 
-type Section = 'pairs' | 'divisions' | 'simulator' | 'matches' | 'standings'
+type Section = 'standings' | 'matches' | 'pairs' | 'points' | 'simulator'
 const SECTIONS: [Section, string][] = [
-  ['pairs', 'Parelhas'],
-  ['divisions', 'Divisões'],
-  ['simulator', 'Simulador'],
-  ['matches', 'Jogos'],
   ['standings', 'Classificação'],
+  ['matches', 'Jogos'],
+  ['pairs', 'Parelhas'],
+  ['points', 'Pontos de ranking'],
+  ['simulator', 'Simulador'],
 ]
 
 const chip = (active: boolean) =>
@@ -29,8 +30,10 @@ const chip = (active: boolean) =>
  * on phones those replace the set columns. */
 export function TeamsStandings({ rows, stageNumbers }: { rows: StandingRow[]; stageNumbers?: number[] }) {
   if (rows.length === 0) return <p className="text-[14px] text-gray-500">Ainda sem classificação.</p>
+  // Edition total: ranking points only. Games and sets are left out on purpose: a set won in the 6.ª
+  // would weigh the same as one in the 1.ª.
   const perStage = !!stageNumbers?.length
-  const setCol = perStage ? 'max-sm:hidden' : ''
+  const setCol = perStage ? 'hidden' : ''
   const stageCell = (r: StandingRow, n: number) => {
     const st = r.stages?.find(x => x.stageNumber === n)
     if (!st || st.points == null) return <span className="text-gray-600">–</span>
@@ -44,7 +47,7 @@ export function TeamsStandings({ rows, stageNumbers }: { rows: StandingRow[]; st
           <tr className="border-b text-left text-[12px] text-gray-500">
             <th className="py-[6px] pr-[8px]">#</th>
             <th className="py-[6px] pr-[8px]">Jogador</th>
-            <th className="py-[6px] pr-[8px] text-right" title="Jogos">J</th>
+            <th className={`py-[6px] pr-[8px] text-right ${setCol}`} title="Jogos">J</th>
             <th className={`py-[6px] pr-[8px] text-right ${setCol}`} title="Sets ganhos">SG</th>
             <th className={`py-[6px] pr-[8px] text-right ${setCol}`} title="Sets empatados">SE</th>
             {stageNumbers?.map(n => (
@@ -63,7 +66,7 @@ export function TeamsStandings({ rows, stageNumbers }: { rows: StandingRow[]; st
                   <span className="max-w-[110px] truncate sm:max-w-none">{r.player.name}</span>
                 </span>
               </td>
-              <td className="py-[6px] pr-[8px] text-right tabular-nums">{r.played}</td>
+              <td className={`py-[6px] pr-[8px] text-right tabular-nums ${setCol}`}>{r.played}</td>
               <td className={`py-[6px] pr-[8px] text-right tabular-nums ${setCol}`}>{r.setsWon ?? '–'}</td>
               <td className={`py-[6px] pr-[8px] text-right tabular-nums ${setCol}`}>{r.setsDrawn ?? '–'}</td>
               {stageNumbers?.map(n => (
@@ -128,7 +131,7 @@ function StageAdmin({ competition, stage }: { competition: Competition; stage: S
 export default function TeamsCompetitionPanel({ competition: initial }: { competition: Competition }) {
   const { user } = useAuth()
   const isAdmin = !!(user?.isAdmin || user?.superAdmin)
-  const [section, setSection] = useState<Section>('pairs')
+  const [section, setSection] = useState<Section>('standings')
   const competitionQuery = useQuery({
     queryKey: ['v2', 'competitions', initial.id],
     queryFn: () => teamsV2Api.competition(initial.id),
@@ -141,8 +144,7 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
   const stage = stages.find(s => s.id === (stageId ?? competition.currentStageId)) ?? stages[0]
   const [groupId, setGroupId] = useState<number | null>(null)
   const activeGroupId = stage?.groups.some(g => g.id === groupId) ? groupId : stage?.groups[0]?.id ?? null
-  const [standingsScope, setStandingsScope] = useState<'edition' | 'stage'>('edition')
-  // Pair formation for the current mini-tournament: Divisões is the live projection, Simulador appears.
+  // Pair formation for the current mini-tournament: Classificação shows the live projection, Simulador appears.
   const current = stages.find(s => s.id === competition.currentStageId)
   const forming = !!current && current.groups.length === 0
   const simulating = forming && !current.pairingClosed
@@ -150,7 +152,7 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
   const standings = useQuery({
     queryKey: ['v2', 'competitions', competition.id, 'standings'],
     queryFn: () => teamsV2Api.standings(competition.id),
-    enabled: section === 'standings' && standingsScope === 'edition',
+    enabled: section === 'points',
   })
 
   const stagePicker = stages.length > 1 && (
@@ -181,22 +183,6 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
 
       {section === 'pairs' && <PairChoice competitionId={competition.id} />}
 
-      {section === 'divisions' && (
-        <div>
-          {stagePicker}
-          {stage && isAdmin && <StageAdmin competition={competition} stage={stage} />}
-          {forming && stage?.id === current.id ? (
-            <DivisionsProjection competitionId={competition.id} onSimulate={simulating ? () => setSection('simulator') : undefined} />
-          ) : !stage || stage.groups.length === 0 ? (
-            <p className="text-[15px] text-gray-600">As divisões são formadas quando as parelhas fecham.</p>
-          ) : (
-            <div className="grid gap-[12px] md:grid-cols-2">
-              {stage.groups.map(g => <GroupCard key={g.id} groupId={g.id} />)}
-            </div>
-          )}
-        </div>
-      )}
-
       {section === 'simulator' && simulating && <PartnerSimulator competitionId={competition.id} />}
 
       {section === 'matches' && (
@@ -223,32 +209,36 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
 
       {section === 'standings' && (
         <div>
-          <div className="mb-[14px] flex gap-[6px]">
-            <button className={chip(standingsScope === 'edition')} onClick={() => setStandingsScope('edition')}>Total da edição</button>
-            <button className={chip(standingsScope === 'stage')} onClick={() => setStandingsScope('stage')}>Por mini-torneio</button>
-          </div>
-          {standingsScope === 'edition' ? (
-            standings.isError ? (
-              <p className="text-[14px] text-red-700">Não foi possível carregar a classificação.</p>
-            ) : (
-              <>
-                <p className="mb-[8px] text-[13px] text-gray-600">
-                  Pontos de ranking somados dos mini-torneios fechados; presenças e sets contam todos os jogos.
-                </p>
-                <TeamsStandings rows={standings.data ?? []} stageNumbers={stages.map(s => s.number)} />
-              </>
-            )
+          {stagePicker}
+          {stage && isAdmin && <StageAdmin competition={competition} stage={stage} />}
+          {forming && stage?.id === current.id ? (
+            <DivisionsProjection competitionId={competition.id} onSimulate={simulating ? () => setSection('simulator') : undefined} />
+          ) : !stage || stage.groups.length === 0 ? (
+            <p className="text-[15px] text-gray-600">As divisões deste mini-torneio são formadas quando as parelhas fecharem.</p>
           ) : (
-            <>
-              {stagePicker}
-              {!stage || stage.groups.length === 0 ? (
-                <p className="text-[15px] text-gray-600">Ainda sem divisões neste mini-torneio.</p>
-              ) : (
-                <div className="space-y-[12px]">
-                  {stage.groups.map(g => <GroupCard key={g.id} groupId={g.id} showStandings />)}
-                </div>
-              )}
-            </>
+            <div className="space-y-[12px]">
+              {stage.groups.map(g => <GroupCard key={g.id} groupId={g.id} showStandings />)}
+            </div>
+          )}
+        </div>
+      )}
+
+      {section === 'points' && (
+        <div>
+          <div className="mb-[12px] rounded-lg border border-gray-200 bg-gray-50 p-[12px] text-[13px] text-gray-700">
+            <p className="font-semibold text-gray-900">Pontos de ranking ganhos nesta edição</p>
+            <p className="mt-[4px]">
+              Não é uma classificação da Teams: cada mini-torneio tem a sua. Isto é o que cada jogador já somou para o
+              ranking geral, mini-torneio a mini-torneio. As divisões do próximo mini-torneio e da próxima edição saem do
+              ranking geral.
+            </p>
+          </div>
+          {standings.isError ? (
+            <p className="text-[14px] text-red-700">Não foi possível carregar os pontos.</p>
+          ) : standings.data && !standings.data.some(r => r.points) ? (
+            <p className="text-[14px] text-gray-500">Ainda sem pontos: aparecem quando o primeiro mini-torneio fechar.</p>
+          ) : (
+            <TeamsStandings rows={standings.data ?? []} stageNumbers={stages.map(s => s.number)} />
           )}
         </div>
       )}
