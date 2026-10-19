@@ -34,11 +34,9 @@ function CompetitionCard({ competition: c }: { competition: Card }) {
                 <span className="text-[32px] font-bold uppercase tracking-[2px] text-white">{FORMAT_LABEL[c.format] ?? c.format}</span>
               </div>
             )}
-            <div className="flex items-center gap-[8px] flex-wrap" style={{ padding: '0 0 4px' }}>
+            <div className="c-tournaments__meta">
               <FormatBadge competition={c} />
-              <span className="text-[12px] font-semibold" style={{ color: c.status === 'live' ? '#166534' : '#4b5563' }}>
-                {STATUS_LABEL[c.status]}
-              </span>
+              <span className={`c-tournaments__status c-tournaments__status--${c.status}`}>{STATUS_LABEL[c.status]}</span>
             </div>
             <p className="c-tournaments__date" style={{ color: '#004E54' }}>{dateRange(c.startsOn, c.endsOn) ?? 'Datas por definir'}</p>
           </header>
