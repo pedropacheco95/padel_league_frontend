@@ -636,6 +636,71 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/matches/{matchId}/slots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                matchId: components["parameters"]["matchId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Who played in one seat of a match (any signed-in player)
+         * @description The per-player control of the result modal, before or after the result is saved.
+         *     Seat held by a member and `playerId` is someone else or null: the member missed
+         *     this match (partial absence, `playerId` = substitute, null = unknown). Seat held
+         *     by a substitute (or nobody) and `playerId` is the member taken out of it: the
+         *     member is put back (the absence goes once they play the whole round again).
+         *     Otherwise the substitute is replaced. A group member can't be a substitute.
+         *     Standings (and, for a closed group, awards and ranking) follow.
+         *
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    matchId: components["parameters"]["matchId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        side: "home" | "away";
+                        /** @enum {integer} */
+                        slot: 1 | 2;
+                        playerId?: number | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Match"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/rounds/{roundId}/absences": {
         parameters: {
             query?: never;
@@ -2262,6 +2327,8 @@ export interface components {
             role: "member" | "substitute" | "unknown";
             /** @description null when an unknown substitute played */
             player?: components["schemas"]["PlayerRef"] | null;
+            /** @description Substitute / unknown seats only. The member taken out of this seat (absence audit trail); null when not recorded. */
+            replaces?: components["schemas"]["PlayerRef"] | null;
         };
         MatchSet: {
             setNo: number;

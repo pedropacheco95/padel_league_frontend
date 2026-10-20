@@ -6,7 +6,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { errorMessage, resultsApi } from './api'
 import { buildResult, buildWalkover, setInProgress, teamsSetPoints, TEAMS_SETS, walkoverAbsentees, type SetDraft, type Side } from './resultInput'
 import type { ResultInput } from '@/api/v2'
-import { participantName, sideNames, sideParticipants } from './matchText'
+import { sideNames, sideParticipants } from './matchText'
+import { groupMatchesKey, seatKey, type SeatKey } from './keys'
+import { SeatButton, SeatPanel } from './SeatControls'
 
 const emptySets = (n: number): SetDraft[] => Array.from({ length: n }, () => ({ home: '', away: '' }))
 
@@ -23,16 +25,19 @@ function timeoutFrom(match: Match): number | null {
   return i >= 0 ? match.sets[i].setNo - 1 : null
 }
 
-export const groupMatchesKey = (groupId: number) => ['v2', 'groups', groupId, 'matches'] as const
+export { groupMatchesKey }
 
 export default function ResultEntryDialog({
   match,
   roundId,
+  roundMatches,
   open,
   onOpenChange,
 }: {
   match: Match
   roundId?: number
+  /** the jornada's matches of this group, when the caller has them (whole-jornada absences) */
+  roundMatches?: Match[]
   open: boolean
   onOpenChange: (o: boolean) => void
 }) {
@@ -43,8 +48,12 @@ export default function ResultEntryDialog({
   const [walkover, setWalkover] = useState<Side | null>(null)
   const [woAbsent, setWoAbsent] = useState<number | 'both' | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [pendingSeat, setPendingSeat] = useState<SeatKey | null>(null)
+  const [panelSeat, setPanelSeat] = useState<SeatKey | null>(null)
   const qc = useQueryClient()
 
+  // Reset the draft when the dialog opens, not when the match refetches: taking a player out
+  // mid-entry must not wipe the games already typed.
   useEffect(() => {
     if (!open) return
     setSets(draftFrom(match, n))
@@ -52,7 +61,10 @@ export default function ResultEntryDialog({
     setWalkover(match.status === 'walkover' && match.winner !== 'draw' ? (match.winner ?? null) : null)
     setWoAbsent(null)
     setError(null)
-  }, [open, match, n, teams])
+    setPendingSeat(null)
+    setPanelSeat(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, match.id, n, teams])
 
   const save = useMutation({
     // A walkover first records the no-shows as absent for the round (they lose the presence; whoever
@@ -123,6 +135,9 @@ export default function ResultEntryDialog({
           <DialogTitle className="!text-left !text-[18px] !text-gray-900">Resultado</DialogTitle>
         </DialogHeader>
 
+        {!walkover && (
+          <p className="-mt-[4px] mb-[4px] text-[12px] text-gray-600">Alguém não veio? Toca no nome.</p>
+        )}
         {/* A scoreboard: one row per pair (names on the left), one column per set. */}
         {!walkover && (
           <div className="grid items-center gap-x-[8px] gap-y-[8px]" style={{ gridTemplateColumns: `minmax(0,1fr) repeat(${n}, 52px)` }}>
@@ -136,10 +151,30 @@ export default function ResultEntryDialog({
             ))}
             {(['home', 'away'] as const).map((side, k) => (
               <div key={side} className="contents">
-                <div className="min-w-0 text-[14px] leading-snug">
-                  {sideParticipants(match)[k].map(p => (
-                    <span key={p.slot} className="block truncate">{participantName(p)}</span>
-                  ))}
+                <div className="min-w-0">
+                  {sideParticipants(match)[k].map(p => {
+                    const key = seatKey(p)
+                    return (
+                      <SeatButton
+                        key={p.slot}
+                        p={p}
+                        pending={pendingSeat === key || panelSeat === key}
+                        onTap={() => {
+                          if (p.role === 'member') {
+                            setPanelSeat(null)
+                            setPendingSeat(s => (s === key ? null : key))
+                          } else {
+                            setPendingSeat(null)
+                            setPanelSeat(s => (s === key ? null : key))
+                          }
+                        }}
+                        onRemove={() => {
+                          setPendingSeat(null)
+                          setPanelSeat(key)
+                        }}
+                      />
+                    )
+                  })}
                 </div>
                 {sets.map((s, i) => {
                   const notStarted = timeoutAt !== null && i > timeoutAt
@@ -163,6 +198,19 @@ export default function ResultEntryDialog({
             ))}
           </div>
         )}
+        {!walkover && panelSeat && (() => {
+          const seat = match.participants.find(p => seatKey(p) === panelSeat)
+          return seat ? (
+            <SeatPanel
+              key={`${panelSeat}-${seat.player?.id ?? 'x'}`}
+              match={match}
+              seat={seat}
+              roundId={roundId}
+              roundMatches={roundMatches}
+              onClose={() => setPanelSeat(null)}
+            />
+          ) : null
+        })()}
         {walkover && <p className="text-[14px] text-gray-700">{home} <span className="text-gray-500">vs</span> {away}</p>}
 
         {teams && !walkover && (

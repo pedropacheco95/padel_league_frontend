@@ -13,6 +13,12 @@ export interface AbsenceInput {
   matchIds?: number[]
 }
 
+export interface SlotInput {
+  side: 'home' | 'away'
+  slot: 1 | 2
+  playerId: number | null
+}
+
 export const resultsApi = {
   players: async (): Promise<PlayerSummary[]> =>
     useMocks ? mockPlayers : (await api.get('/players', v2)).data,
@@ -32,6 +38,11 @@ export const resultsApi = {
     useMocks
       ? mockResults.addAbsence(roundId, body)
       : (await api.post(`/rounds/${roundId}/absences`, { kind: 'full', ...body }, v2)).data,
+
+  /** Who played in one seat: a member's seat given to someone else (null = unknown substitute) takes
+   * them out of this match only; the member taken out of a seat, given back, is restored. */
+  putSlot: async (matchId: number, body: SlotInput): Promise<Match> =>
+    useMocks ? mockResults.putSlot(matchId, body) : (await api.put(`/matches/${matchId}/slots`, body, v2)).data,
 
   closeGroup: async (groupId: number): Promise<GroupDetail> =>
     useMocks ? { ...mockGroup(groupId), hasEnded: true } : (await api.post(`/groups/${groupId}/close`, null, v2)).data,

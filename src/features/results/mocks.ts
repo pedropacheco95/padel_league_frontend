@@ -132,6 +132,27 @@ export const mockResults = {
     return a
   },
 
+  putSlot: (matchId: number, body: { side: 'home' | 'away'; slot: 1 | 2; playerId: number | null }): Match => {
+    const m = matches.get(matchId)
+    if (!m) throw mockError('Jogo não encontrado.', 404)
+    const seat = m.participants.find(p => p.side === body.side && p.slot === body.slot)!
+    const original = seat.role === 'member' ? seat.player : seat.replaces ?? null
+    const player = body.playerId == null ? null : mockPlayers.find(x => x.id === body.playerId) ?? null
+    const restored = !!player && original?.id === player.id
+    const next: Match = {
+      ...m,
+      participants: m.participants.map(p =>
+        p === seat
+          ? restored
+            ? { side: p.side, slot: p.slot, role: 'member' as const, player }
+            : { side: p.side, slot: p.slot, role: player ? ('substitute' as const) : ('unknown' as const), player, replaces: original }
+          : p,
+      ),
+    }
+    matches.set(matchId, next)
+    return next
+  },
+
   deleteAbsence: (absenceId: number) => {
     const i = absences.findIndex(a => a.id === absenceId)
     if (i >= 0) absences.splice(i, 1)

@@ -9,8 +9,19 @@ import AbsenceDialog from './AbsenceDialog'
 import ResultEntryDialog, { groupMatchesKey } from './ResultEntryDialog'
 import { matchAbsences, scoreText, sideNames } from './matchText'
 
-/** `groupEnded`: an ended group's results belong to the admins (the server 409s anyone else). */
-export function MatchActions({ match, roundId, groupEnded }: { match: Match; roundId?: number; groupEnded?: boolean }) {
+/** `groupEnded`: an ended group's results belong to the admins (the server 409s anyone else).
+ * Who played is edited in the result modal (tap a name), before or after the result is saved. */
+export function MatchActions({
+  match,
+  roundId,
+  groupEnded,
+  roundMatches,
+}: {
+  match: Match
+  roundId?: number
+  groupEnded?: boolean
+  roundMatches?: Match[]
+}) {
   const { user } = useAuth()
   const [dialog, setDialog] = useState<'result' | 'absence' | null>(null)
   const isAdmin = !!(user?.isAdmin || user?.superAdmin)
@@ -24,18 +35,16 @@ export function MatchActions({ match, roundId, groupEnded }: { match: Match; rou
       >
         {played ? 'Editar resultado' : 'Resultado'}
       </button>
-      {!played && (
-        <button className="min-h-[40px] rounded border border-gray-300 px-[10px] py-[6px] text-[13px]" onClick={() => setDialog('absence')}>
-          Falta
-        </button>
-      )}
-      <ResultEntryDialog match={match} roundId={roundId} open={dialog === 'result'} onOpenChange={o => setDialog(o ? 'result' : null)} />
+      <button className="min-h-[40px] rounded border border-gray-300 px-[10px] py-[6px] text-[13px]" onClick={() => setDialog('absence')}>
+        Falta
+      </button>
+      <ResultEntryDialog match={match} roundId={roundId} roundMatches={roundMatches} open={dialog === 'result'} onOpenChange={o => setDialog(o ? 'result' : null)} />
       <AbsenceDialog match={match} roundId={roundId} open={dialog === 'absence'} onOpenChange={o => setDialog(o ? 'absence' : null)} />
     </div>
   )
 }
 
-function MatchRow({ match, roundId, groupEnded }: { match: Match; roundId?: number; groupEnded?: boolean }) {
+function MatchRow({ match, roundId, groupEnded, roundMatches }: { match: Match; roundId?: number; groupEnded?: boolean; roundMatches?: Match[] }) {
   const [home, away] = sideNames(match)
   const score = scoreText(match)
   const points = match.format === 'teams' && match.homeScore != null ? `${match.homeScore}–${match.awayScore}` : null
@@ -55,7 +64,7 @@ function MatchRow({ match, roundId, groupEnded }: { match: Match; roundId?: numb
         </p>
       )}
       <div className="mt-[10px]">
-        <MatchActions match={match} roundId={roundId} groupEnded={groupEnded} />
+        <MatchActions match={match} roundId={roundId} groupEnded={groupEnded} roundMatches={roundMatches} />
       </div>
     </li>
   )
@@ -98,7 +107,7 @@ export default function GroupMatches({ groupId }: { groupId: number }) {
         </div>
       )}
       <ul className="space-y-[8px]">
-        {(matches.data ?? []).map(m => <MatchRow key={m.id} match={m} roundId={roundId} groupEnded={group.data?.hasEnded} />)}
+        {(matches.data ?? []).map(m => <MatchRow key={m.id} match={m} roundId={roundId} groupEnded={group.data?.hasEnded} roundMatches={matches.data} />)}
         {matches.data?.length === 0 && <li className="text-[14px] text-gray-500">Sem jogos nesta jornada.</li>}
       </ul>
     </div>
