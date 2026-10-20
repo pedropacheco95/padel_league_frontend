@@ -2,7 +2,7 @@
 // (contract: default export, props { competition }). Sections: standings (per mini-tournament; before it
 // starts, the projected/closed pairings), matches, pairs, ranking points won this edition, simulator.
 import { useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { Competition, Stage, StandingRow } from '@/api/v2'
 import { formatPoints } from '@/components/v2/PointsValue'
@@ -10,6 +10,7 @@ import { useAuth } from '@/context/AuthContext'
 import { errorMessage, resultsApi } from '@/features/results/api'
 import GroupMatches from '@/features/results/GroupMatches'
 import CloseGroupButton from '@/features/results/CloseGroupButton'
+import { buildTeamsShareMessage } from '@/lib/teamsShareMessage'
 import { teamsV2Api } from './api'
 import PairChoice, { Avatar } from './PairChoice'
 import { DivisionsProjection, PartnerSimulator } from './TeamsProjection'
@@ -128,6 +129,64 @@ function StageAdmin({ competition, stage }: { competition: Competition; stage: S
   )
 }
 
+/** Admin: the round's WhatsApp message (same layout as Clássica and Shuffle). Defaults to the first round with
+ * matches still to play. */
+function ShareMessage({ competition, stage }: { competition: Competition; stage: Stage }) {
+  const [round, setRound] = useState<number | null>(null)
+  const [copied, setCopied] = useState(false)
+  const results = useQueries({
+    queries: stage.groups.map(g => ({
+      queryKey: ['v2', 'groups', g.id, 'matches'],
+      queryFn: () => resultsApi.groupMatches(g.id),
+    })),
+  })
+  if (results.some(r => !r.data)) return null
+  const all = results.flatMap(r => r.data ?? [])
+  const rounds = [...new Set(all.map(m => m.round))].sort((a, b) => a - b)
+  if (rounds.length === 0) return null
+  const pending = all.filter(m => m.status === 'scheduled').map(m => m.round)
+  const active = round ?? (pending.length ? Math.min(...pending) : rounds[rounds.length - 1])
+  const message = buildTeamsShareMessage(
+    competition.title || competition.label,
+    stage.number,
+    active,
+    stage.groups.map((g, i) => ({
+      tier: g.tier ?? i + 1,
+      matches: (results[i].data ?? []).filter(m => m.round === active && m.status !== 'cancelled'),
+    })),
+  )
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(message)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      toast.error('Não foi possível copiar. Seleciona o texto e copia à mão.')
+    }
+  }
+  return (
+    <section className="mb-[16px] rounded-lg border border-gray-200 bg-white p-[12px]">
+      <div className="mb-[8px] flex flex-wrap items-center justify-between gap-[8px]">
+        <p className="text-[14px] font-semibold">Mensagem da jornada</p>
+        <div className="flex flex-wrap gap-[6px]">
+          {rounds.map(r => (
+            <button key={r} className={chip(r === active)} onClick={() => setRound(r)}>Jornada {r}</button>
+          ))}
+          <button className="min-h-[40px] rounded bg-gray-900 px-[12px] py-[6px] text-[13px] font-semibold text-white" onClick={copy}>
+            {copied ? 'Copiado' : 'Copiar'}
+          </button>
+        </div>
+      </div>
+      <textarea
+        readOnly
+        value={message}
+        rows={12}
+        className="w-full rounded border border-gray-300 p-[8px] text-[13px] leading-[1.35]"
+      />
+    </section>
+  )
+}
+
 export default function TeamsCompetitionPanel({ competition: initial }: { competition: Competition }) {
   const { user } = useAuth()
   const isAdmin = !!(user?.isAdmin || user?.superAdmin)
@@ -192,6 +251,7 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
             <p className="text-[15px] text-gray-600">Ainda não há jogos neste mini-torneio.</p>
           ) : (
             <>
+              {isAdmin && <ShareMessage competition={competition} stage={stage} />}
               {stage.groups.length > 1 && (
                 <div className="mb-[12px] flex gap-[6px] overflow-x-auto pb-[2px]" aria-label="Divisão">
                   {stage.groups.map(g => (
