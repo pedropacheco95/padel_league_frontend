@@ -96,6 +96,14 @@ export const mockResults = {
     return [...matches.values()].filter(m => m.groupId === groupId && (!round || m.round === round))
   },
 
+  clearResult: (matchId: number): Match => {
+    const m = matches.get(matchId)
+    if (!m) throw mockError('Jogo não encontrado.', 404)
+    const next: Match = { ...m, status: 'scheduled', sets: [], homeScore: null, awayScore: null, winner: null }
+    matches.set(matchId, next)
+    return next
+  },
+
   putResult: (matchId: number, input: ResultInput): Match => {
     const m = matches.get(matchId)
     if (!m) throw mockError('Jogo não encontrado.', 404)

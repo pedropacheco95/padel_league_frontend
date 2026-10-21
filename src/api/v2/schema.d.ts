@@ -630,7 +630,38 @@ export interface paths {
             };
         };
         post?: never;
-        delete?: never;
+        /**
+         * Clear a result saved by mistake (any signed-in player)
+         * @description The match goes back to scheduled with no sets and standings follow. Absences stay
+         *     (undo them on their own). Refused (409 group_closed) on a finished group.
+         *
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    matchId: components["parameters"]["matchId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Match"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;

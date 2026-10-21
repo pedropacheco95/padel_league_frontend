@@ -41,6 +41,10 @@ export const resultsApi = {
 
   /** Who played in one seat: a member's seat given to someone else (null = unknown substitute) takes
    * them out of this match only; the member taken out of a seat, given back, is restored. */
+  /** Undo a result saved on the wrong match: back to scheduled. */
+  clearResult: async (matchId: number): Promise<Match> =>
+    useMocks ? mockResults.clearResult(matchId) : (await api.delete(`/matches/${matchId}/result`, v2)).data,
+
   putSlot: async (matchId: number, body: SlotInput): Promise<Match> =>
     useMocks ? mockResults.putSlot(matchId, body) : (await api.put(`/matches/${matchId}/slots`, body, v2)).data,
 

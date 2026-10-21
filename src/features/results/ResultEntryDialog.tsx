@@ -50,6 +50,7 @@ export default function ResultEntryDialog({
   const [error, setError] = useState<string | null>(null)
   const [pendingSeat, setPendingSeat] = useState<SeatKey | null>(null)
   const [panelSeat, setPanelSeat] = useState<SeatKey | null>(null)
+  const [confirmClear, setConfirmClear] = useState(false)
   const qc = useQueryClient()
 
   // Reset the draft when the dialog opens, not when the match refetches: taking a player out
@@ -63,6 +64,7 @@ export default function ResultEntryDialog({
     setError(null)
     setPendingSeat(null)
     setPanelSeat(null)
+    setConfirmClear(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, match.id, n, teams])
 
@@ -100,6 +102,21 @@ export default function ResultEntryDialog({
       setError(errorMessage(err))
     },
   })
+
+  // A result saved on the wrong match (e.g. a jornada not played yet): back to "por jogar".
+  const clear = useMutation({
+    mutationFn: () => resultsApi.clearResult(match.id),
+    onSuccess: saved => {
+      qc.setQueriesData<Match[]>({ queryKey: groupMatchesKey(match.groupId) }, old => old?.map(m => (m.id === saved.id ? saved : m)))
+      qc.invalidateQueries({ queryKey: ['v2', 'groups', match.groupId] })
+      qc.invalidateQueries({ queryKey: ['v2', 'group', match.groupId] })
+      qc.invalidateQueries({ predicate: q => q.queryKey[0] === 'v2' && q.queryKey[1] === 'competitions' && q.queryKey[3] === 'standings' })
+      toast.success('Resultado apagado. O jogo volta a estar por jogar.')
+      onOpenChange(false)
+    },
+    onError: err => setError(errorMessage(err)),
+  })
+  const hasResult = match.status === 'played' || match.status === 'walkover'
 
   const built = walkover ? ({ ok: true, input: buildWalkover(walkover) } as const) : buildResult(match.format, sets, timeoutAt)
   const preview = teams && built.ok && !walkover ? teamsSetPoints(built.input) : null
@@ -280,7 +297,28 @@ export default function ResultEntryDialog({
         )}
         {error && <p role="alert" className="mt-[10px] text-[13px] text-red-700">{error}</p>}
 
-        <div className="mt-[16px] flex justify-end gap-[8px]">
+        {hasResult && confirmClear && (
+          <div className="mt-[14px] rounded border border-red-200 bg-red-50 p-[10px] text-[13px]">
+            <p>Apagar o resultado deste jogo? Fica por jogar e a classificação é recalculada.</p>
+            <div className="mt-[8px] flex justify-end gap-[8px]">
+              <button className="min-h-[40px] px-[10px] text-[13px] underline" onClick={() => setConfirmClear(false)}>Não</button>
+              <button
+                className="min-h-[40px] rounded bg-red-700 px-[12px] text-[13px] font-semibold text-white disabled:opacity-40"
+                disabled={clear.isPending}
+                onClick={() => clear.mutate()}
+              >
+                {clear.isPending ? 'A apagar…' : 'Sim, apagar'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-[16px] flex items-center justify-end gap-[8px]">
+          {hasResult && !confirmClear && (
+            <button className="mr-auto min-h-[40px] px-[4px] text-[13px] text-red-700 underline" onClick={() => setConfirmClear(true)}>
+              Apagar resultado
+            </button>
+          )}
           <button className="min-h-[40px] px-[12px] py-[8px] text-[14px] underline" onClick={() => onOpenChange(false)}>Cancelar</button>
           <button
             className="min-h-[40px] rounded bg-gray-900 px-[16px] py-[8px] text-[14px] font-semibold text-white disabled:opacity-40"
