@@ -1,5 +1,5 @@
 import { api } from '@/api/client'
-import { API_V2_BASE, type Absence, type GroupDetail, type Match, type PlayerSummary, type ResultInput } from '@/api/v2'
+import { API_V2_BASE, type Absence, type GroupDetail, type Match, type PlayerRef, type PlayerSummary, type ResultInput } from '@/api/v2'
 import { mockGroup, mockPlayers, mockResults, useMocks } from './mocks'
 
 const v2 = { baseURL: API_V2_BASE }
@@ -22,6 +22,12 @@ export interface SlotInput {
 export const resultsApi = {
   players: async (): Promise<PlayerSummary[]> =>
     useMocks ? mockPlayers : (await api.get('/players', v2)).data,
+
+  /** Outside substitutes (not league members); /players leaves them out. */
+  substitutes: async (): Promise<PlayerRef[]> => (useMocks ? [] : (await api.get('/substitutes', v2)).data),
+
+  /** Admin: add an outside substitute by name (an existing player with that name is returned instead). */
+  createSubstitute: async (name: string): Promise<PlayerRef> => (await api.post('/substitutes', { name }, v2)).data,
 
   group: async (groupId: number): Promise<GroupDetail> =>
     useMocks ? mockGroup(groupId) : (await api.get(`/groups/${groupId}`, v2)).data,

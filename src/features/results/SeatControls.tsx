@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { useAuth } from '@/context/AuthContext'
 import type { Match, Participant } from '@/api/v2'
 import { errorMessage, resultsApi } from './api'
 import { groupMatchesKey } from './keys'
@@ -11,6 +12,7 @@ import { participantName } from './matchText'
 
 
 const UNKNOWN = 'unknown'
+const NEW = 'new'
 const DEFAULT_PHOTO = '/static/images/Player/default_player.jpg' // as the legacy EditableMatchCard
 
 /** One player of the scoreboard's name column. A member: tap → red pill + ✕ → confirm.
@@ -99,6 +101,22 @@ export function SeatPanel({
   useEffect(() => setError(null), [scope, substitute])
 
   const players = useQuery({ queryKey: ['v2', 'players'], queryFn: resultsApi.players })
+  const outside = useQuery({ queryKey: ['v2', 'substitutes'], queryFn: resultsApi.substitutes })
+  const { user } = useAuth()
+  const isAdmin = !!(user?.isAdmin || user?.superAdmin)
+  const [newName, setNewName] = useState('')
+  const addSub = useMutation({
+    mutationFn: () => resultsApi.createSubstitute(newName),
+    onSuccess: p => {
+      qc.setQueryData<{ id: number; name: string }[]>(['v2', 'substitutes'], old =>
+        old?.some(o => o.id === p.id) ? old : [...(old ?? []), p],
+      )
+      setSubstitute(String(p.id))
+      setNewName('')
+      toast.success(`${p.name} adicionado.`)
+    },
+    onError: err => setError(errorMessage(err)),
+  })
   const inMatch = new Set(match.participants.map(p => p.player?.id).filter(Boolean))
   // Group members can't be substitutes (the server refuses): the jornada's members, when known.
   const members = new Set(
@@ -107,7 +125,10 @@ export function SeatPanel({
   const options = (players.data ?? [])
     .filter(p => p.id !== null && (!inMatch.has(p.id) || p.id === seat.player?.id) && !members.has(p.id) && p.id !== seat.replaces?.id)
     .sort((a, b) => a.name.localeCompare(b.name))
-  const subId = substitute === UNKNOWN ? null : Number(substitute)
+  const outsideOptions = (outside.data ?? [])
+    .filter(p => (!inMatch.has(p.id) || p.id === seat.player?.id) && !options.some(o => o.id === p.id))
+    .sort((a, b) => a.name.localeCompare(b.name))
+  const subId = substitute === UNKNOWN || substitute === NEW ? null : Number(substitute)
 
   const refresh = (saved?: Match) => {
     if (saved) qc.setQueriesData<Match[]>({ queryKey: groupMatchesKey(match.groupId) }, old => old?.map(m => (m.id === saved.id ? saved : m)))
@@ -148,10 +169,41 @@ export function SeatPanel({
         onChange={e => setSubstitute(e.target.value)}
       >
         <option value={UNKNOWN}>Jogador substituto (não sei quem)</option>
-        {options.map(p => (
-          <option key={p.id} value={String(p.id)}>{p.name}</option>
-        ))}
+        {isAdmin && <option value={NEW}>+ Novo substituto…</option>}
+        <optgroup label="Jogadores da liga">
+          {options.map(p => (
+            <option key={p.id} value={String(p.id)}>{p.name}</option>
+          ))}
+        </optgroup>
+        {outsideOptions.length > 0 && (
+          <optgroup label="Substitutos de fora">
+            {outsideOptions.map(p => (
+              <option key={p.id} value={String(p.id)}>{p.name}</option>
+            ))}
+          </optgroup>
+        )}
       </select>
+      {substitute === NEW && (
+        <span className="mt-[8px] flex gap-[8px]">
+          <input
+            id="new-substitute-name"
+            className="h-[40px] min-w-0 flex-1 rounded border border-gray-300 bg-white px-[8px] text-[15px] text-gray-900"
+            placeholder="Nome (ex.: João Silva)"
+            maxLength={60}
+            value={newName}
+            onChange={e => setNewName(e.target.value)}
+            autoFocus
+          />
+          <button
+            type="button"
+            className="min-h-[40px] rounded bg-gray-900 px-[12px] text-[13px] font-semibold text-white disabled:opacity-40"
+            disabled={!newName.trim() || addSub.isPending}
+            onClick={() => addSub.mutate()}
+          >
+            {addSub.isPending ? 'A adicionar…' : 'Adicionar'}
+          </button>
+        </span>
+      )}
     </label>
   )
 
@@ -212,7 +264,7 @@ export function SeatPanel({
             type="button"
             className="min-h-[40px] rounded px-[14px] py-[8px] text-[14px] font-semibold text-white disabled:opacity-50"
             style={{ backgroundColor: '#e74c3c' }}
-            disabled={save.isPending || !playerId}
+            disabled={save.isPending || !playerId || substitute === NEW}
             onClick={() => save.mutate('out')}
           >
             {save.isPending ? 'A remover…' : 'Sim, ele não veio'}
@@ -221,7 +273,7 @@ export function SeatPanel({
           <button
             type="button"
             className="min-h-[40px] rounded bg-gray-900 px-[14px] py-[8px] text-[14px] font-semibold text-white disabled:opacity-50"
-            disabled={save.isPending || subId === (seat.player?.id ?? null)}
+            disabled={save.isPending || substitute === NEW || subId === (seat.player?.id ?? null)}
             onClick={() => save.mutate('sub')}
           >
             {save.isPending ? 'A guardar…' : 'Guardar substituto'}
