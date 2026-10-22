@@ -183,6 +183,15 @@ export function SeatPanel({
           </optgroup>
         )}
       </select>
+      {isAdmin && substitute !== NEW && (
+        <button
+          type="button"
+          className="mt-[6px] min-h-[32px] text-[13px] font-semibold text-gray-900 underline"
+          onClick={() => setSubstitute(NEW)}
+        >
+          Não está na lista? + Novo substituto
+        </button>
+      )}
       {substitute === NEW && (
         <span className="mt-[8px] flex gap-[8px]">
           <input
