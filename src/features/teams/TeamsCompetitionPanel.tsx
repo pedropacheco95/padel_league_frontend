@@ -154,6 +154,7 @@ function ShareMessage({ competition, stage }: { competition: Competition; stage:
       tier: g.tier ?? i + 1,
       matches: (results[i].data ?? []).filter(m => m.round === active && m.status !== 'cancelled'),
     })),
+    stage.rounds.find(r => r.number === active)?.date,
   )
   const copy = async () => {
     try {

@@ -9,8 +9,11 @@ const EMOJIS = ['🟡', '🔴', '🟢', '🔵'] as const
 
 const dayMonth = (d: Date) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
 
-// Earliest scheduled match, else today if it's Tuesday, else the next Tuesday.
-function dateLabel(divisions: TeamsDivisionRound[]): string {
+// The jornada's own date (rounds.date, once set), else the earliest scheduled match, else today if
+// it's Tuesday, else the next Tuesday (a guess: the result card never shows it, see ResultCard).
+function dateLabel(divisions: TeamsDivisionRound[], roundDate?: string | null): string {
+  const ymd = /^(\d{4})-(\d{2})-(\d{2})/.exec(roundDate ?? '')
+  if (ymd) return `${ymd[3]}/${ymd[2]}`
   const times = divisions
     .flatMap(d => d.matches.map(m => (m.scheduledAt ? new Date(m.scheduledAt).getTime() : NaN)))
     .filter(t => !isNaN(t))
@@ -26,8 +29,10 @@ export function buildTeamsShareMessage(
   stageNumber: number,
   jornada: number,
   divisions: TeamsDivisionRound[],
+  /** the jornada's date (Round.date), when the stage has it */
+  roundDate?: string | null,
 ): string {
-  const lines = [`🚨*${title} 💥 | Mini-torneio ${stageNumber} · ${jornada}ª Jornada - ${dateLabel(divisions)} às 21h30 | PAC*🚨`, '']
+  const lines = [`🚨*${title} 💥 | Mini-torneio ${stageNumber} · ${jornada}ª Jornada - ${dateLabel(divisions, roundDate)} às 21h30 | PAC*🚨`, '']
   divisions
     .filter(d => d.matches.length > 0)
     .sort((a, b) => a.tier - b.tier)
