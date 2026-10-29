@@ -327,7 +327,9 @@ export default function ResultCard({
             )}
           </div>
           <span className="mx-[4px] h-[36px] w-px shrink-0 bg-white/30" aria-hidden />
-          {walkover ? (
+          {match.status === 'cancelled' ? (
+            <div className="flex flex-1 items-center justify-center text-[15px] font-bold">Cancelado</div>
+          ) : walkover ? (
             <div className="flex flex-1 items-center justify-center text-[15px] font-bold">W.O. · vitória {walkover === 'home' ? 'casa' : 'fora'}</div>
           ) : nobody ? (
             <div className="flex flex-1 items-center justify-center text-center text-[13px] font-semibold leading-tight">Ninguém compareceu · sem resultado</div>
