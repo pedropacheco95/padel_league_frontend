@@ -23,7 +23,7 @@ const LIGHT = '#eef3f4' // $color-light
 const DARK = '#281e1e' // $color-dark
 const FIELD = '#2b7f85' // the score fields: a lighter teal than the bar (Pedro's reference, 29 Oct)
 const DEFAULT_PHOTO = '/static/images/Player/default_player.jpg'
-const scoreBoxClass = 'flex h-[40px] w-[30px] items-center justify-center rounded-[5px] text-center text-[18px] font-bold text-white'
+const scoreBoxClass = 'flex h-[40px] items-center justify-center rounded-[5px] text-center text-[18px] font-bold text-white'
 const scoreInputClass = `${scoreBoxClass} border-0 p-0 outline-none focus:ring-2 focus:ring-white disabled:opacity-40`
 const tiny = 'text-[9px] font-semibold uppercase tracking-[0.08em] leading-none opacity-90'
 
@@ -199,12 +199,13 @@ export default function ResultCard({
     setPanelSeat(seatKey(p))
   }
 
+  const fieldW = teams ? 'w-[30px]' : 'w-[36px]' // three pairs must fit a 390px bar; a single pair keeps the old 3rem
   const scoreBox = (i: number, side: 'home' | 'away', last: boolean) => {
     const label = `${teams ? `Set ${i + 1}` : 'Jogos'} ${side === 'home' ? 'casa' : 'fora'}`
     if (!editable) {
       const set = match.sets.find(x => x.setNo === i + 1)
       const v = set?.outcome === 'not_started' ? '—' : (side === 'home' ? set?.homeGames : set?.awayGames) ?? ''
-      return <span aria-label={label} className={scoreBoxClass} style={{ background: FIELD }}>{v}</span>
+      return <span aria-label={label} className={`${scoreBoxClass} ${fieldW}`} style={{ background: FIELD }}>{v}</span>
     }
     const notStarted = draft.timeoutAt !== null && i > draft.timeoutAt
     return (
@@ -214,7 +215,7 @@ export default function ResultCard({
         inputMode="numeric"
         pattern="[0-9]*"
         enterKeyHint={last ? 'done' : 'next'}
-        className={scoreInputClass}
+        className={`${scoreInputClass} ${fieldW}`}
         style={{ background: FIELD }}
         value={notStarted ? '' : draft.sets[i][side]}
         placeholder={notStarted ? '—' : ''}
@@ -313,9 +314,16 @@ export default function ResultCard({
           with Guardar appears under it while there is a result to save. */}
       <div className="text-white transition-colors" style={{ backgroundColor: showRed ? DIRTY_RED : TEAL }}>
         <div className="flex items-center gap-[5px] px-[8px] py-[6px]">
+          {/* The date, as the reference; the jornada (already the filter above the list) only as a hint. */}
           <div className="shrink-0 text-center leading-tight">
-            <div className={tiny}>Jornada {match.round}</div>
-            {date && <div className="mt-[3px] text-[11px] font-bold">{date}</div>}
+            {date ? (
+              <>
+                <div className={tiny}>Jornada {match.round}</div>
+                <div className="mt-[3px] text-[11px] font-bold">{date}</div>
+              </>
+            ) : (
+              <div className="text-[11px] font-bold">Jornada {match.round}</div>
+            )}
           </div>
           <span className="mx-[4px] h-[36px] w-px shrink-0 bg-white/30" aria-hidden />
           {draft.walkover ? (
