@@ -1,7 +1,7 @@
 // The group page's Jogos tab: one card for everyone (Pedro, 29 Oct): visitors get the result card
 // read-only (no inputs, no Mais), the same card a signed-in player edits.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import GroupPage from './GroupPage'
@@ -42,6 +42,9 @@ describe('GroupPage Jogos for a visitor', () => {
     expect(screen.getByLabelText('Jogos casa').tagName).toBe('SPAN')
     expect(screen.getByLabelText('Jogos casa')).toHaveTextContent('7')
     expect(screen.getByText('13/10/26')).toBeInTheDocument()
+    expect(screen.getByText('22:30')).toBeInTheDocument() // the tiny line: time (Lisbon) then court
+    expect(screen.getByText('Campo 1')).toBeInTheDocument()
+    expect(within(screen.getByLabelText('Jogo 10')).queryByText(/Jornada 7/)).toBeNull() // the hint only when neither exists
     expect(screen.getByRole('button', { name: 'Bernardo C' })).toBeDisabled()
     expect(screen.queryByRole('button', { name: /Mais/ })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Resultado' })).toBeNull()

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Match } from '@/api/v2'
-import { draftFrom, initials, roundNight, sameDraft, serverDraft, setsTally, shortDate, timeoutFrom, walkoverFrom } from './resultDraft'
+import { draftFrom, initials, roundNight, sameDraft, serverDraft, setsTally, shortDate, shortTime, timeoutFrom, walkoverFrom } from './resultDraft'
 
 const teams = (over: Partial<Match> = {}): Pick<Match, 'format' | 'sets' | 'status' | 'winner'> => ({
   format: 'teams',
@@ -42,6 +42,9 @@ describe('result card draft (Oct 2026 inline card)', () => {
     expect(shortDate('2026-11-03T21:30:00Z')).toBe('03/11/26')
     expect(shortDate(null)).toBeNull()
     expect(shortDate('nope')).toBeNull()
+    expect(shortTime('2026-10-13T21:30:00Z')).toBe('22:30') // summer time
+    expect(shortTime('2026-11-03T21:30:00Z')).toBe('21:30')
+    expect(shortTime(null)).toBeNull()
   })
 
   it("dates the bar by the night the jornada's other matches are scheduled for, when the match has none", () => {

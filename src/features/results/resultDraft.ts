@@ -81,3 +81,11 @@ export function roundNight(matches: Pick<Match, 'scheduledAt'>[] | undefined): s
   const times = (matches ?? []).map(m => (m.scheduledAt ? new Date(m.scheduledAt).getTime() : NaN)).filter(t => !Number.isNaN(t))
   return times.length ? new Date(Math.min(...times)).toISOString() : null
 }
+
+/** "22:30" from the match's scheduledAt (Lisbon time); null when unscheduled. */
+export function shortTime(iso: string | null | undefined): string | null {
+  if (!iso) return null
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return null
+  return d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Lisbon' })
+}
