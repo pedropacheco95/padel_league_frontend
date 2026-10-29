@@ -145,4 +145,34 @@ describe('ResultCard', () => {
     expect(screen.getByRole('button', { name: 'Guardar' })).toBeInTheDocument()
     expect(screen.queryByLabelText('Set 2 casa')).toBeNull()
   })
+
+  it('W.O. from the absence panel: a pair with both seats empty loses to a pair that came', async () => {
+    const empty = (side: 'home' | 'away', slot: 1 | 2) => ({ side, slot, role: 'unknown' as const, player: null })
+    const m = match({ participants: [seat('home', 1, 1, 'Pancho'), seat('home', 2, 2, 'Pi'), empty('away', 1), empty('away', 2)] })
+    vi.mocked(resultsApi.putResult).mockResolvedValue({ ...m, status: 'walkover', winner: 'home', homeScore: 9, awayScore: 0 })
+    renderCard(m)
+    expect(screen.getByText('W.O. · vitória casa')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Set 1 casa')).toBeNull()
+    expect(screen.getByText('por guardar')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar W.O.' }))
+    await waitFor(() => expect(resultsApi.putResult).toHaveBeenCalledWith(10, { sets: [], walkoverWinner: 'home' }))
+  })
+
+  it('both pairs empty: no W.O. offered, the bar says nobody came', () => {
+    const empty = (side: 'home' | 'away', slot: 1 | 2) => ({ side, slot, role: 'unknown' as const, player: null })
+    renderCard(match({ participants: [empty('home', 1), empty('home', 2), empty('away', 1), empty('away', 2)] }))
+    expect(screen.getByText('Ninguém compareceu · sem resultado')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Guardar/ })).toBeNull()
+  })
+
+  it('a non-terminal score shows the TE label and the hint before saving, later set disabled', () => {
+    renderCard(match({ inProgress: true, sets: [{ setNo: 1, homeGames: 6, awayGames: 3, outcome: 'completed' }] }))
+    fireEvent.change(screen.getByLabelText('Set 2 casa'), { target: { value: '4' } })
+    fireEvent.change(screen.getByLabelText('Set 2 fora'), { target: { value: '4' } })
+    expect(screen.getByText('Set 2 TE')).toBeInTheDocument()
+    expect(screen.getByText(/4-4 não é um set completo/)).toBeInTheDocument()
+    expect(screen.getByLabelText('Set 3 casa')).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Guardar' })).toBeInTheDocument() // a complete result: 3 sets
+    expect(screen.getByText('Pontos: 4 – 1')).toBeInTheDocument() // 3 + 1 vs 1
+  })
 })

@@ -12,7 +12,7 @@ import { useAuth } from '@/context/AuthContext'
 import { groupMatchesKey, seatKey, type SeatKey } from './keys'
 import { matchAbsences, participantName, sideParticipants } from './matchText'
 import { initials, roundNight, sameDraft, serverDraft, setsFor, setsTally, shortDate, type Draft } from './resultDraft'
-import { buildResult, buildWalkover, isPartialInput, teamsSetPoints } from './resultInput'
+import { buildResult, buildWalkover, isPartialInput, teamsSetPoints, type Side } from './resultInput'
 import { SeatPanel } from './SeatControls'
 
 const TEAL = '#006A71' // $color-primary
@@ -73,7 +73,19 @@ export default function ResultCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signature])
 
-  const dirty = editable && !sameDraft(draft, server)
+  // W.O. from the absence panel (Pedro, 29 Oct): a pair with both seats empty (nobody came, no
+  // substitute named) loses by walkover to a pair with at least one player; there is nothing to type.
+  // Both pairs empty: no W.O., the bar says so. Only while no set has been saved or typed.
+  const present = (side: Side) => match.participants.filter(p => p.side === side && p.player).length
+  const untouched = match.sets.length === 0 && draft.sets.every(x => x.home.trim() === '' && x.away.trim() === '')
+  const autoWo: Side | null =
+    teams && untouched && match.status !== 'walkover'
+      ? present('away') === 0 && present('home') > 0 ? 'home' : present('home') === 0 && present('away') > 0 ? 'away' : null
+      : null
+  const nobody = teams && untouched && match.status === 'scheduled' && present('home') === 0 && present('away') === 0
+  const walkover = draft.walkover ?? autoWo
+  const typed = !sameDraft(draft, server)
+  const dirty = editable && (typed || (autoWo !== null && server.walkover !== autoWo))
   useEffect(() => {
     if (!dirty) return
     const handler = (e: BeforeUnloadEvent) => {
@@ -119,18 +131,23 @@ export default function ResultCard({
   })
 
   const hasResult = match.status === 'played' || match.status === 'walkover' || !!match.inProgress
-  const built = draft.walkover ? ({ ok: true, input: buildWalkover(draft.walkover) } as const) : buildResult(match.format, draft.sets, draft.timeoutAt)
-  const partial = teams && built.ok && !draft.walkover && isPartialInput(built.input)
+  const built = walkover ? ({ ok: true, input: buildWalkover(walkover) } as const) : buildResult(match.format, draft.sets, draft.timeoutAt)
+  const partial = teams && built.ok && !walkover && isPartialInput(built.input)
   const canSave = dirty && built.ok && !save.isPending
   const showRed = canSave && !focused
   const field = showRed ? DIRTY_FIELD : FIELD
-  const preview = teams && built.ok && !draft.walkover ? teamsSetPoints(built.input) : null
+  const preview = teams && built.ok && !walkover ? teamsSetPoints(built.input) : null
   const points: [number, number] | null =
     dirty && preview ? preview : match.homeScore != null && match.awayScore != null ? [match.homeScore, match.awayScore] : teams && preview && hasResult ? preview : null
   // The bar's date: the match's own time, else the jornada's date, else the night the jornada's
   // other matches are scheduled for (the first rule of lib/teamsShareMessage's dateLabel).
   const date = shortDate(match.scheduledAt ?? roundDate ?? roundNight(roundMatches))
-  const typedSets = built.ok && !draft.walkover ? built.input.sets : match.sets
+  const typedSets = built.ok && !walkover ? built.input.sets : match.sets
+  // The set time ran out in: derived from a non-terminal score as typed (shown before saving), else
+  // the saved result's. Later sets are not played.
+  const builtTe = built.ok && !walkover ? built.input.sets.findIndex(x => x.outcome === 'timeout_draw') : -1
+  const teAt = builtTe >= 0 ? builtTe : built.ok ? null : draft.timeoutAt
+  const teDerived = teAt !== null && draft.timeoutAt !== teAt
   const tally = typedSets.length ? setsTally(typedSets) : null
   const [home, away] = sideParticipants(match)
   const absences = matchAbsences(match)
@@ -191,7 +208,7 @@ export default function ResultCard({
       const v = set?.outcome === 'not_started' ? '—' : (side === 'home' ? set?.homeGames : set?.awayGames) ?? ''
       return <span aria-label={label} className={`${scoreBoxClass} ${fieldW}`} style={{ background: field }}>{v}</span>
     }
-    const notStarted = draft.timeoutAt !== null && i > draft.timeoutAt
+    const notStarted = teAt !== null && i > teAt
     return (
       <input
         data-score
@@ -285,10 +302,10 @@ export default function ResultCard({
   }
 
   const setTag = (i: number) => {
-    if (draft.timeoutAt === i) return <>Set {i + 1}<span className="block text-[10px] font-normal text-amber-200">TE</span></>
+    if (teAt === i) return <>Set {i + 1}<span className="block text-[10px] font-normal text-amber-200">TE</span></>
     return <>Set {i + 1}</>
   }
-  const guardarLabel = save.isPending ? 'A guardar…' : partial && built.ok ? `Guardar ${built.input.sets.length} set${built.input.sets.length > 1 ? 's' : ''}` : 'Guardar'
+  const guardarLabel = save.isPending ? 'A guardar…' : walkover ? 'Guardar W.O.' : partial && built.ok ? `Guardar ${built.input.sets.length} set${built.input.sets.length > 1 ? 's' : ''}` : 'Guardar'
   const sides = (['home', 'away'] as const).map(s => [s, s === 'home' ? 'casa' : 'fora'] as const)
   const panel = panelSeat ? match.participants.find(p => seatKey(p) === panelSeat) : undefined
 
@@ -310,13 +327,15 @@ export default function ResultCard({
             )}
           </div>
           <span className="mx-[4px] h-[36px] w-px shrink-0 bg-white/30" aria-hidden />
-          {draft.walkover ? (
-            <div className="flex flex-1 items-center justify-center text-[15px] font-bold">W.O. · vitória {draft.walkover === 'home' ? 'casa' : 'fora'}</div>
+          {walkover ? (
+            <div className="flex flex-1 items-center justify-center text-[15px] font-bold">W.O. · vitória {walkover === 'home' ? 'casa' : 'fora'}</div>
+          ) : nobody ? (
+            <div className="flex flex-1 items-center justify-center text-center text-[13px] font-semibold leading-tight">Ninguém compareceu · sem resultado</div>
           ) : (
             <div className="flex flex-1 items-end justify-center gap-[4px]">
               {Array.from({ length: n }, (_, i) => (
                 <span key={i} className="flex flex-col items-center gap-[3px]">
-                  <span className={`${tiny} ${draft.timeoutAt === i ? 'text-amber-200' : ''}`}>{teams ? `Set ${i + 1}${draft.timeoutAt === i ? ' TE' : ''}` : 'Jogos'}</span>
+                  <span className={`${tiny} ${teAt === i ? 'text-amber-200' : ''}`}>{teams ? `Set ${i + 1}${teAt === i ? ' TE' : ''}` : 'Jogos'}</span>
                   {setPair(i)}
                 </span>
               ))}
@@ -328,7 +347,7 @@ export default function ResultCard({
               <div className="flex shrink-0 flex-col items-center leading-none">
                 <span className={`${tiny} ${!dirty && match.inProgress ? 'text-amber-300' : ''}`}>{!dirty && match.inProgress ? 'em curso' : 'Sets'}</span>
                 <span className="mt-[3px] text-[20px] font-bold tabular-nums">
-                  {draft.walkover ? 'W.O.' : tally ? `${tally[0]} – ${tally[1]}` : '— – —'}
+                  {walkover ? 'W.O.' : tally ? `${tally[0]} – ${tally[1]}` : '— – —'}
                 </span>
               </div>
             </>
@@ -349,6 +368,16 @@ export default function ResultCard({
         <p className="px-[10px] pt-[6px] text-[12px] text-red-700">{built.error}</p>
       )}
       {error && <p role="alert" className="px-[10px] pt-[6px] text-[12px] text-red-700">{error}</p>}
+      {editable && teDerived && teAt !== null && built.ok && (
+        <p className="px-[10px] pt-[6px] text-[12px] text-amber-800">
+          Set {teAt + 1}: {built.input.sets[teAt].homeGames}-{built.input.sets[teAt].awayGames} não é um set completo, fica como tempo esgotado (1 ponto para cada dupla); os sets seguintes ficam por jogar.
+        </p>
+      )}
+      {editable && autoWo && dirty && (
+        <p className="px-[10px] pt-[6px] text-[12px] text-amber-800">
+          A dupla {autoWo === 'home' ? 'de fora' : 'da casa'} não compareceu: guarda a falta de comparência (3 sets para quem veio). Enganaste-te? Toca na foto e "Afinal X jogou".
+        </p>
+      )}
 
       {/* The pairs: photo | names | photo, VS between them (the old c-teams box). */}
       <div className="px-[8px] pt-[8px]">
@@ -374,7 +403,7 @@ export default function ResultCard({
       )}
 
       <div className="flex min-h-[32px] items-center gap-[10px] px-[10px] py-[4px] text-[12px] text-gray-500">
-        {editable && dirty && (
+        {editable && typed && (
           <button type="button" className="min-h-[32px] underline" onClick={cancel} disabled={save.isPending}>
             Cancelar
           </button>

@@ -1,7 +1,7 @@
 // Pure rules for turning the result form into a v2 ResultInput (unit-tested).
-// Clássica / Shuffle: one set carrying the games. Teams: exactly 3 sets to 6 (tie-break at 6-6, so a
-// completed set never ends level); "Tempo esgotado" makes the set in progress a timeout_draw (typed games
-// kept) and every later set not_started. Both count as a drawn set. A walkover has no sets.
+// Clássica / Shuffle: one set carrying the games. Teams: up to 3 sets to 6 (tie-break at 6-6, so a
+// completed set never ends level), saved set by set; a non-terminal score is a time-out (timeout_draw,
+// typed games kept) and every later set not_started. Both count as a drawn set. A walkover has no sets.
 import type { Format, ResultInput } from '@/api/v2'
 
 export interface SetDraft {
@@ -32,35 +32,52 @@ export function buildGamesResult(set: SetDraft): BuildResult {
 }
 
 const isBlank = (s: SetDraft | undefined) => (s?.home ?? '').trim() === '' && (s?.away ?? '').trim() === ''
+/** Nothing typed for the set: blank, or 0-0 (a 0-0 is never a score; it is an untouched set). */
+const isUntyped = (s: SetDraft | undefined) => isBlank(s) || (toNum(s?.home ?? '') === 0 && toNum(s?.away ?? '') === 0)
+
+const badGames = (h: number | null, a: number | null) =>
+  (h !== null && (!Number.isInteger(h) || h < 0)) || (a !== null && (!Number.isInteger(a) || a < 0))
 
 /**
- * timeoutAt: index of the set in progress when time ran out (null = no time-out).
- * Sets before it must be complete; it becomes timeout_draw; later sets not_started.
- * Without a time-out, the sets can be saved one at a time (Pedro, Oct 2026): a blank set after
- * the typed ones ends the input, and the result is in progress until all 3 are typed.
+ * Teams (Pedro, 29 Oct 2026): the sets are typed in order; a terminal score (6-0…6-4, 7-5, 7-6) is a
+ * completed set; a NON-terminal score (4-4, 3-2, 5-5…) means time ran out in that set: it is sent as
+ * timeout_draw and every later set, which must be left untyped, as not_started. Terminal sets followed
+ * by untyped ones are a partial save (the result stays in progress). A 0-0 counts as untyped.
+ * timeoutAt: the set a SAVED result already marks as tempo esgotado (its games may be blank); it stays
+ * a time-out unless the user types a terminal score into it.
  */
 export function buildTeamsResult(sets: SetDraft[], timeoutAt: number | null): BuildResult {
   const out: ResultInput['sets'] = []
+  let timedOut: number | null = null
   for (let i = 0; i < TEAMS_SETS; i++) {
     const h = toNum(sets[i]?.home ?? '')
     const a = toNum(sets[i]?.away ?? '')
-    if (timeoutAt === null && i > 0 && isBlank(sets[i])) {
-      if (sets.slice(i + 1, TEAMS_SETS).some(s => !isBlank(s))) return { ok: false, error: `Set ${i + 1}: preenche os sets por ordem.` }
-      break
-    }
-    if (timeoutAt !== null && i > timeoutAt) {
+    if (timedOut !== null) {
+      if (!isUntyped(sets[i])) return { ok: false, error: `Set ${i + 1}: depois do tempo esgotado no set ${timedOut + 1} não há mais sets; deixa-o em branco.` }
       out.push({ homeGames: null, awayGames: null, outcome: 'not_started' })
       continue
     }
-    if (timeoutAt === i) {
-      const bad = (h !== null && (!Number.isInteger(h) || h < 0)) || (a !== null && (!Number.isInteger(a) || a < 0))
-      if (bad) return { ok: false, error: `Set ${i + 1}: jogos inválidos.` }
+    const terminal = h !== null && a !== null && validTeamsSet(h, a)
+    if (timeoutAt === i && !terminal) {
+      if (badGames(h, a)) return { ok: false, error: `Set ${i + 1}: jogos inválidos.` }
       out.push({ homeGames: h, awayGames: a, outcome: 'timeout_draw' })
+      timedOut = i
       continue
     }
+    if (isUntyped(sets[i])) {
+      if (i === 0) return { ok: false, error: 'Set 1: indica os jogos das duas equipas.' }
+      if (sets.slice(i + 1, TEAMS_SETS).some(s => !isUntyped(s))) return { ok: false, error: `Set ${i + 1}: preenche os sets por ordem.` }
+      break
+    }
     if (h === null || a === null) return { ok: false, error: i === 0 ? 'Set 1: indica os jogos das duas equipas.' : `Set ${i + 1}: indica os jogos das duas equipas (ou deixa o set em branco para guardar mais tarde).` }
-    if (!validTeamsSet(h, a)) return { ok: false, error: `Set ${i + 1}: ${h}-${a} não é um resultado válido (6-0 a 6-4, 7-5 ou 7-6).` }
-    out.push({ homeGames: h, awayGames: a, outcome: 'completed' })
+    if (badGames(h, a)) return { ok: false, error: `Set ${i + 1}: jogos inválidos.` }
+    if (terminal) {
+      out.push({ homeGames: h, awayGames: a, outcome: 'completed' })
+      continue
+    }
+    // time ran out in this set: a drawn set, 1 point each; the rest of the match is not played
+    out.push({ homeGames: h, awayGames: a, outcome: 'timeout_draw' })
+    timedOut = i
   }
   return { ok: true, input: { sets: out } }
 }
