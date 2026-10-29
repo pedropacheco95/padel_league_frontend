@@ -130,3 +130,38 @@ describe('buildTeamsResult set by set (Oct 2026)', () => {
     expect(te.ok && isPartialInput(te.input)).toBe(false)
   })
 })
+
+describe('buildTeamsResult time-out from a non-terminal score (Pedro, 29 Oct 2026)', () => {
+  const d = (home: string, away: string) => ({ home, away })
+  it('a non-terminal score is tempo esgotado; the later sets are not played', () => {
+    const r = buildTeamsResult([d('6', '3'), d('4', '4'), d('', '')], null)
+    expect(r.ok && r.input.sets).toEqual([
+      { homeGames: 6, awayGames: 3, outcome: 'completed' },
+      { homeGames: 4, awayGames: 4, outcome: 'timeout_draw' },
+      { homeGames: null, awayGames: null, outcome: 'not_started' },
+    ])
+    const first = buildTeamsResult([d('3', '2'), d('', ''), d('', '')], null)
+    expect(first.ok && first.input.sets.map(s => s.outcome)).toEqual(['timeout_draw', 'not_started', 'not_started'])
+  })
+  it('terminal sets followed by blanks stay a partial save', () => {
+    const r = buildTeamsResult([d('6', '3'), d('', ''), d('', '')], null)
+    expect(r.ok && r.input.sets.length).toBe(1)
+  })
+  it('0-0 is untyped, not a time-out', () => {
+    const r = buildTeamsResult([d('6', '3'), d('0', '0'), d('', '')], null)
+    expect(r.ok && r.input.sets.length).toBe(1)
+    const none = buildTeamsResult([d('0', '0'), d('', ''), d('', '')], null)
+    expect('error' in none && none.error).toMatch(/Set 1/)
+  })
+  it('a set typed after the time-out set is an error', () => {
+    const r = buildTeamsResult([d('4', '4'), d('6', '3'), d('', '')], null)
+    expect('error' in r && r.error).toMatch(/tempo esgotado no set 1/)
+  })
+  it("a saved time-out set stays one while its score is not terminal, and becomes completed when it is", () => {
+    const keep = buildTeamsResult([d('6', '3'), d('', ''), d('', '')], 1)
+    expect(keep.ok && keep.input.sets.map(s => s.outcome)).toEqual(['completed', 'timeout_draw', 'not_started'])
+    const fixed = buildTeamsResult([d('6', '3'), d('6', '4'), d('', '')], 1)
+    expect(fixed.ok && fixed.input.sets.map(s => s.outcome)).toEqual(['completed', 'completed'])
+  })
+})
+

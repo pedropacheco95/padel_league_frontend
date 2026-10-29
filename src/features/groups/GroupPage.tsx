@@ -9,8 +9,9 @@ import StandingsTable from '@/components/v2/StandingsTable'
 import { dateRange } from '@/features/competitions/format'
 import { V2NotFound } from '@/features/competitions/v2http'
 import MonthCalendar from '@/features/calendar/MonthCalendar'
+import ResultCard from '@/features/results/ResultCard'
+import { useAuth } from '@/context/AuthContext'
 import { useGroup, useGroupMatches } from './api'
-import MatchActionsSlot from './MatchActionsSlot'
 
 type Tab = 'standings' | 'matches' | 'calendar'
 const TABS: { key: Tab; label: string }[] = [
@@ -23,6 +24,7 @@ export default function GroupPage() {
   const id = Number(useParams().id)
   const { data: g, isLoading, error } = useGroup(id)
   const { data: matches } = useGroupMatches(id)
+  const { user } = useAuth()
   const [tab, setTab] = useState<Tab>('standings')
   const [round, setRound] = useState<number | null>(null)
 
@@ -75,15 +77,22 @@ export default function GroupPage() {
             <RoundSelector rounds={rounds} value={activeRound} onChange={setRound} />
             <div className="flex flex-col gap-[12px]">
               {roundMatches.length === 0 && <p className="text-center text-[15px] text-gray-500">Sem jogos nesta jornada.</p>}
-              {roundMatches.map((m) => (
-                <MatchCard
-                  key={m.id}
-                  match={m}
-                  actions={c.format === 'teams' || c.format === 'shuffle' ? undefined : (
-                    <MatchActionsSlot match={m} roundId={rounds.find((r) => r.number === m.round && r.id !== r.number)?.id} groupEnded={g.hasEnded} />
-                  )}
-                />
-              ))}
+              {/* Signed in: the inline result card (type the games in the header, tap a player who did not
+                  come); otherwise the read-only match card. An ended group is editable by admins only. */}
+              {roundMatches.map((m) =>
+                user && m.status !== 'cancelled' && (!g.hasEnded || user.isAdmin || user.superAdmin) ? (
+                  <ResultCard
+                    key={m.id}
+                    match={m}
+                    roundId={rounds.find((r) => r.number === m.round && r.id !== r.number)?.id}
+                    roundDate={(rounds.find((r) => r.number === m.round) as { date?: string | null } | undefined)?.date}
+                    roundMatches={roundMatches}
+                    editable
+                  />
+                ) : (
+                  <MatchCard key={m.id} match={m} />
+                ),
+              )}
             </div>
           </>
         )}
