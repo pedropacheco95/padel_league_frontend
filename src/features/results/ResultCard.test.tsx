@@ -6,7 +6,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Match } from '@/api/v2'
 import ResultCard from './ResultCard'
 
-vi.mock('@/context/AuthContext', () => ({ useAuth: () => ({ user: { id: 1, username: 'pedro', isAdmin: true } }) }))
+const auth = { user: { id: 1, username: 'pedro', isAdmin: true } as { id: number; username: string; isAdmin: boolean } | null }
+vi.mock('@/context/AuthContext', () => ({ useAuth: () => auth }))
 vi.mock('./api', async importOriginal => {
   const mod = await importOriginal<typeof import('./api')>()
   return {
@@ -56,7 +57,10 @@ const renderCard = (m: Match, editable = true) => {
   return { ...r, rerender: (mm: Match) => r.rerender(ui(mm)) }
 }
 
-beforeEach(() => vi.clearAllMocks())
+beforeEach(() => {
+  vi.clearAllMocks()
+  auth.user = { id: 1, username: 'pedro', isAdmin: true }
+})
 
 describe('ResultCard', () => {
   it('shows Guardar only once a set is typed, says "por guardar", and saves set by set', async () => {
@@ -100,14 +104,29 @@ describe('ResultCard', () => {
     expect(screen.getByRole('button', { name: 'Sim, ele não veio' })).toBeInTheDocument()
   })
 
-  it('Mais ▾ holds Tempo esgotado, W.O. and Apagar resultado', () => {
+  it('Mais ▾ (admins, saved result) holds only Apagar resultado; no W.O. / tempo esgotado / falta buttons', () => {
     renderCard(match({ status: 'played', sets: [1, 2, 3].map(n => ({ setNo: n, homeGames: 6, awayGames: 3, outcome: 'completed' as const })), homeScore: 9, awayScore: 0, winner: 'home' }))
     expect(screen.getByText('Pontos: 9 – 0')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /Mais/ }))
-    expect(screen.getByRole('button', { name: 'Tempo esgotado' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'W.O.' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Tempo esgotado' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'W.O.' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Falta na jornada' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Apagar resultado' }))
     expect(screen.getByRole('button', { name: 'Sim, apagar' })).toBeInTheDocument()
+  })
+
+  it('a player who is not an admin gets no Mais ▾ and no Apagar resultado', () => {
+    auth.user = { id: 2, username: 'dinis', isAdmin: false }
+    renderCard(match({ status: 'played', sets: [1, 2, 3].map(n => ({ setNo: n, homeGames: 6, awayGames: 3, outcome: 'completed' as const })), homeScore: 9, awayScore: 0, winner: 'home' }))
+    expect(screen.queryByRole('button', { name: /Mais/ })).toBeNull()
+    expect(screen.queryByText('Apagar resultado')).toBeNull()
+    expect(screen.getByLabelText('Set 1 casa')).toHaveValue('6') // still editable
+  })
+
+  it('a saved tempo-esgotado set is still shown (TE label, later set blank)', () => {
+    renderCard(match({ status: 'played', sets: [{ setNo: 1, homeGames: 6, awayGames: 3, outcome: 'completed' }, { setNo: 2, homeGames: 3, awayGames: 3, outcome: 'timeout_draw' }, { setNo: 3, homeGames: null, awayGames: null, outcome: 'not_started' }], homeScore: 4, awayScore: 1, winner: 'home' }))
+    expect(screen.getByText('Set 2 TE')).toBeInTheDocument()
+    expect(screen.getByLabelText('Set 3 casa')).toBeDisabled()
   })
 
   it('is read-only without a session: the saved sets as plain boxes, no inputs, no Mais', () => {

@@ -8,11 +8,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { Match, Participant, ResultInput } from '@/api/v2'
 import { errorMessage, resultsApi } from './api'
-import AbsenceDialog from './AbsenceDialog'
+import { useAuth } from '@/context/AuthContext'
 import { groupMatchesKey, seatKey, type SeatKey } from './keys'
 import { matchAbsences, participantName, sideParticipants } from './matchText'
 import { initials, roundNight, sameDraft, serverDraft, setsFor, setsTally, shortDate, type Draft } from './resultDraft'
-import { buildResult, buildWalkover, isPartialInput, setInProgress, teamsSetPoints, TEAMS_SETS, walkoverAbsentees } from './resultInput'
+import { buildResult, buildWalkover, isPartialInput, teamsSetPoints } from './resultInput'
 import { SeatPanel } from './SeatControls'
 
 const TEAL = '#006A71' // $color-primary
@@ -22,6 +22,7 @@ const X_OVERLAY = 'rgba(238, 0, 0, 0.75)' // the old card's ✕ over the photo
 const LIGHT = '#eef3f4' // $color-light
 const DARK = '#281e1e' // $color-dark
 const FIELD = '#2b7f85' // the score fields: a lighter teal than the bar (Pedro's reference, 29 Oct)
+const DIRTY_FIELD = '#dc3838' // the same lightness step up from the red bar while there is a result to save
 const DEFAULT_PHOTO = '/static/images/Player/default_player.jpg'
 const scoreBoxClass = 'flex h-[40px] items-center justify-center rounded-[5px] text-center text-[18px] font-bold text-white'
 const scoreInputClass = `${scoreBoxClass} border-0 p-0 outline-none focus:ring-2 focus:ring-white disabled:opacity-40`
@@ -47,14 +48,13 @@ export default function ResultCard({
   const n = setsFor(match)
   const server = serverDraft(match)
   const [draft, setDraft] = useState<Draft>(server)
-  const [woAbsent, setWoAbsent] = useState<number | 'both' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [pendingSeat, setPendingSeat] = useState<SeatKey | null>(null)
   const [panelSeat, setPanelSeat] = useState<SeatKey | null>(null)
   const [more, setMore] = useState(false)
-  const [woOpen, setWoOpen] = useState(false)
+  const { user } = useAuth()
+  const isAdmin = !!(user?.isAdmin || user?.superAdmin) // Apagar resultado is for admins (Pedro, 29 Oct)
   const [confirmClear, setConfirmClear] = useState(false)
-  const [absenceOpen, setAbsenceOpen] = useState(false)
   const [savedOnce, setSavedOnce] = useState(false)
   const [focused, setFocused] = useState(false)
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -93,17 +93,10 @@ export default function ResultCard({
   }
 
   const save = useMutation({
-    // A walkover first records the no-shows as absent for the round (they lose the presence; whoever
-    // of the losing pair came keeps it), then the result.
-    mutationFn: async ({ input, absentees }: { input: ResultInput; absentees: number[] }) => {
-      for (const playerId of absentees) await resultsApi.addAbsence(roundId!, { playerId, groupId: match.groupId })
-      return resultsApi.putResult(match.id, input)
-    },
+    mutationFn: (input: ResultInput) => resultsApi.putResult(match.id, input),
     onSuccess: saved => {
       refresh(saved)
       setDraft(serverDraft(saved))
-      setWoAbsent(null)
-      setWoOpen(false)
       setMore(false)
       setSavedOnce(true)
       toast.success(saved.inProgress ? `Guardado: ${saved.sets.length === 1 ? '1 set' : `${saved.sets.length} sets`}. Falta o resto.` : 'Resultado guardado.')
@@ -128,13 +121,9 @@ export default function ResultCard({
   const hasResult = match.status === 'played' || match.status === 'walkover' || !!match.inProgress
   const built = draft.walkover ? ({ ok: true, input: buildWalkover(draft.walkover) } as const) : buildResult(match.format, draft.sets, draft.timeoutAt)
   const partial = teams && built.ok && !draft.walkover && isPartialInput(built.input)
-  const alreadyAbsent = (match.absences ?? []).map(a => a.player.id)
-  const losers = draft.walkover
-    ? match.participants.filter(p => p.side !== draft.walkover && p.role === 'member' && p.player && !alreadyAbsent.includes(p.player.id))
-    : []
-  const needsAbsent = !!draft.walkover && losers.length > 0 && woAbsent === null
-  const canSave = dirty && built.ok && !needsAbsent && !save.isPending
+  const canSave = dirty && built.ok && !save.isPending
   const showRed = canSave && !focused
+  const field = showRed ? DIRTY_FIELD : FIELD
   const preview = teams && built.ok && !draft.walkover ? teamsSetPoints(built.input) : null
   const points: [number, number] | null =
     dirty && preview ? preview : match.homeScore != null && match.awayScore != null ? [match.homeScore, match.awayScore] : teams && preview && hasResult ? preview : null
@@ -171,17 +160,10 @@ export default function ResultCard({
 
   const submit = () => {
     if ('error' in built) return setError(built.error)
-    let absentees: number[] = []
-    if (draft.walkover && losers.length > 0) {
-      if (woAbsent === null) return setError('Indica quem faltou da dupla que perdeu por falta de comparência.')
-      if (!roundId) return setError('Jornada sem identificador; não é possível registar a falta.')
-      absentees = walkoverAbsentees(match.participants, draft.walkover, woAbsent, alreadyAbsent)
-    }
-    save.mutate({ input: built.input, absentees })
+    save.mutate(built.input)
   }
   const cancel = () => {
     setDraft(server)
-    setWoAbsent(null)
     setError(null)
   }
 
@@ -207,7 +189,7 @@ export default function ResultCard({
     if (!editable) {
       const set = match.sets.find(x => x.setNo === i + 1)
       const v = set?.outcome === 'not_started' ? '—' : (side === 'home' ? set?.homeGames : set?.awayGames) ?? ''
-      return <span aria-label={label} className={`${scoreBoxClass} ${fieldW}`} style={{ background: FIELD }}>{v}</span>
+      return <span aria-label={label} className={`${scoreBoxClass} ${fieldW}`} style={{ background: field }}>{v}</span>
     }
     const notStarted = draft.timeoutAt !== null && i > draft.timeoutAt
     return (
@@ -218,7 +200,7 @@ export default function ResultCard({
         pattern="[0-9]*"
         enterKeyHint={last ? 'done' : 'next'}
         className={`${scoreInputClass} ${fieldW}`}
-        style={{ background: FIELD }}
+        style={{ background: field }}
         value={notStarted ? '' : draft.sets[i][side]}
         placeholder={notStarted ? '—' : ''}
         disabled={notStarted || save.isPending}
@@ -403,7 +385,7 @@ export default function ResultCard({
             Pontos{dirty && partial ? ' até agora' : ''}: {points[0]} – {points[1]}
           </span>
         )}
-        {editable && (
+        {editable && isAdmin && hasResult && (
           <button
             type="button"
             className={`min-h-[32px] px-[4px] ${points ? '' : 'ml-auto'}`}
@@ -415,93 +397,17 @@ export default function ResultCard({
         )}
       </div>
 
-      {editable && more && (
+      {/* Admin only (Pedro, 29 Oct): a result saved on the wrong match goes back to "por jogar". W.O.,
+          tempo esgotado and faltas are not buttons here: they follow from the result and from the players. */}
+      {editable && isAdmin && hasResult && more && (
         <div className="border-t border-gray-100 px-[10px] py-[8px] text-[13px]">
-          <div className="flex flex-wrap gap-[8px]">
-            {teams && !draft.walkover && draft.timeoutAt === null && (
-              <button
-                type="button"
-                className="min-h-[36px] rounded border border-amber-600 px-[10px] text-amber-800"
-                onClick={() => setDraft(d => ({ ...d, timeoutAt: setInProgress(d.sets) }))}
-              >
-                Tempo esgotado
-              </button>
-            )}
-            {teams && !draft.walkover && draft.timeoutAt !== null && (
-              <label className="flex min-h-[36px] items-center text-gray-700">
-                Tempo esgotado no
-                <select
-                  className="ml-[6px] min-h-[36px] rounded border border-gray-300 px-[6px]"
-                  value={draft.timeoutAt}
-                  onChange={e => setDraft(d => ({ ...d, timeoutAt: Number(e.target.value) }))}
-                >
-                  {Array.from({ length: TEAMS_SETS }, (_, i) => <option key={i} value={i}>set {i + 1}</option>)}
-                </select>
-                <button type="button" className="ml-[6px] px-[6px] underline" onClick={() => setDraft(d => ({ ...d, timeoutAt: null }))}>
-                  Anular
-                </button>
-              </label>
-            )}
-            {teams && (
-              <button
-                type="button"
-                className={`min-h-[36px] rounded border px-[10px] ${woOpen || draft.walkover ? 'border-gray-900' : 'border-gray-300'}`}
-                aria-expanded={woOpen || !!draft.walkover}
-                onClick={() => setWoOpen(o => !o)}
-              >
-                W.O.
-              </button>
-            )}
-            <button type="button" className="min-h-[36px] rounded border border-gray-300 px-[10px]" onClick={() => setAbsenceOpen(true)}>
-              Falta na jornada
+          {!confirmClear && (
+            <button type="button" className="min-h-[36px] px-[4px] text-red-700 underline" onClick={() => setConfirmClear(true)}>
+              Apagar resultado
             </button>
-            {hasResult && !confirmClear && (
-              <button type="button" className="min-h-[36px] px-[4px] text-red-700 underline" onClick={() => setConfirmClear(true)}>
-                Apagar resultado
-              </button>
-            )}
-          </div>
-          {teams && (woOpen || draft.walkover) && (
-            <div className="mt-[8px]">
-              <p className="text-gray-600">Falta de comparência: quem ganha?</p>
-              <div className="mt-[6px] flex flex-wrap gap-[8px]">
-                {sides.map(([side, label]) => (
-                  <button
-                    key={side}
-                    type="button"
-                    className={`min-h-[36px] rounded border px-[10px] ${draft.walkover === side ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-300'}`}
-                    onClick={() => {
-                      setDraft(d => ({ ...d, walkover: d.walkover === side ? null : side }))
-                      setWoAbsent(null)
-                    }}
-                  >
-                    Vitória {label}
-                  </button>
-                ))}
-              </div>
-              {draft.walkover && losers.length > 0 && (
-                <div className="mt-[8px]">
-                  <p className="text-gray-700">Quem faltou? Quem veio mantém a presença.</p>
-                  <div className="mt-[6px] flex flex-wrap gap-[8px]" role="radiogroup" aria-label="Quem faltou">
-                    {[...losers.map(p => [p.player!.id, p.player!.name] as const), ['both', 'Faltaram os dois'] as const].map(([value, label]) => (
-                      <button
-                        key={value}
-                        type="button"
-                        role="radio"
-                        aria-checked={woAbsent === value}
-                        className={`min-h-[36px] rounded-full border px-[12px] ${woAbsent === value ? 'border-red-700 bg-red-700 text-white' : 'border-gray-300'}`}
-                        onClick={() => setWoAbsent(value)}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
           )}
           {confirmClear && (
-            <div className="mt-[8px] rounded border border-red-200 bg-red-50 p-[10px]">
+            <div className="rounded border border-red-200 bg-red-50 p-[10px]">
               <p>Apagar o resultado deste jogo? Fica por jogar e a classificação é recalculada.</p>
               <div className="mt-[8px] flex justify-end gap-[8px]">
                 <button type="button" className="min-h-[36px] px-[10px] underline" onClick={() => setConfirmClear(false)}>Não</button>
@@ -518,7 +424,6 @@ export default function ResultCard({
           )}
         </div>
       )}
-      {editable && <AbsenceDialog match={match} roundId={roundId} open={absenceOpen} onOpenChange={setAbsenceOpen} />}
     </section>
   )
 }
