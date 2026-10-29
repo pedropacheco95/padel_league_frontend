@@ -74,3 +74,10 @@ export function setsTally(sets: { homeGames?: number | null; awayGames?: number 
   }
   return [h, a]
 }
+
+/** The earliest scheduled time among a jornada's matches, as the WhatsApp message dates the night
+ * (lib/teamsShareMessage dateLabel); null when none of them is scheduled. */
+export function roundNight(matches: Pick<Match, 'scheduledAt'>[] | undefined): string | null {
+  const times = (matches ?? []).map(m => (m.scheduledAt ? new Date(m.scheduledAt).getTime() : NaN)).filter(t => !Number.isNaN(t))
+  return times.length ? new Date(Math.min(...times)).toISOString() : null
+}

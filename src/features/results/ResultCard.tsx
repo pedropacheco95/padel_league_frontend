@@ -11,7 +11,7 @@ import { errorMessage, resultsApi } from './api'
 import AbsenceDialog from './AbsenceDialog'
 import { groupMatchesKey, seatKey, type SeatKey } from './keys'
 import { matchAbsences, participantName, sideParticipants } from './matchText'
-import { initials, sameDraft, serverDraft, setsFor, setsTally, shortDate, type Draft } from './resultDraft'
+import { initials, roundNight, sameDraft, serverDraft, setsFor, setsTally, shortDate, type Draft } from './resultDraft'
 import { buildResult, buildWalkover, isPartialInput, setInProgress, teamsSetPoints, TEAMS_SETS, walkoverAbsentees } from './resultInput'
 import { SeatPanel } from './SeatControls'
 
@@ -138,7 +138,9 @@ export default function ResultCard({
   const preview = teams && built.ok && !draft.walkover ? teamsSetPoints(built.input) : null
   const points: [number, number] | null =
     dirty && preview ? preview : match.homeScore != null && match.awayScore != null ? [match.homeScore, match.awayScore] : teams && preview && hasResult ? preview : null
-  const date = shortDate(match.scheduledAt ?? roundDate)
+  // The bar's date: the match's own time, else the jornada's date, else the night the jornada's
+  // other matches are scheduled for (the first rule of lib/teamsShareMessage's dateLabel).
+  const date = shortDate(match.scheduledAt ?? roundDate ?? roundNight(roundMatches))
   const typedSets = built.ok && !draft.walkover ? built.input.sets : match.sets
   const tally = typedSets.length ? setsTally(typedSets) : null
   const [home, away] = sideParticipants(match)
