@@ -2576,6 +2576,9 @@ export interface components {
             rule: string;
             /** @enum {string} */
             kind: "at_least" | "at_most" | "leader";
+            /** @description catalogue group key (BadgeCatalogue.themes) */
+            theme: string;
+            themeLabel: string;
             target?: number | null;
             holdersCount: number;
             /** @description share of players with at least one game who own it */
@@ -2600,9 +2603,15 @@ export interface components {
             info: components["schemas"]["StoryLine"];
             items: components["schemas"]["PlayerBadge"][];
         };
+        BadgeTheme: {
+            key: string;
+            label: string;
+        };
         BadgeCatalogue: {
             playersCount: number;
             info: components["schemas"]["StoryLine"];
+            /** @description catalogue groups in display order */
+            themes: components["schemas"]["BadgeTheme"][];
             badges: (components["schemas"]["Badge"] & {
                 holders: components["schemas"]["PlayerRef"][];
             })[];
