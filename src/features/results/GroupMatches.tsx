@@ -1,76 +1,15 @@
-// Matches of one group by round, with result entry and absences for signed-in players.
-// Self-contained so S3's MatchCard can replace the row later via its `actions` slot.
+// Matches of one group by round: one inline result card per match (ResultCard), editable for
+// signed-in players, read-only for everyone else.
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import type { Match } from '@/api/v2'
 import { useAuth } from '@/context/AuthContext'
 import { resultsApi } from './api'
-import AbsenceDialog from './AbsenceDialog'
-import ResultEntryDialog, { groupMatchesKey } from './ResultEntryDialog'
-import { matchAbsences, scoreText, sideNames } from './matchText'
-
-/** `groupEnded`: an ended group's results belong to the admins (the server 409s anyone else).
- * Who played is edited in the result modal (tap a name), before or after the result is saved. */
-export function MatchActions({
-  match,
-  roundId,
-  groupEnded,
-  roundMatches,
-}: {
-  match: Match
-  roundId?: number
-  groupEnded?: boolean
-  roundMatches?: Match[]
-}) {
-  const { user } = useAuth()
-  const [dialog, setDialog] = useState<'result' | 'absence' | null>(null)
-  const isAdmin = !!(user?.isAdmin || user?.superAdmin)
-  if (!user || match.status === 'cancelled' || (groupEnded && !isAdmin)) return null
-  const played = match.status !== 'scheduled'
-  return (
-    <div className="flex gap-[8px]">
-      <button
-        className="min-h-[40px] rounded bg-gray-900 px-[10px] py-[6px] text-[13px] font-semibold text-white"
-        onClick={() => setDialog('result')}
-      >
-        {played ? 'Editar resultado' : match.inProgress ? 'Continuar resultado' : 'Resultado'}
-      </button>
-      <button className="min-h-[40px] rounded border border-gray-300 px-[10px] py-[6px] text-[13px]" onClick={() => setDialog('absence')}>
-        Falta
-      </button>
-      <ResultEntryDialog match={match} roundId={roundId} roundMatches={roundMatches} open={dialog === 'result'} onOpenChange={o => setDialog(o ? 'result' : null)} />
-      <AbsenceDialog match={match} roundId={roundId} open={dialog === 'absence'} onOpenChange={o => setDialog(o ? 'absence' : null)} />
-    </div>
-  )
-}
-
-function MatchRow({ match, roundId, groupEnded, roundMatches }: { match: Match; roundId?: number; groupEnded?: boolean; roundMatches?: Match[] }) {
-  const [home, away] = sideNames(match)
-  const score = scoreText(match)
-  const points = match.format === 'teams' && match.homeScore != null ? `${match.homeScore}–${match.awayScore}` : null
-  return (
-    <li className="rounded-lg border border-gray-200 bg-white p-[12px]">
-      <div className="grid grid-cols-[1fr_auto] items-center gap-x-[12px] gap-y-[4px] text-[15px]">
-        <span className={`truncate ${match.winner === 'home' ? 'font-semibold' : ''}`}>{home}</span>
-        <span className={`row-span-2 text-right text-[14px] tabular-nums ${match.inProgress ? 'text-amber-800' : ''}`}>
-          {score ?? <span className="text-gray-600">por jogar</span>}
-          {points && <span className="block text-[12px] text-gray-500">{points} pts</span>}
-        </span>
-        <span className={`truncate ${match.winner === 'away' ? 'font-semibold' : ''}`}>{away}</span>
-      </div>
-      {matchAbsences(match).length > 0 && (
-        <p className="mt-[6px] text-[12px] text-amber-800">
-          Faltas: {matchAbsences(match).map(a => `${a.player.name} (${a.substitute?.name ?? 'substituto desconhecido'})`).join(', ')}
-        </p>
-      )}
-      <div className="mt-[10px]">
-        <MatchActions match={match} roundId={roundId} groupEnded={groupEnded} roundMatches={roundMatches} />
-      </div>
-    </li>
-  )
-}
+import { groupMatchesKey } from './keys'
+import ResultCard from './ResultCard'
 
 export default function GroupMatches({ groupId }: { groupId: number }) {
+  const { user } = useAuth()
+  const isAdmin = !!(user?.isAdmin || user?.superAdmin)
   const group = useQuery({ queryKey: ['v2', 'groups', groupId], queryFn: () => resultsApi.group(groupId) })
   const [round, setRound] = useState<number | null>(null)
   useEffect(() => {
@@ -87,7 +26,10 @@ export default function GroupMatches({ groupId }: { groupId: number }) {
     return <p className="text-[14px] text-red-700">Não foi possível carregar os jogos.</p>
   }
   const rounds = group.data?.rounds ?? []
-  const roundId = rounds.find(r => r.number === round)?.id
+  const activeRound = rounds.find(r => r.number === round)
+  const roundId = activeRound?.id
+  // An ended group's results belong to the admins (the server 409s anyone else).
+  const editable = !!user && (isAdmin || !group.data?.hasEnded)
 
   return (
     <div>
@@ -106,8 +48,12 @@ export default function GroupMatches({ groupId }: { groupId: number }) {
           ))}
         </div>
       )}
-      <ul className="space-y-[8px]">
-        {(matches.data ?? []).map(m => <MatchRow key={m.id} match={m} roundId={roundId} groupEnded={group.data?.hasEnded} roundMatches={matches.data} />)}
+      <ul className="space-y-[12px]">
+        {(matches.data ?? []).map(m => (
+          <li key={m.id}>
+            <ResultCard match={m} roundId={roundId} roundDate={activeRound?.date} roundMatches={matches.data} editable={editable && m.status !== 'cancelled'} />
+          </li>
+        ))}
         {matches.data?.length === 0 && <li className="text-[14px] text-gray-500">Sem jogos nesta jornada.</li>}
       </ul>
     </div>
