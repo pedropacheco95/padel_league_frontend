@@ -12,6 +12,16 @@ type S = components['schemas']
 type PlayerBadges = S['PlayerBadges']
 type BadgeCatalogue = S['BadgeCatalogue']
 type BadgeDetail = S['BadgeDetail']
+type BadgeTheme = S['BadgeTheme']
+type CatalogueBadge = BadgeCatalogue['badges'][number]
+
+/** The catalogue's badges grouped by theme, themes in the API's order, each group keeping the
+ *  catalogue's rarest-first order. Themes without a badge are left out. */
+export function groupByTheme(themes: BadgeTheme[], badges: CatalogueBadge[]) {
+  return themes
+    .map((t) => ({ ...t, badges: badges.filter((b) => b.theme === t.key) }))
+    .filter((g) => g.badges.length > 0)
+}
 
 export const TIER_COLOR: Record<string, string> = {
   comum: '#9ACBD0',
@@ -68,23 +78,28 @@ export function BadgesCataloguePage() {
         <div className="wrap on-light">
           <h2 className="sec">Conquistas</h2>
           <p className="lede">{data.info.text}</p>
-          <div className="cat">
-            {data.badges.map((b) => (
-              <Link key={b.key} to={`/conquistas/${b.key}`} className="cat-row">
-                <Medal tier={b.tier} earned size={44} />
-                <div className="cat-main">
-                  <div className="cat-top"><b>{b.name}</b><span className="pilltier" style={{ background: TIER_COLOR[b.tier] }}>{b.tierLabel}</span></div>
-                  <div className="cat-rule">{b.rule}</div>
-                  <div className="cat-meta">
-                    {b.rarityLine.text} · {b.holdersLine?.text}
-                    <span className="cat-avs">
-                      {b.holders.slice(0, 6).map((p) => <PlayerAvatar key={p.id} player={p} size={20} link={false} />)}
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+          {groupByTheme(data.themes, data.badges).map((g) => (
+            <section key={g.key} className="cat-theme" aria-labelledby={`theme-${g.key}`}>
+              <h3 id={`theme-${g.key}`} className="cat-h">{g.label} <small>{g.badges.length}</small></h3>
+              <div className="cat">
+                {g.badges.map((b) => (
+                  <Link key={b.key} to={`/conquistas/${b.key}`} className="cat-row">
+                    <Medal tier={b.tier} earned size={44} />
+                    <div className="cat-main">
+                      <div className="cat-top"><b>{b.name}</b><span className="pilltier" style={{ background: TIER_COLOR[b.tier] }}>{b.tierLabel}</span></div>
+                      <div className="cat-rule">{b.rule}</div>
+                      <div className="cat-meta">
+                        {b.rarityLine.text} · {b.holdersLine?.text}
+                        <span className="cat-avs">
+                          {b.holders.slice(0, 6).map((p) => <PlayerAvatar key={p.id} player={p} size={20} link={false} />)}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ))}
         </div>
       </section>
     </div>
