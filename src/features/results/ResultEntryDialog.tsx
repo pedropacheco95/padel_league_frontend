@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import type { Match } from '@/api/v2'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { errorMessage, resultsApi } from './api'
-import { buildResult, buildWalkover, setInProgress, teamsSetPoints, TEAMS_SETS, walkoverAbsentees, type SetDraft, type Side } from './resultInput'
+import { buildResult, buildWalkover, isPartialInput, setInProgress, teamsSetPoints, TEAMS_SETS, walkoverAbsentees, type SetDraft, type Side } from './resultInput'
 import type { ResultInput } from '@/api/v2'
 import { sideNames, sideParticipants } from './matchText'
 import { groupMatchesKey, seatKey, type SeatKey } from './keys'
@@ -80,11 +80,13 @@ export default function ResultEntryDialog({
       const key = groupMatchesKey(match.groupId)
       await qc.cancelQueries({ queryKey: key })
       const previous = qc.getQueriesData<Match[]>({ queryKey: key })
+      const partial = teams && isPartialInput(input)
       const optimistic: Match = {
         ...match,
-        status: input.walkoverWinner ? 'walkover' : 'played',
+        status: input.walkoverWinner ? 'walkover' : partial ? 'scheduled' : 'played',
+        inProgress: partial,
         sets: input.sets.map((s, i) => ({ setNo: i + 1, ...s })),
-        winner: input.walkoverWinner ?? match.winner,
+        winner: input.walkoverWinner ?? (partial ? null : match.winner),
       }
       qc.setQueriesData<Match[]>({ queryKey: key }, old => old?.map(m => (m.id === match.id ? optimistic : m)))
       return { previous }
@@ -94,7 +96,7 @@ export default function ResultEntryDialog({
       qc.invalidateQueries({ queryKey: ['v2', 'groups', match.groupId] })
       qc.invalidateQueries({ queryKey: ['v2', 'group', match.groupId] }) // S3's group page cache
       qc.invalidateQueries({ predicate: q => q.queryKey[0] === 'v2' && q.queryKey[1] === 'competitions' && q.queryKey[3] === 'standings' })
-      toast.success('Resultado guardado.')
+      toast.success(saved.inProgress ? `Guardado: ${saved.sets.length === 1 ? '1 set' : `${saved.sets.length} sets`}. Falta o resto.` : 'Resultado guardado.')
       onOpenChange(false)
     },
     onError: (err, _input, ctx) => {
@@ -116,10 +118,11 @@ export default function ResultEntryDialog({
     },
     onError: err => setError(errorMessage(err)),
   })
-  const hasResult = match.status === 'played' || match.status === 'walkover'
+  const hasResult = match.status === 'played' || match.status === 'walkover' || !!match.inProgress
 
   const built = walkover ? ({ ok: true, input: buildWalkover(walkover) } as const) : buildResult(match.format, sets, timeoutAt)
   const preview = teams && built.ok && !walkover ? teamsSetPoints(built.input) : null
+  const partial = teams && built.ok && !walkover && isPartialInput(built.input)
   const [home, away] = sideNames(match)
 
   const setGame = (i: number, side: 'home' | 'away', v: string) => {
@@ -153,7 +156,9 @@ export default function ResultEntryDialog({
         </DialogHeader>
 
         {!walkover && (
-          <p className="-mt-[4px] mb-[4px] text-[12px] text-gray-600">Alguém não veio? Toca no nome.</p>
+          <p className="-mt-[4px] mb-[4px] text-[12px] text-gray-600">
+            Alguém não veio? Toca no nome.{teams && ' Podes guardar set a set: deixa os seguintes em branco.'}
+          </p>
         )}
         {/* A scoreboard: one row per pair (names on the left), one column per set. */}
         {!walkover && (
@@ -292,7 +297,8 @@ export default function ResultEntryDialog({
 
         {preview && (
           <p className="mt-[12px] text-[13px] text-gray-700">
-            Pontos: <strong>{preview[0]}</strong> – <strong>{preview[1]}</strong>
+            {partial ? 'Pontos até agora' : 'Pontos'}: <strong>{preview[0]}</strong> – <strong>{preview[1]}</strong>
+            {partial && <span className="ml-[6px] text-amber-800">(em curso: só conta quando os 3 sets estiverem guardados)</span>}
           </p>
         )}
         {error && <p role="alert" className="mt-[10px] text-[13px] text-red-700">{error}</p>}
@@ -325,7 +331,7 @@ export default function ResultEntryDialog({
             disabled={save.isPending}
             onClick={submit}
           >
-            {save.isPending ? 'A guardar…' : 'Guardar'}
+            {save.isPending ? 'A guardar…' : partial ? `Guardar ${built.ok ? built.input.sets.length : ''} set${built.ok && built.input.sets.length > 1 ? 's' : ''}` : 'Guardar'}
           </button>
         </div>
       </DialogContent>
