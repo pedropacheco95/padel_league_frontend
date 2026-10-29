@@ -42,8 +42,9 @@ export default function MatchCard({ match, actions, showGroup = false }: { match
   const away = match.participants.filter((p) => p.side === 'away')
   const multiSet = match.sets.length > 1
   const played = match.status === 'played' || match.status === 'walkover'
+  const inProgress = !!match.inProgress && match.sets.length > 0 // Teams, saved set by set
   const score = (s: 'home' | 'away') => {
-    if (!played) return null
+    if (!played && !inProgress) return null
     if (multiSet) {
       return match.sets.map((set) => (
         <span key={set.setNo} className="w-[20px] text-center">{s === 'home' ? set.homeGames ?? '–' : set.awayGames ?? '–'}</span>
@@ -75,6 +76,9 @@ export default function MatchCard({ match, actions, showGroup = false }: { match
       <SideRow parts={away} score={score('away')} won={match.winner === 'away'} />
       {multiSet && played && match.homeScore !== null && match.homeScore !== undefined && (
         <div className="text-[12px] text-gray-500 text-right mt-[4px]">Pontos: {match.homeScore} – {match.awayScore}</div>
+      )}
+      {inProgress && (
+        <div className="text-[12px] text-amber-800 text-right mt-[4px]">Em curso · {match.sets.length === 1 ? '1 set guardado' : `${match.sets.length} sets guardados`}</div>
       )}
       {specialOutcomes.length > 0 && (
         <div className="text-[12px] text-gray-500 mt-[4px]">

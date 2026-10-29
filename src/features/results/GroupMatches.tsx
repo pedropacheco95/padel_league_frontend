@@ -33,7 +33,7 @@ export function MatchActions({
         className="min-h-[40px] rounded bg-gray-900 px-[10px] py-[6px] text-[13px] font-semibold text-white"
         onClick={() => setDialog('result')}
       >
-        {played ? 'Editar resultado' : 'Resultado'}
+        {played ? 'Editar resultado' : match.inProgress ? 'Continuar resultado' : 'Resultado'}
       </button>
       <button className="min-h-[40px] rounded border border-gray-300 px-[10px] py-[6px] text-[13px]" onClick={() => setDialog('absence')}>
         Falta
@@ -52,7 +52,7 @@ function MatchRow({ match, roundId, groupEnded, roundMatches }: { match: Match; 
     <li className="rounded-lg border border-gray-200 bg-white p-[12px]">
       <div className="grid grid-cols-[1fr_auto] items-center gap-x-[12px] gap-y-[4px] text-[15px]">
         <span className={`truncate ${match.winner === 'home' ? 'font-semibold' : ''}`}>{home}</span>
-        <span className="row-span-2 text-right text-[14px] tabular-nums">
+        <span className={`row-span-2 text-right text-[14px] tabular-nums ${match.inProgress ? 'text-amber-800' : ''}`}>
           {score ?? <span className="text-gray-600">por jogar</span>}
           {points && <span className="block text-[12px] text-gray-500">{points} pts</span>}
         </span>

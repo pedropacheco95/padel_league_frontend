@@ -594,8 +594,10 @@ export interface paths {
         get?: never;
         /**
          * Record a result (any signed-in player)
-         * @description Clássica / Shuffle send one set with the games. Teams send exactly 3 sets,
-         *     each `completed`, `timeout_draw` or `not_started`; a walkover sends no sets and `walkoverWinner` (Teams: 3-0).
+         * @description Clássica / Shuffle send one set with the games. Teams send 1 to 3 sets,
+         *     each `completed`, `timeout_draw` or `not_started`; 3 sets complete the match (status `played`),
+         *     1–2 completed sets save it set by set (status stays `scheduled`, `inProgress` true, nothing counts it yet);
+         *     a walkover sends no sets and `walkoverWinner` (Teams: 3-0).
          *
          */
         put: {
@@ -2461,6 +2463,8 @@ export interface components {
             court?: string | null;
             /** @enum {string} */
             status: "scheduled" | "played" | "walkover" | "cancelled";
+            /** @description Teams: a result saved set by set and not complete (1–2 sets stored, status still scheduled); standings, close-out, awards and ranking ignore it until the 3rd set. */
+            inProgress?: boolean;
             participants: components["schemas"]["Participant"][];
             sets: components["schemas"]["MatchSet"][];
             /** @description Games (Clássica/Shuffle) or set points (Teams) */
@@ -2471,7 +2475,7 @@ export interface components {
             absences?: components["schemas"]["Absence"][];
         };
         ResultInput: {
-            /** @description Teams requires exactly 3 unless walkoverWinner is set; Clássica/Shuffle send one set with the games. */
+            /** @description Teams: 1 to 3 sets unless walkoverWinner is set — 3 sets (or a time-out chain) complete the match; 1–2 completed sets save it in progress (status stays scheduled, inProgress true). Clássica/Shuffle send one set with the games. */
             sets: {
                 homeGames?: number | null;
                 awayGames?: number | null;

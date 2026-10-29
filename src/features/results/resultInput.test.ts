@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildGamesResult, buildTeamsResult, buildWalkover, setInProgress, teamsSetPoints, validTeamsSet, walkoverAbsentees } from './resultInput'
+import { buildGamesResult, buildTeamsResult, buildWalkover, isPartialInput, setInProgress, teamsSetPoints, validTeamsSet, walkoverAbsentees } from './resultInput'
 
 const s = (home: string, away: string) => ({ home, away })
 
@@ -94,5 +94,39 @@ describe('matchAbsences', () => {
       absences: [abs(7, 'partial'), abs(8, 'partial'), abs(9, 'full')],
     }
     expect(matchAbsences(m).map(a => a.player.id)).toEqual([8, 9])
+  })
+})
+
+describe('buildTeamsResult set by set (Oct 2026)', () => {
+  it('set 1 only → one completed set, saved in progress', () => {
+    const r = buildTeamsResult([s('6', '3'), s('', ''), s('', '')], null)
+    expect(r.ok && r.input.sets).toEqual([{ homeGames: 6, awayGames: 3, outcome: 'completed' }])
+    expect(r.ok && isPartialInput(r.input)).toBe(true)
+    expect(r.ok && teamsSetPoints(r.input)).toEqual([3, 0])
+  })
+
+  it('sets 1 and 2 → two completed sets, still in progress', () => {
+    const r = buildTeamsResult([s('6', '3'), s('4', '6'), s('', '')], null)
+    expect(r.ok && r.input.sets.length).toBe(2)
+    expect(r.ok && isPartialInput(r.input)).toBe(true)
+  })
+
+  it('a typed set after a blank one is refused (fill in order)', () => {
+    const r = buildTeamsResult([s('6', '3'), s('', ''), s('6', '4')], null)
+    expect(r.ok).toBe(false)
+    expect('error' in r && r.error).toMatch(/Set 2: preenche os sets por ordem/)
+  })
+
+  it('a half-typed set is still an error, set 1 blank is still an error', () => {
+    expect(buildTeamsResult([s('6', '3'), s('4', ''), s('', '')], null).ok).toBe(false)
+    expect(buildTeamsResult([s('', ''), s('', ''), s('', '')], null).ok).toBe(false)
+  })
+
+  it('three sets are complete, not partial; a time-out chain is never partial', () => {
+    const full = buildTeamsResult([s('6', '3'), s('4', '6'), s('7', '6')], null)
+    expect(full.ok && isPartialInput(full.input)).toBe(false)
+    const te = buildTeamsResult([s('6', '2'), s('3', '2'), s('', '')], 1)
+    expect(te.ok && te.input.sets.length).toBe(3)
+    expect(te.ok && isPartialInput(te.input)).toBe(false)
   })
 })

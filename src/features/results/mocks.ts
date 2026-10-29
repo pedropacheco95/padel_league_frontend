@@ -119,13 +119,15 @@ export const mockResults = {
       if (s.outcome !== 'completed' || h === a) { home += 1; away += 1 } else if (h > a) home += 3; else away += 3
     }
     const wo = input.walkoverWinner
+    const partial = teams && !wo && sets.length < 3 // saved set by set: nothing counts it yet
     const next: Match = {
       ...m,
       sets,
-      status: wo ? 'walkover' : 'played',
-      homeScore: wo ? null : home,
-      awayScore: wo ? null : away,
-      winner: wo ?? (home > away ? 'home' : away > home ? 'away' : 'draw'),
+      status: wo ? 'walkover' : partial ? 'scheduled' : 'played',
+      inProgress: partial,
+      homeScore: wo || partial ? null : home,
+      awayScore: wo || partial ? null : away,
+      winner: wo ?? (partial ? null : home > away ? 'home' : away > home ? 'away' : 'draw'),
     }
     matches.set(matchId, next)
     return next
