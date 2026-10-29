@@ -173,6 +173,6 @@ describe('ResultCard', () => {
     expect(screen.getByText(/4-4 não é um set completo/)).toBeInTheDocument()
     expect(screen.getByLabelText('Set 3 casa')).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Guardar' })).toBeInTheDocument() // a complete result: 3 sets
-    expect(screen.getByText('Pontos: 4 – 1')).toBeInTheDocument() // 3 + 1 vs 1
+    expect(screen.getByText('Pontos: 5 – 2')).toBeInTheDocument() // 3-0, 1-1 (TE), 1-1 (not played)
   })
 })
