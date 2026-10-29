@@ -31,15 +31,23 @@ export function buildGamesResult(set: SetDraft): BuildResult {
   return { ok: true, input: { sets: [{ homeGames: h, awayGames: a, outcome: 'completed' }] } }
 }
 
+const isBlank = (s: SetDraft | undefined) => (s?.home ?? '').trim() === '' && (s?.away ?? '').trim() === ''
+
 /**
- * timeoutAt: index of the set in progress when time ran out (null = all 3 sets played).
+ * timeoutAt: index of the set in progress when time ran out (null = no time-out).
  * Sets before it must be complete; it becomes timeout_draw; later sets not_started.
+ * Without a time-out, the sets can be saved one at a time (Pedro, Oct 2026): a blank set after
+ * the typed ones ends the input, and the result is in progress until all 3 are typed.
  */
 export function buildTeamsResult(sets: SetDraft[], timeoutAt: number | null): BuildResult {
   const out: ResultInput['sets'] = []
   for (let i = 0; i < TEAMS_SETS; i++) {
     const h = toNum(sets[i]?.home ?? '')
     const a = toNum(sets[i]?.away ?? '')
+    if (timeoutAt === null && i > 0 && isBlank(sets[i])) {
+      if (sets.slice(i + 1, TEAMS_SETS).some(s => !isBlank(s))) return { ok: false, error: `Set ${i + 1}: preenche os sets por ordem.` }
+      break
+    }
     if (timeoutAt !== null && i > timeoutAt) {
       out.push({ homeGames: null, awayGames: null, outcome: 'not_started' })
       continue
@@ -50,7 +58,7 @@ export function buildTeamsResult(sets: SetDraft[], timeoutAt: number | null): Bu
       out.push({ homeGames: h, awayGames: a, outcome: 'timeout_draw' })
       continue
     }
-    if (h === null || a === null) return { ok: false, error: `Set ${i + 1}: indica os jogos (ou usa "Tempo esgotado").` }
+    if (h === null || a === null) return { ok: false, error: i === 0 ? 'Set 1: indica os jogos das duas equipas.' : `Set ${i + 1}: indica os jogos das duas equipas (ou deixa o set em branco para guardar mais tarde).` }
     if (!validTeamsSet(h, a)) return { ok: false, error: `Set ${i + 1}: ${h}-${a} não é um resultado válido (6-0 a 6-4, 7-5 ou 7-6).` }
     out.push({ homeGames: h, awayGames: a, outcome: 'completed' })
   }
@@ -64,6 +72,9 @@ export function buildWalkover(winner: Side): ResultInput {
 export function buildResult(format: Format | undefined, sets: SetDraft[], timeoutAt: number | null): BuildResult {
   return format === 'teams' ? buildTeamsResult(sets, timeoutAt) : buildGamesResult(sets[0] ?? { home: '', away: '' })
 }
+
+/** A Teams input that saves the match in progress (fewer than 3 sets, no walkover). */
+export const isPartialInput = (input: ResultInput) => !input.walkoverWinner && input.sets.length > 0 && input.sets.length < TEAMS_SETS
 
 /** Set points for a Teams result as shown before saving: 3 per set won, 1 each per drawn set. */
 export function teamsSetPoints(input: ResultInput): [number, number] {
