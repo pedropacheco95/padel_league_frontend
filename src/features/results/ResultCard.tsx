@@ -11,7 +11,7 @@ import { errorMessage, resultsApi } from './api'
 import { useAuth } from '@/context/AuthContext'
 import { groupMatchesKey, seatKey, type SeatKey } from './keys'
 import { matchAbsences, participantName, sideParticipants } from './matchText'
-import { initials, roundNight, sameDraft, serverDraft, setsFor, setsTally, shortDate, type Draft } from './resultDraft'
+import { initials, roundNight, sameDraft, serverDraft, setsFor, setsTally, shortDate, shortTime, type Draft } from './resultDraft'
 import { buildResult, buildWalkover, isPartialInput, teamsSetPoints, type Side } from './resultInput'
 import { SeatPanel } from './SeatControls'
 
@@ -142,6 +142,7 @@ export default function ResultCard({
   // The bar's date: the match's own time, else the jornada's date, else the night the jornada's
   // other matches are scheduled for (the first rule of lib/teamsShareMessage's dateLabel).
   const date = shortDate(match.scheduledAt ?? roundDate ?? roundNight(roundMatches))
+  const time = shortTime(match.scheduledAt) // the match's own time only; a jornada date has none
   const typedSets = built.ok && !walkover ? built.input.sets : match.sets
   // The set time ran out in: derived from a non-terminal score as typed (shown before saving), else
   // the saved result's. Later sets are not played.
@@ -315,19 +316,19 @@ export default function ResultCard({
           with Guardar appears under it while there is a result to save. */}
       <div className="text-white transition-colors" style={{ backgroundColor: showRed ? DIRTY_RED : TEAL }}>
         <div className="flex items-center gap-[5px] px-[8px] py-[6px]">
-          {/* The date, as the reference; the jornada (already the filter above the list) only as a hint. */}
+          {/* The date, as the reference, with the time and the court (what people look up on match
+              night) tiny underneath, one per line so the Teams bar still fits 390px; the jornada hint
+              (already the filter above the list) only when there is neither. */}
           <div className="shrink-0 text-center leading-tight">
-            {date ? (
-              <>
-                <div className={tiny}>Jornada {match.round}</div>
-                <div className="mt-[3px] text-[11px] font-bold">{date}</div>
-              </>
-            ) : (
-              <div className="text-[11px] font-bold">Jornada {match.round}</div>
-            )}
+            {date && !time && !match.court && <div className={`${tiny} mb-[3px]`}>Jornada {match.round}</div>}
+            <div className="text-[11px] font-bold">{date ?? `Jornada ${match.round}`}</div>
+            {time && <div className={`${tiny} mt-[3px]`}>{time}</div>}
+            {match.court && <div className={`${tiny} mt-[3px] normal-case`}>{match.court}</div>}
           </div>
           <span className="mx-[4px] h-[36px] w-px shrink-0 bg-white/30" aria-hidden />
-          {walkover ? (
+          {match.status === 'cancelled' ? (
+            <div className="flex flex-1 items-center justify-center text-[15px] font-bold">Cancelado</div>
+          ) : walkover ? (
             <div className="flex flex-1 items-center justify-center text-[15px] font-bold">W.O. · vitória {walkover === 'home' ? 'casa' : 'fora'}</div>
           ) : nobody ? (
             <div className="flex flex-1 items-center justify-center text-center text-[13px] font-semibold leading-tight">Ninguém compareceu · sem resultado</div>

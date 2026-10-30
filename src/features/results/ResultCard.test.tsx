@@ -67,7 +67,8 @@ describe('ResultCard', () => {
     const saved = match({ inProgress: true, sets: [{ setNo: 1, homeGames: 6, awayGames: 3, outcome: 'completed' }] })
     vi.mocked(resultsApi.putResult).mockResolvedValue(saved)
     const { rerender } = renderCard(match())
-    expect(screen.getByText(/Jornada 3/)).toBeInTheDocument()
+    expect(screen.getByText('03/11/26')).toBeInTheDocument()
+    expect(screen.getByText('21:30')).toBeInTheDocument() // Lisbon time of the match's own scheduledAt
     expect(screen.queryByRole('button', { name: /Guardar/ })).toBeNull()
 
     fireEvent.change(screen.getByLabelText('Set 1 casa'), { target: { value: '6' } })
