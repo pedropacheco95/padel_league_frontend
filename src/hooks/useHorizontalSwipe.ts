@@ -5,7 +5,7 @@
 // coming while the page scrolls, and the direction test below throws scrolls away.
 // Guards (design brief "swipe conflicts"): a touch that starts within `edge` px of either screen edge
 // is ignored (iOS back/forward gesture); so is one that starts inside an element that scrolls sideways
-// (tabs nav, standings tables) or inside a form field, and any multi-finger touch; the gesture counts
+// (tabs nav, standings tables) or inside a form field that has the focus, and any multi-finger touch; the gesture counts
 // only when |dx| > minDistance and |dx| > ratio × |dy|. `touch-action: pan-y` keeps vertical scrolling
 // native and stops horizontal page panning. Listeners are passive (React never calls preventDefault here).
 import { useRef, type CSSProperties, type TouchEvent as ReactTouchEvent } from 'react'
@@ -23,11 +23,14 @@ export type SwipeOptions = {
 
 const FIELDS = new Set(['INPUT', 'TEXTAREA', 'SELECT'])
 
-/** True when `target` (or an ancestor below `root`) is a form field or scrolls horizontally. */
+/** True when `target` (or an ancestor below `root`) is a form field WITH the focus (text selection or
+ * caret drag in progress) or scrolls horizontally. An idle score box is just part of the card: a swipe
+ * may start on it, so the teal header bar of a result card swipes like the rest of the card. */
 export function startsInsideProtected(target: EventTarget | null, root: Element): boolean {
   let el = target instanceof Element ? target : null
+  const active = typeof document === 'undefined' ? null : document.activeElement
   while (el && el !== root) {
-    if (FIELDS.has(el.tagName) || el.getAttribute('contenteditable') === 'true') return true
+    if ((FIELDS.has(el.tagName) || el.getAttribute('contenteditable') === 'true') && el === active) return true
     if (el.scrollWidth > el.clientWidth + 1) {
       const ox = getComputedStyle(el).overflowX
       if (ox === 'auto' || ox === 'scroll') return true

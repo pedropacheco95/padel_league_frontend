@@ -278,8 +278,10 @@ export default function ResultCard({
         type="button"
         disabled={!editable}
         onClick={() => tap(p)}
-        className={`max-w-full truncate rounded-[5px] px-[6px] text-[16px] font-semibold leading-[1.35] ${won ? 'underline decoration-2 underline-offset-2' : ''} ${member ? '' : 'italic'}`}
-        style={pending ? { backgroundColor: PILL, color: 'white' } : { color: DARK }}
+        className={`max-w-full truncate rounded-[5px] px-[6px] text-[16px] font-semibold leading-[1.35] ${member ? '' : 'italic'}`}
+        // Winner marker (Pedro, 30 Oct): the winning pair's names in the card's teal, same weight, no underline.
+        style={pending ? { backgroundColor: PILL, color: 'white' } : { color: won ? TEAL : DARK }}
+        data-won={won || undefined}
       >
         {participantName(p)}
         {!member && <span className={`ml-[4px] text-[11px] not-italic ${pending ? 'text-white' : 'text-gray-500'}`}>{p.replaces ? `por ${p.replaces.name}` : 'substituto'}</span>}

@@ -71,15 +71,24 @@ describe('useHorizontalSwipe', () => {
     expect(right).not.toHaveBeenCalled()
   })
 
-  it('ignores touches starting inside a sideways scroller or a form field, and two fingers', () => {
+  it('ignores touches starting inside a sideways scroller or a focused form field, and two fingers', () => {
     const { getByTestId } = render(<List />)
     const tabs = getByTestId('tabs')
     Object.defineProperty(tabs, 'scrollWidth', { value: 800, configurable: true })
     Object.defineProperty(tabs, 'clientWidth', { value: 390, configurable: true })
     drag(tabs, [300, 100], [100, 100])
-    drag(getByTestId('field'), [300, 100], [100, 100])
+    const field = getByTestId('field') as HTMLInputElement
+    field.focus()
+    drag(field, [300, 100], [100, 100])
     drag(getByTestId('list'), [300, 100], [100, 100], 2)
     expect(left).not.toHaveBeenCalled()
+  })
+
+  it('an idle (unfocused) score box does not block a swipe that starts on it', () => {
+    const { getByTestId } = render(<List />)
+    ;(document.activeElement as HTMLElement | null)?.blur()
+    drag(getByTestId('field'), [300, 100], [100, 100])
+    expect(left).toHaveBeenCalledTimes(1)
   })
 
   it('a cancelled touch never fires', () => {
