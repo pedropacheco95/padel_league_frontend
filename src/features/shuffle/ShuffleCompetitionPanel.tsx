@@ -9,6 +9,7 @@ import type { Competition, StandingRow } from '@/api/v2'
 import StepperSelect from '@/components/v2/StepperSelect'
 import { useHeaderSlot } from '@/components/v2/headerSlot'
 import { useAuth } from '@/context/AuthContext'
+import { blurAfterPointerClick } from '@/lib/focus'
 import { errorMessage } from '@/features/results/api'
 import GroupMatches from '@/features/results/GroupMatches'
 import CloseGroupButton from '@/features/results/CloseGroupButton'
@@ -187,7 +188,10 @@ export default function ShuffleCompetitionPanel({ competition: initial }: { comp
             role="tab"
             aria-selected={section === key}
             className={`whitespace-nowrap border-b-2 px-[12px] py-[10px] text-[15px] ${section === key ? 'border-gray-900 font-semibold' : 'border-transparent text-gray-600'}`}
-            onClick={() => setSection(key)}
+            onClick={e => {
+              blurAfterPointerClick(e)
+              setSection(key)
+            }}
           >
             {label}
           </button>

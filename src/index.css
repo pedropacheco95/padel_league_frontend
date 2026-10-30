@@ -64,5 +64,19 @@
 @layer base {
   * {
     @apply border-border;
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Focus ring policy (Pedro, 30 Oct): no ring after a tap or click, a teal ring for keyboard focus only. */
+  button:focus:not(:focus-visible),
+  a:focus:not(:focus-visible),
+  [role="tab"]:focus:not(:focus-visible) {
+    outline: none;
+    box-shadow: none;
+  }
+  button:focus-visible,
+  a:focus-visible,
+  [role="tab"]:focus-visible {
+    outline: 2px solid #006A71;
+    outline-offset: 2px;
   }
 }

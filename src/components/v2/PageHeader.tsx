@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { HEADER_SLOT_ID } from './headerSlot'
+import { blurAfterPointerClick } from '@/lib/focus'
 
 export type HeaderTab<K extends string> = { key: K; label: string }
 
@@ -35,7 +36,10 @@ export default function PageHeader<K extends string>({ image, kicker, title, sub
             <button
               key={t.key}
               type="button"
-              onClick={() => onTab?.(t.key)}
+              onClick={e => {
+                blurAfterPointerClick(e)
+                onTab?.(t.key)
+              }}
               className="px-[14px] py-[12px] text-[15px] font-semibold whitespace-nowrap bg-transparent"
               style={active === t.key ? { borderBottom: '3px solid #006A71', color: '#006A71' } : { borderBottom: '3px solid transparent', color: '#6b7280' }}
             >
