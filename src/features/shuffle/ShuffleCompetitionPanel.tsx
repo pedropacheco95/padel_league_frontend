@@ -146,7 +146,14 @@ export default function ShuffleCompetitionPanel({ competition: initial }: { comp
     const g = groups[activeIdx + d]
     if (g) setGroupId(g.id)
   }
-  const swipe = useHorizontalSwipe({ onSwipeLeft: () => stepGroup(1), onSwipeRight: () => stepGroup(-1), enabled: groups.length > 1 })
+  // Swipes: the sticky group bar steps the group, the hero row steps the jornada (one stage per round).
+  const stageIdx = stages.findIndex(s => s.id === stage?.id)
+  const stepStage = (d: number) => {
+    const s = stages[stageIdx + d]
+    if (s) setStageId(s.id)
+  }
+  const swipeGroup = useHorizontalSwipe({ onSwipeLeft: () => stepGroup(1), onSwipeRight: () => stepGroup(-1), enabled: groups.length > 1 })
+  const swipeStage = useHorizontalSwipe({ onSwipeLeft: () => stepStage(1), onSwipeRight: () => stepStage(-1), enabled: stages.length > 1 })
   const headerSlot = useHeaderSlot()
   const mult = multipliers(competition)
 
@@ -165,7 +172,8 @@ export default function ShuffleCompetitionPanel({ competition: initial }: { comp
         const row = (
           <div
             className={headerSlot ? 'w-full pt-[4px]' : '-mx-[16px] -mt-[16px] mb-[4px] px-[16px] pb-[14px] pt-[2px]'}
-            style={headerSlot ? undefined : { background: 'linear-gradient(135deg,#006A71,#48A6A7)' }}
+            {...swipeStage}
+            style={{ ...swipeStage.style, ...(headerSlot ? {} : { background: 'linear-gradient(135deg,#006A71,#48A6A7)' }) }}
           >
             <StepperSelect variant="header" title="Jornada" options={stageOptions} value={stage?.id ?? null} onChange={setStageId} />
           </div>
@@ -203,7 +211,7 @@ export default function ShuffleCompetitionPanel({ competition: initial }: { comp
             <>
               {groups.length > 1 && (
                 // top: 0 — the site header (.c-global-header) is position: relative, not sticky.
-                <div className="sticky top-0 z-30 -mx-[16px] mb-[12px] border-b border-gray-200 bg-white px-[8px] pb-[6px] pt-[8px]" style={{ boxShadow: '0 2px 6px rgba(20,26,40,.05)' }}>
+                <div className="sticky top-0 z-30 -mx-[16px] mb-[12px] border-b border-gray-200 bg-white px-[8px] pb-[6px] pt-[8px]" {...swipeGroup} style={{ ...swipeGroup.style, boxShadow: '0 2px 6px rgba(20,26,40,.05)' }}>
                   <StepperSelect variant="subheader" title="Grupo" nudgeKey="group" options={groupOptions} value={activeGroupId} onChange={setGroupId} />
                 </div>
               )}
@@ -211,12 +219,12 @@ export default function ShuffleCompetitionPanel({ competition: initial }: { comp
                 <div className="loader" />
               ) : (
                 activeGroupId && (
-                  <div {...swipe}>
+                  <>
                     <div className="mb-[10px]">
                       <CloseGroupButton groupId={activeGroupId} hasEnded={groups.find(g => g.id === activeGroupId)?.hasEnded} />
                     </div>
                     <GroupMatches key={activeGroupId} groupId={activeGroupId} />
-                  </div>
+                  </>
                 )
               )}
             </>

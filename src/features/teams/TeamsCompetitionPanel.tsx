@@ -248,8 +248,15 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
     setStageId(id)
     setRound(null) // the jornada numbers restart in each mini-tournament
   }
-  // Swipe on the match list only (not the tabs, tables or sheet): left = next division, right = previous.
-  const swipe = useHorizontalSwipe({ onSwipeLeft: () => stepGroup(1), onSwipeRight: () => stepGroup(-1), enabled: groups.length > 1 })
+  // Swipes (Pedro, 30 Oct): the match list steps the jornada (inside GroupMatches), the sticky division
+  // bar steps the division, the hero switcher row steps the mini-torneio. Left = next, right = previous.
+  const stageIdx = stages.findIndex(s => s.id === stage?.id)
+  const stepStage = (d: number) => {
+    const s = stages[stageIdx + d]
+    if (s) pickStage(s.id)
+  }
+  const swipeDivision = useHorizontalSwipe({ onSwipeLeft: () => stepGroup(1), onSwipeRight: () => stepGroup(-1), enabled: groups.length > 1 })
+  const swipeStage = useHorizontalSwipe({ onSwipeLeft: () => stepStage(1), onSwipeRight: () => stepStage(-1), enabled: stages.length > 1 })
   const [heroRow, setHeroRow] = useState<HTMLDivElement | null>(null)
   const headerSlot = useHeaderSlot()
   const heroHidden = useScrolledPast(heroRow)
@@ -281,7 +288,8 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
           <div
             ref={setHeroRow}
             className={headerSlot ? 'w-full pt-[4px]' : '-mx-[16px] -mt-[16px] mb-[4px] px-[16px] pb-[14px] pt-[2px]'}
-            style={headerSlot ? undefined : { background: 'linear-gradient(135deg,#006A71,#48A6A7)' }}
+            {...swipeStage}
+            style={{ ...swipeStage.style, ...(headerSlot ? {} : { background: 'linear-gradient(135deg,#006A71,#48A6A7)' }) }}
           >
             <StepperSelect variant="header" title="Mini-torneio" options={stageOptions} value={stage?.id ?? null} onChange={pickStage} />
           </div>
@@ -316,7 +324,7 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
                   position: relative, not sticky, so nothing sits above this bar once the page scrolls. The
                   compact title bar with the "MT1 ▾" chip appears once the hero switcher has scrolled away. */}
               {(groups.length > 1 || (heroHidden && stages.length > 1)) && (
-                <div className="sticky top-0 z-30 -mx-[16px] mb-[12px] bg-white" style={{ boxShadow: '0 2px 6px rgba(20,26,40,.05)' }}>
+                <div className="sticky top-0 z-30 -mx-[16px] mb-[12px] bg-white" {...swipeDivision} style={{ ...swipeDivision.style, boxShadow: '0 2px 6px rgba(20,26,40,.05)' }}>
                   {heroHidden && stages.length > 1 && (
                     <div className="flex items-center gap-[8px] py-[8px] pl-[16px] pr-[12px] text-white" style={{ background: '#00585e' }}>
                       <span className="min-w-0 flex-1 truncate text-[16px] font-semibold">{competition.title || competition.label}</span>
@@ -334,11 +342,7 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
               {!my.ready ? (
                 <div className="loader" />
               ) : (
-                activeGroupId && (
-                  <div {...swipe}>
-                    <GroupMatches key={activeGroupId} groupId={activeGroupId} round={round} onRound={setRound} />
-                  </div>
-                )
+                activeGroupId && <GroupMatches key={activeGroupId} groupId={activeGroupId} round={round} onRound={setRound} />
               )}
             </>
           )}
