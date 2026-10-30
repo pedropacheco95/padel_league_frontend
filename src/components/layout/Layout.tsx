@@ -54,7 +54,7 @@ export default function Layout({ children }: Props) {
                   </a>
                 </div>
                 <div className="c-btn-topright">
-                  <Link to="/matches/for_edit">Editar jogos</Link>
+                  <Link to="/editar-jogos">Editar jogos</Link>
                 </div>
                 {(user.isAdmin || user.superAdmin) && (
                   <div className="c-btn-topright">
@@ -125,7 +125,7 @@ export default function Layout({ children }: Props) {
                 </>
               ) : (
                 <>
-                  <Link className="c-main-nav__link" to="/matches/for_edit">
+                  <Link className="c-main-nav__link" to="/editar-jogos">
                     Editar jogos
                   </Link>
                   <AdminPasswordsLink className="c-main-nav__link" />

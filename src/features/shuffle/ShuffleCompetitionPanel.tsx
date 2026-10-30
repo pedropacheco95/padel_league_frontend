@@ -2,6 +2,7 @@
 // Port of pages/Shuffle/ShufflePage.tsx onto v2: one stage per round ("jornada"), groups ranked by tier,
 // standings for the whole competition; admins generate / delete the last round.
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { createPortal } from 'react-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -120,7 +121,9 @@ function RoundAdmin({ competition }: { competition: Competition }) {
 export default function ShuffleCompetitionPanel({ competition: initial }: { competition: Competition }) {
   const { user } = useAuth()
   const isAdmin = !!(user?.isAdmin || user?.superAdmin)
-  const [section, setSection] = useState<Section>('standings')
+  // ?section=matches&group=<id> is where "Editar jogos" lands (EditGamesPage); read once, on mount.
+  const [params] = useSearchParams()
+  const [section, setSection] = useState<Section>(() => (['matches', 'rounds'].includes(params.get('section') ?? '') ? 'rounds' : 'standings'))
   const competition = useQuery({
     queryKey: ['v2', 'competitions', initial.id],
     queryFn: () => shuffleApi.competition(initial.id),
@@ -139,7 +142,7 @@ export default function ShuffleCompetitionPanel({ competition: initial }: { comp
   const [stageId, setStageId] = useState<number | null>(null)
   const stage = stages.find(s => s.id === (stageId ?? competition.currentStageId)) ?? stages[stages.length - 1]
   const groups = [...(stage?.groups ?? [])].sort((a, b) => (a.tier ?? 0) - (b.tier ?? 0))
-  const [groupId, setGroupId] = useState<number | null>(null)
+  const [groupId, setGroupId] = useState<number | null>(() => Number(params.get('group')) || null)
   const my = useMyGroup(groups, user?.playerId)
   const activeGroupId = groups.some(g => g.id === groupId) ? groupId : my.mineId ?? groups[0]?.id ?? null
   const activeIdx = groups.findIndex(g => g.id === activeGroupId)

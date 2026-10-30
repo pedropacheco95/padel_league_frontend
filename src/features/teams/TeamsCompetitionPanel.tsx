@@ -3,6 +3,7 @@
 // starts, the projected/closed pairings), matches, pairs, ranking points won this edition, simulator.
 // The mini-torneio switcher sits in the header row above the tabs (direction C filters).
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { createPortal } from 'react-dom'
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -220,7 +221,9 @@ function useScrolledPast(el: HTMLElement | null): boolean {
 export default function TeamsCompetitionPanel({ competition: initial }: { competition: Competition }) {
   const { user } = useAuth()
   const isAdmin = !!(user?.isAdmin || user?.superAdmin)
-  const [section, setSection] = useState<Section>('standings')
+  // ?section=matches&group=<id> is where "Editar jogos" lands (EditGamesPage); read once, on mount.
+  const [params] = useSearchParams()
+  const [section, setSection] = useState<Section>(() => SECTIONS.find(([k]) => k === params.get('section'))?.[0] ?? 'standings')
   const competitionQuery = useQuery({
     queryKey: ['v2', 'competitions', initial.id],
     queryFn: () => teamsV2Api.competition(initial.id),
@@ -235,7 +238,7 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
   const [stageId, setStageId] = useState<number | null>(null)
   const stage = stages.find(s => s.id === (stageId ?? competition.currentStageId)) ?? stages[0]
   const groups = [...(stage?.groups ?? [])].sort((a, b) => (a.tier ?? 99) - (b.tier ?? 99))
-  const [groupId, setGroupId] = useState<number | null>(null)
+  const [groupId, setGroupId] = useState<number | null>(() => Number(params.get('group')) || null)
   const [round, setRound] = useState<number | null>(null)
   // Opens on the signed-in player's own division (groups[0] for everyone else).
   const my = useMyGroup(groups, user?.playerId)
