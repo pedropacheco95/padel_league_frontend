@@ -54,7 +54,7 @@ export default function Layout({ children }: Props) {
                   </a>
                 </div>
                 <div className="c-btn-topright">
-                  <Link to="/matches/for_edit">Editar jogos</Link>
+                  <Link to="/editar-jogos">Editar jogos</Link>
                 </div>
                 {(user.isAdmin || user.superAdmin) && (
                   <div className="c-btn-topright">
@@ -112,11 +112,7 @@ export default function Layout({ children }: Props) {
                 </li>
               </>
             )}
-            <li className="c-main-nav__item">
-              <Link className="c-main-nav__link" to="/chatbot" title="chatbot">
-                Chatbot
-              </Link>
-            </li>
+            {/* Chatbot retired from the nav (Pedro, 30 Oct); the /chatbot route and page stay. */}
             <li className="c-main-nav__item for_login_logout">
               {!user ? (
                 <>
@@ -125,7 +121,7 @@ export default function Layout({ children }: Props) {
                 </>
               ) : (
                 <>
-                  <Link className="c-main-nav__link" to="/matches/for_edit">
+                  <Link className="c-main-nav__link" to="/editar-jogos">
                     Editar jogos
                   </Link>
                   <AdminPasswordsLink className="c-main-nav__link" />
@@ -156,7 +152,6 @@ export default function Layout({ children }: Props) {
               <li><Link className="inline-flex items-center min-h-[40px]" to="/tournaments">Torneios</Link></li>
               <li><Link className="inline-flex items-center min-h-[40px]" to="/players">Jogadores</Link></li>
               <li><Link className="inline-flex items-center min-h-[40px]" to="/calendar">Calendário</Link></li>
-              <li><Link className="inline-flex items-center min-h-[40px]" to="/chatbot">Chatbot</Link></li>
               <li><Link className="inline-flex items-center min-h-[40px]" to="/statues">Estatutos</Link></li>
             </ul>
           </div>

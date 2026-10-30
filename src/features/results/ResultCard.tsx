@@ -11,6 +11,7 @@ import { errorMessage, resultsApi } from './api'
 import { useAuth } from '@/context/AuthContext'
 import { blurAfterPointerClick } from '@/lib/focus'
 import { groupMatchesKey, seatKey, type SeatKey } from './keys'
+import { emitResultSaved } from './resultSaved'
 import { matchAbsences, participantName, sideParticipants } from './matchText'
 import { initials, roundNight, sameDraft, serverDraft, setsFor, setsTally, shortDate, shortTime, type Draft } from './resultDraft'
 import { buildResult, buildWalkover, isPartialInput, teamsSetPoints, type Side } from './resultInput'
@@ -112,6 +113,7 @@ export default function ResultCard({
       setDraft(serverDraft(saved))
       setMore(false)
       setSavedOnce(true)
+      if (!saved.inProgress) emitResultSaved({ groupId: match.groupId, matchId: saved.id })
       toast.success(saved.inProgress ? `Guardado: ${saved.sets.length === 1 ? '1 set' : `${saved.sets.length} sets`}. Falta o resto.` : 'Resultado guardado.')
     },
     onError: err => setError(errorMessage(err)),

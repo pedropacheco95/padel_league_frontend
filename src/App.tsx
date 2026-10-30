@@ -13,6 +13,7 @@ import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import VerifyCode from "./pages/auth/VerifyCode";
 import NotFound from "./pages/NotFound";
+import StatuesPage from "./pages/StatuesPage";
 import Layout from "./components/layout/Layout";
 import TournamentsPage from "./pages/tournaments/TournamentsPage";
 import TournamentPage from "./pages/tournaments/TournamentPage";
@@ -20,6 +21,7 @@ import PlayersPage from "./pages/players/PlayersPage";
 import PlayerPage from "./pages/players/PlayerPage";
 import EditPlayerPage from "./pages/players/EditPlayerPage";
 import ForEditPage from "./pages/matches/ForEditPage";
+import EditGamesPage from "./features/results/EditGamesPage";
 import ShufflePage from "./pages/Shuffle/ShufflePage";
 import CreateShufflePage from "./pages/Shuffle/CreateShufflePage";
 import CalendarPage from "./pages/CalendarPage";
@@ -62,8 +64,11 @@ const App = () => (
               <Route path="/conquistas" element={<Layout><BadgesCataloguePage /></Layout>} />
               <Route path="/conquistas/:key" element={<Layout><BadgeDetailPage /></Layout>} />
               <Route path="/matches/for_edit" element={<Layout><ForEditPage /></Layout>} />
+              {/* "Editar jogos": the signed-in player's division on the current jornada (owner: S3). */}
+              <Route path="/editar-jogos" element={<Layout><EditGamesPage /></Layout>} />
               <Route path="/calendar" element={<Layout>{v2Or(<CalendarPage />, v2.calendar)}</Layout>} />
               <Route path="/chatbot" element={<Layout><ChatbotPage /></Layout>} />
+              <Route path="/statues" element={<Layout><StatuesPage /></Layout>} />
               <Route path="/teams" element={<Layout>{v2FormatOr(<TeamsPage />, v2.teams)}</Layout>} />
               <Route path="/shuffle" element={<Layout>{v2FormatOr(<ShufflePage />, v2.shuffle)}</Layout>} />
               <Route path="/shuffle/create" element={<Layout><CreateShufflePage /></Layout>} />

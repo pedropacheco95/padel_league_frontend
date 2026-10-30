@@ -3,6 +3,7 @@
 // one division hides that control.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Competition } from '@/api/v2'
 import { resultsApi } from '@/features/results/api'
@@ -49,7 +50,7 @@ const competition = (stages: number, groups: number): Competition =>
     })),
   }) as unknown as Competition
 
-const renderPanel = (c: Competition) => {
+const renderPanel = (c: Competition, url = '/competitions/27') => {
   vi.mocked(resultsApi.group).mockImplementation(async id => ({
     ...group(id, id % 10), competition: { id: 27 }, stage: {}, standings: [],
     members: id % 10 === 2 ? [{ id: 7, name: 'Pedro' }] : [{ id: 99, name: 'Outro' }],
@@ -59,10 +60,12 @@ const renderPanel = (c: Competition) => {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <QueryClientProvider client={qc}>
-      <TeamsCompetitionPanel competition={c} />
+      <MemoryRouter initialEntries={[url]}>
+        <TeamsCompetitionPanel competition={c} />
+      </MemoryRouter>
     </QueryClientProvider>,
   )
-  fireEvent.click(screen.getByRole('tab', { name: 'Jogos' }))
+  if (url === '/competitions/27') fireEvent.click(screen.getByRole('tab', { name: 'Jogos' }))
 }
 
 describe('TeamsCompetitionPanel filters', () => {
@@ -108,5 +111,12 @@ describe('TeamsCompetitionPanel filters', () => {
     expect(screen.queryByRole('group', { name: 'Divisão' })).toBeNull()
     expect(screen.getByRole('group', { name: 'Jornada' })).toHaveTextContent('Jornada 2')
     auth.user = { playerId: 7 }
+  })
+
+  it('lands on the Jogos section and the division named in the URL ("Editar jogos")', async () => {
+    renderPanel(competition(2, 3), '/competitions/27?section=matches&group=23')
+    expect(screen.getByRole('tab', { name: 'Jogos' })).toHaveAttribute('aria-selected', 'true')
+    await waitFor(() => expect(screen.getByLabelText('Divisão: 3.ª Divisão. Abrir lista')).toBeInTheDocument())
+    await waitFor(() => expect(resultsApi.groupMatches).toHaveBeenCalledWith(23, 2))
   })
 })

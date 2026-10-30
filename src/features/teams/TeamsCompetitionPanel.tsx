@@ -3,8 +3,9 @@
 // starts, the projected/closed pairings), matches, pairs, ranking points won this edition, simulator.
 // The mini-torneio switcher sits in the header row above the tabs (direction C filters).
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { createPortal } from 'react-dom'
-import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { Competition, Stage, StandingRow } from '@/api/v2'
 import { formatPoints } from '@/components/v2/PointsValue'
@@ -14,12 +15,11 @@ import { useAuth } from '@/context/AuthContext'
 import { blurAfterPointerClick } from '@/lib/focus'
 import { errorMessage, resultsApi } from '@/features/results/api'
 import GroupMatches from '@/features/results/GroupMatches'
-import CloseGroupButton from '@/features/results/CloseGroupButton'
 import { useMyGroup } from '@/features/results/useMyGroup'
 import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe'
-import { buildTeamsShareMessage } from '@/lib/teamsShareMessage'
 import { teamsV2Api } from './api'
 import PairChoice, { Avatar } from './PairChoice'
+import ShareMessagePanel from './ShareMessagePanel'
 import { DivisionsProjection, PartnerSimulator } from './TeamsProjection'
 
 type Section = 'standings' | 'matches' | 'pairs' | 'points' | 'simulator'
@@ -104,9 +104,6 @@ function GroupCard({ groupId, showStandings }: { groupId: number; showStandings?
       ) : (
         <p className="text-[14px] text-gray-700">{g.members.map(m => m.name).join(', ')}</p>
       )}
-      <div className="mt-[10px]">
-        <CloseGroupButton groupId={g.id} hasEnded={g.hasEnded} />
-      </div>
     </section>
   )
 }
@@ -136,65 +133,6 @@ function StageAdmin({ competition, stage }: { competition: Competition; stage: S
   )
 }
 
-/** Admin: the round's WhatsApp message (same layout as Clássica and Shuffle). Defaults to the first round with
- * matches still to play. */
-function ShareMessage({ competition, stage }: { competition: Competition; stage: Stage }) {
-  const [round, setRound] = useState<number | null>(null)
-  const [copied, setCopied] = useState(false)
-  const results = useQueries({
-    queries: stage.groups.map(g => ({
-      queryKey: ['v2', 'groups', g.id, 'matches'],
-      queryFn: () => resultsApi.groupMatches(g.id),
-    })),
-  })
-  if (results.some(r => !r.data)) return null
-  const all = results.flatMap(r => r.data ?? [])
-  const rounds = [...new Set(all.map(m => m.round))].sort((a, b) => a - b)
-  if (rounds.length === 0) return null
-  const pending = all.filter(m => m.status === 'scheduled').map(m => m.round)
-  const active = round ?? (pending.length ? Math.min(...pending) : rounds[rounds.length - 1])
-  const message = buildTeamsShareMessage(
-    competition.title || competition.label,
-    stage.number,
-    active,
-    stage.groups.map((g, i) => ({
-      tier: g.tier ?? i + 1,
-      matches: (results[i].data ?? []).filter(m => m.round === active && m.status !== 'cancelled'),
-    })),
-    stage.rounds.find(r => r.number === active)?.date,
-  )
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(message)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch {
-      toast.error('Não foi possível copiar. Seleciona o texto e copia à mão.')
-    }
-  }
-  return (
-    <section className="mb-[16px] rounded-lg border border-gray-200 bg-white p-[12px]">
-      <div className="mb-[8px] flex flex-wrap items-center justify-between gap-[8px]">
-        <p className="text-[14px] font-semibold">Mensagem da jornada</p>
-        <div className="flex flex-wrap gap-[6px]">
-          {rounds.map(r => (
-            <button key={r} className={chip(r === active)} onClick={() => setRound(r)}>Jornada {r}</button>
-          ))}
-          <button className="min-h-[40px] rounded bg-gray-900 px-[12px] py-[6px] text-[13px] font-semibold text-white" onClick={copy}>
-            {copied ? 'Copiado' : 'Copiar'}
-          </button>
-        </div>
-      </div>
-      <textarea
-        readOnly
-        value={message}
-        rows={12}
-        className="w-full rounded border border-gray-300 p-[8px] text-[13px] leading-[1.35]"
-      />
-    </section>
-  )
-}
-
 /** Sheet hint for a mini-tournament: its status, or the month of its first night when still planned. */
 function stageHint(s: Stage): string | undefined {
   if (s.status === 'running') return 'a decorrer'
@@ -220,7 +158,10 @@ function useScrolledPast(el: HTMLElement | null): boolean {
 export default function TeamsCompetitionPanel({ competition: initial }: { competition: Competition }) {
   const { user } = useAuth()
   const isAdmin = !!(user?.isAdmin || user?.superAdmin)
-  const [section, setSection] = useState<Section>('standings')
+  const [shareOpenerSlot, setShareOpenerSlot] = useState<HTMLDivElement | null>(null)
+  // ?section=matches&group=<id> is where "Editar jogos" lands (EditGamesPage); read once, on mount.
+  const [params] = useSearchParams()
+  const [section, setSection] = useState<Section>(() => SECTIONS.find(([k]) => k === params.get('section'))?.[0] ?? 'standings')
   const competitionQuery = useQuery({
     queryKey: ['v2', 'competitions', initial.id],
     queryFn: () => teamsV2Api.competition(initial.id),
@@ -235,7 +176,7 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
   const [stageId, setStageId] = useState<number | null>(null)
   const stage = stages.find(s => s.id === (stageId ?? competition.currentStageId)) ?? stages[0]
   const groups = [...(stage?.groups ?? [])].sort((a, b) => (a.tier ?? 99) - (b.tier ?? 99))
-  const [groupId, setGroupId] = useState<number | null>(null)
+  const [groupId, setGroupId] = useState<number | null>(() => Number(params.get('group')) || null)
   const [round, setRound] = useState<number | null>(null)
   // Opens on the signed-in player's own division (groups[0] for everyone else).
   const my = useMyGroup(groups, user?.playerId)
@@ -336,13 +277,18 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
                     </div>
                   )}
                   {groups.length > 1 && (
-                    <div className="border-b border-gray-200 px-[8px] pb-[6px] pt-[8px]">
-                      <StepperSelect variant="subheader" title="Divisão" nudgeKey="division" options={groupOptions} value={activeGroupId} onChange={setGroupId} />
+                    <div className="flex items-center border-b border-gray-200 px-[8px] pb-[6px] pt-[8px]">
+                      <div className="min-w-0 flex-1">
+                        <StepperSelect variant="subheader" title="Divisão" nudgeKey="division" options={groupOptions} value={activeGroupId} onChange={setGroupId} />
+                      </div>
+                      {/* The admin's "Mensagem da jornada" opener lives here (bug-955): sticky at the top, it can
+                          never meet the jornada pill floating at the bottom, whatever the scroll. */}
+                      {isAdmin && <div ref={setShareOpenerSlot} className="shrink-0" />}
                     </div>
                   )}
                 </div>
               )}
-              {isAdmin && <ShareMessage competition={competition} stage={stage} />}
+              {isAdmin && <ShareMessagePanel competition={competition} stage={stage} openerSlot={shareOpenerSlot} />}
               {!my.ready ? (
                 <div className="loader" />
               ) : (
