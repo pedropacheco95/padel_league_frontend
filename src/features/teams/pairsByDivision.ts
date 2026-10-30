@@ -3,8 +3,9 @@
 import type { GroupDetail, TeamsState } from '@/api/v2'
 
 export type TeamsPair = TeamsState['pairs'][number]
-export type DivisionGroup = Pick<GroupDetail, 'id' | 'name' | 'tier' | 'members'>
-export type PairsDivision = { id: number; name: string; tier: number | null; pairs: TeamsPair[] }
+export type DivisionGroup = Pick<GroupDetail, 'id' | 'name' | 'tier' | 'members'> & Partial<Pick<GroupDetail, 'pointsRange'>>
+export type PointsRange = NonNullable<GroupDetail['pointsRange']>
+export type PairsDivision = { id: number; name: string; tier: number | null; pointsRange: PointsRange | null; pairs: TeamsPair[] }
 
 const byTier = (a: DivisionGroup, b: DivisionGroup) =>
   (a.tier ?? Number.MAX_SAFE_INTEGER) - (b.tier ?? Number.MAX_SAFE_INTEGER) || a.name.localeCompare(b.name, 'pt')
@@ -25,7 +26,7 @@ export function groupPairsByDivision(pairs: TeamsPair[], groups: DivisionGroup[]
   const seed = (a: TeamsPair, b: TeamsPair) => (b.rankingPoints ?? 0) - (a.rankingPoints ?? 0) || a.id - b.id
   const divisions = [...groups]
     .sort(byTier)
-    .map(g => ({ id: g.id, name: g.name, tier: g.tier ?? null, pairs: inGroup.get(g.id)!.sort(seed) }))
+    .map(g => ({ id: g.id, name: g.name, tier: g.tier ?? null, pointsRange: g.pointsRange ?? null, pairs: inGroup.get(g.id)!.sort(seed) }))
     .filter(d => d.pairs.length > 0)
   return { divisions, rest }
 }

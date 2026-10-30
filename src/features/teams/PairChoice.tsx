@@ -138,6 +138,29 @@ export default function PairChoice({ competitionId }: { competitionId: number })
   const deadline = formatDeadline(mt.pairingDeadline)
   const pairNames = (players?: PlayerRef[]) => (players ?? []).map(p => p.name).join(' & ')
 
+  // "Seta e folga em pontos" (Pedro, 30 Oct): served by the backend once the divisions exist.
+  const fmtGap = (n: number) => Math.round(Math.abs(n)).toLocaleString('pt-PT')
+  const MOVE_HINT =
+    'Se a parelha se mantiver no próximo mini-torneio. ↑ folga: passa a parelha mais fraca da divisão acima mesmo no pior caso dela; faltam: nem no melhor caso chega. ↓ risco: a melhor da divisão abaixo pode passá-la; seguro: nem no melhor caso dela.'
+  const moveLines = (pair: TeamsPair) => {
+    const m = pair.movement
+    if (!m || (m.gapUp === null && m.gapDown === null)) return null
+    return (
+      <div className="flex shrink-0 flex-col items-end text-[11px] leading-[1.3] tabular-nums" title={MOVE_HINT} aria-label="Subir ou descer">
+        {m.gapUp !== null && (
+          <span className={m.up ? 'font-semibold text-green-700' : 'text-gray-400'}>
+            ↑ {m.up ? `folga ${fmtGap(m.gapUp)}` : `faltam ${fmtGap(m.gapUp)}`}
+          </span>
+        )}
+        {m.gapDown !== null && (
+          <span className={m.down ? 'font-semibold text-amber-700' : 'text-gray-400'}>
+            ↓ {m.down ? `risco ${fmtGap(m.gapDown)}` : `seguro ${fmtGap(m.gapDown)}`}
+          </span>
+        )}
+      </div>
+    )
+  }
+
   const pairItem = (pair: TeamsPair) => (
     <li key={pair.id} className="flex items-center gap-[12px] rounded-lg border border-gray-200 bg-white px-[12px] py-[10px]">
       <div className="flex -space-x-2">
@@ -149,6 +172,7 @@ export default function PairChoice({ competitionId }: { competitionId: number })
           {formatPoints(pair.rankingPoints ?? 0)} pts{pair.source ? ` · ${SOURCE_LABEL[pair.source] ?? pair.source}` : ''}
         </p>
       </div>
+      {moveLines(pair)}
       {me.isAdmin && !mt.pairingClosed && pair.id != null && (
         <button
           className="min-h-[40px] shrink-0 px-[8px] text-[13px] text-red-700 underline"
@@ -301,9 +325,17 @@ export default function PairChoice({ competitionId }: { competitionId: number })
           <div className="space-y-[18px]">
             {byDivision.divisions.map(d => (
               <section key={d.id} aria-labelledby={`pairs-div-${d.id}`}>
-                <h4 id={`pairs-div-${d.id}`} className="mb-[8px] text-[15px] font-semibold text-gray-900">
+                <h4 id={`pairs-div-${d.id}`} className="mb-[8px] flex flex-wrap items-baseline gap-x-[8px] text-[15px] font-semibold text-gray-900">
                   {d.name}
-                  <span className="ml-[8px] text-[12px] font-normal text-gray-500">{d.pairs.length} parelhas</span>
+                  <span className="text-[12px] font-normal text-gray-500">{d.pairs.length} parelhas</span>
+                  {d.pointsRange && (
+                    <span
+                      className="ml-auto text-[12px] font-normal text-gray-600"
+                      title="Pontos de ranking que cada jogador pode ganhar nesta divisão neste mini-torneio: do último lugar sem sets ao 1.º com todos os sets"
+                    >
+                      {formatPoints(d.pointsRange.min)}–{formatPoints(d.pointsRange.max)} pts
+                    </span>
+                  )}
                 </h4>
                 <ul className="grid gap-[8px] sm:grid-cols-2">{d.pairs.map(pairItem)}</ul>
               </section>
