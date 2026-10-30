@@ -2991,8 +2991,20 @@ ul {
   .statues_inner_container{
     width: 70%;
 
+    // Phones (the page went live again on 30 Oct 2026): full width, lighter indents.
+    @media (max-width: 640px) {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0 16px 24px;
+      h2 { margin-left: 0.75rem; }
+      p { margin-left: 1rem; }
+      ol { margin-left: 2.5rem; }
+    }
+
     h1{
       margin: 2rem 0 2rem 0;
+      font-weight: 700;
+      color: #006A71;
     }
 
     h2 {
