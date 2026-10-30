@@ -1,6 +1,6 @@
 // Group (division) page: standings, matches per round, calendar.
 import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import FormatBadge from '@/components/v2/FormatBadge'
 import PageHeader from '@/components/v2/PageHeader'
 import StepperSelect from '@/components/v2/StepperSelect'
@@ -27,7 +27,9 @@ export default function GroupPage() {
   const { data: g, isLoading, error } = useGroup(id)
   const { data: matches } = useGroupMatches(id)
   const { user } = useAuth()
-  const [tab, setTab] = useState<Tab>('standings')
+  // ?tab=matches is where "Editar jogos" lands (EditGamesPage); the URL is read once, on mount.
+  const [params] = useSearchParams()
+  const [tab, setTab] = useState<Tab>(() => TABS.find((t) => t.key === params.get('tab'))?.key ?? 'standings')
   const [round, setRound] = useState<number | null>(null)
 
   const rounds = useMemo(() => {

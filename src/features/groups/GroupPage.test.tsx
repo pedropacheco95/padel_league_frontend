@@ -49,4 +49,19 @@ describe('GroupPage Jogos for a visitor', () => {
     expect(screen.queryByRole('button', { name: /Mais/ })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Resultado' })).toBeNull()
   })
+
+  it('opens on the Jogos tab when the URL says ?tab=matches ("Editar jogos" landing)', () => {
+    const qc = new QueryClient()
+    render(
+      <QueryClientProvider client={qc}>
+        <MemoryRouter initialEntries={['/groups/72?tab=matches']}>
+          <Routes><Route path="/groups/:id" element={<GroupPage />} /></Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+    // PageHeader marks the active tab with the teal colour (no aria-selected on those buttons).
+    expect(screen.getByRole('button', { name: 'Jogos' })).toHaveStyle({ color: 'rgb(0, 106, 113)' })
+    expect(screen.getByRole('button', { name: 'Classificação' })).not.toHaveStyle({ color: 'rgb(0, 106, 113)' })
+    expect(screen.getByText('Campo 1')).toBeInTheDocument() // the round's card is already on screen
+  })
 })
