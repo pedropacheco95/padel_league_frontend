@@ -13,6 +13,7 @@ import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import VerifyCode from "./pages/auth/VerifyCode";
 import NotFound from "./pages/NotFound";
+import StatuesPage from "./pages/StatuesPage";
 import Layout from "./components/layout/Layout";
 import TournamentsPage from "./pages/tournaments/TournamentsPage";
 import TournamentPage from "./pages/tournaments/TournamentPage";
@@ -67,6 +68,7 @@ const App = () => (
               <Route path="/editar-jogos" element={<Layout><EditGamesPage /></Layout>} />
               <Route path="/calendar" element={<Layout>{v2Or(<CalendarPage />, v2.calendar)}</Layout>} />
               <Route path="/chatbot" element={<Layout><ChatbotPage /></Layout>} />
+              <Route path="/statues" element={<Layout><StatuesPage /></Layout>} />
               <Route path="/teams" element={<Layout>{v2FormatOr(<TeamsPage />, v2.teams)}</Layout>} />
               <Route path="/shuffle" element={<Layout>{v2FormatOr(<ShufflePage />, v2.shuffle)}</Layout>} />
               <Route path="/shuffle/create" element={<Layout><CreateShufflePage /></Layout>} />
