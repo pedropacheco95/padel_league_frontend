@@ -112,11 +112,7 @@ export default function Layout({ children }: Props) {
                 </li>
               </>
             )}
-            <li className="c-main-nav__item">
-              <Link className="c-main-nav__link" to="/chatbot" title="chatbot">
-                Chatbot
-              </Link>
-            </li>
+            {/* Chatbot retired from the nav (Pedro, 30 Oct); the /chatbot route and page stay. */}
             <li className="c-main-nav__item for_login_logout">
               {!user ? (
                 <>
@@ -156,7 +152,6 @@ export default function Layout({ children }: Props) {
               <li><Link className="inline-flex items-center min-h-[40px]" to="/tournaments">Torneios</Link></li>
               <li><Link className="inline-flex items-center min-h-[40px]" to="/players">Jogadores</Link></li>
               <li><Link className="inline-flex items-center min-h-[40px]" to="/calendar">Calendário</Link></li>
-              <li><Link className="inline-flex items-center min-h-[40px]" to="/chatbot">Chatbot</Link></li>
               <li><Link className="inline-flex items-center min-h-[40px]" to="/statues">Estatutos</Link></li>
             </ul>
           </div>
