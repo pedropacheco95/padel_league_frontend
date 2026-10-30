@@ -79,8 +79,29 @@ export default function StepperSelect({
     )
   }, [variant, nudgeKey, options.length])
 
-  if (options.length < 2) return null
   const idx = Math.max(0, options.findIndex(o => o.key === value))
+  // Pill: when the value changes (a swipe on the list, or an arrow) the label slides in from the side
+  // it came from, so the user sees what moved. No motion under prefers-reduced-motion.
+  const prevIdx = useRef(idx)
+  useEffect(() => {
+    const from = prevIdx.current
+    prevIdx.current = idx
+    if (variant !== 'pill' || from === idx) return
+    const el = labelRef.current
+    if (!el || typeof el.animate !== 'function') return
+    try {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    } catch {
+      return
+    }
+    const dir = idx > from ? 1 : -1
+    el.animate(
+      [{ transform: `translateX(${dir * 18}px)`, opacity: 0.4 }, { transform: 'translateX(0)', opacity: 1 }],
+      { duration: 180, easing: 'ease-out' },
+    )
+  }, [idx, variant])
+
+  if (options.length < 2) return null
   const cur = options[idx]
   const prev = options[idx - 1]
   const next = options[idx + 1]

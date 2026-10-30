@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import StepperSelect from '@/components/v2/StepperSelect'
 import { useAuth } from '@/context/AuthContext'
+import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe'
 import { resultsApi } from './api'
 import { groupMatchesKey } from './keys'
 import ResultCard from './ResultCard'
@@ -41,10 +42,19 @@ export default function GroupMatches({
     enabled: round !== null,
   })
 
+  const rounds = group.data?.rounds ?? []
+  // Swiping the list sideways steps the jornada (Pedro, 30 Oct: "pulling to the side would show me the
+  // next matchweek"); left = next, right = previous. The pill animates its label on the change.
+  const roundIdx = rounds.findIndex(r => r.number === round)
+  const stepRound = (d: number) => {
+    const r = rounds[roundIdx + d]
+    if (r) setRound(r.number)
+  }
+  const swipe = useHorizontalSwipe({ onSwipeLeft: () => stepRound(1), onSwipeRight: () => stepRound(-1), enabled: rounds.length > 1 })
+
   if (group.isError || matches.isError) {
     return <p className="text-[14px] text-red-700">Não foi possível carregar os jogos.</p>
   }
-  const rounds = group.data?.rounds ?? []
   const activeRound = rounds.find(r => r.number === round)
   const roundId = activeRound?.id
   // An ended group's results belong to the admins (the server 409s anyone else).
@@ -53,7 +63,7 @@ export default function GroupMatches({
 
   return (
     // Bottom padding keeps the last card clear of the floating pill.
-    <div className={pill ? 'pb-[96px]' : ''}>
+    <div className={pill ? 'pb-[96px]' : ''} {...swipe}>
       <ul className="space-y-[12px]">
         {(matches.data ?? []).map(m => (
           <li key={m.id}>

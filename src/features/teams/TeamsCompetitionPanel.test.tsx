@@ -8,6 +8,24 @@ import type { Competition } from '@/api/v2'
 import { resultsApi } from '@/features/results/api'
 import TeamsCompetitionPanel from './TeamsCompetitionPanel'
 
+// jsdom's TouchEvent cannot be built from plain touch objects; see useHorizontalSwipe.test.tsx.
+type T = { clientX: number; clientY: number }
+class TouchEventPolyfill extends UIEvent {
+  touches: T[]
+  changedTouches: T[]
+  constructor(type: string, init: UIEventInit & { touches?: T[]; changedTouches?: T[] } = {}) {
+    super(type, init)
+    this.touches = init.touches ?? []
+    this.changedTouches = init.changedTouches ?? []
+  }
+}
+;(window as unknown as { TouchEvent: typeof TouchEventPolyfill }).TouchEvent = TouchEventPolyfill
+const swipe = (el: Element, fromX: number, toX: number) => {
+  fireEvent.touchStart(el, { touches: [{ clientX: fromX, clientY: 300 }], changedTouches: [{ clientX: fromX, clientY: 300 }] })
+  fireEvent.touchMove(el, { touches: [{ clientX: toX, clientY: 305 }], changedTouches: [{ clientX: toX, clientY: 305 }] })
+  fireEvent.touchEnd(el, { touches: [], changedTouches: [{ clientX: toX, clientY: 305 }] })
+}
+
 const auth = { user: { id: 1, username: 'pedro', isAdmin: false, superAdmin: false, playerId: 7 } as { playerId: number | null } | null }
 vi.mock('@/context/AuthContext', () => ({ useAuth: () => auth }))
 vi.mock('./PairChoice', () => ({ default: () => null, Avatar: () => null }))
@@ -67,6 +85,19 @@ describe('TeamsCompetitionPanel filters', () => {
     fireEvent.click(division.querySelector('[aria-label="Seguinte"]')!)
     await waitFor(() => expect(resultsApi.groupMatches).toHaveBeenCalledWith(23, 2))
     expect(screen.getByLabelText('Divisão: 3.ª Divisão. Abrir lista')).toBeInTheDocument()
+  })
+
+  it('swiping the match list steps the jornada; the division bar steps the division; the hero row steps the mini-torneio', async () => {
+    Object.defineProperty(window, 'innerWidth', { value: 390, configurable: true })
+    renderPanel(competition(2, 3))
+    await waitFor(() => expect(resultsApi.groupMatches).toHaveBeenCalledWith(22, 2))
+    swipe(screen.getByText('Sem jogos nesta jornada.'), 300, 150) // left on the list → next jornada
+    await waitFor(() => expect(resultsApi.groupMatches).toHaveBeenCalledWith(22, 3))
+    expect(screen.getByRole('group', { name: 'Jornada' })).toHaveTextContent('Jornada 3')
+    swipe(screen.getByRole('group', { name: 'Divisão' }), 300, 150) // left on the sticky bar → next division, jornada kept
+    await waitFor(() => expect(resultsApi.groupMatches).toHaveBeenCalledWith(23, 3))
+    swipe(screen.getByRole('group', { name: 'Mini-torneio' }), 100, 250) // right on the hero row → previous mini-torneio
+    expect(screen.getByLabelText('Mini-torneio: Mini-torneio 1. Abrir lista')).toBeInTheDocument()
   })
 
   it('hides the mini-torneio and division controls when there is only one of each', async () => {

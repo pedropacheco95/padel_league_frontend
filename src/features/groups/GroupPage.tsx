@@ -11,6 +11,7 @@ import MonthCalendar from '@/features/calendar/MonthCalendar'
 import ResultCard from '@/features/results/ResultCard'
 import { shortDate } from '@/features/results/resultDraft'
 import { useAuth } from '@/context/AuthContext'
+import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe'
 import { useGroup, useGroupMatches } from './api'
 
 type Tab = 'standings' | 'matches' | 'calendar'
@@ -36,6 +37,13 @@ export default function GroupPage() {
 
   const activeRound = round ?? g?.currentRound ?? rounds[rounds.length - 1]?.number ?? null
   const roundMatches = (matches ?? []).filter((m) => m.round === activeRound)
+  // Swiping the match list sideways steps the jornada (left = next, right = previous).
+  const roundIdx = rounds.findIndex((r) => r.number === activeRound)
+  const stepRound = (d: number) => {
+    const r = rounds[roundIdx + d]
+    if (r) setRound(r.number)
+  }
+  const swipe = useHorizontalSwipe({ onSwipeLeft: () => stepRound(1), onSwipeRight: () => stepRound(-1), enabled: rounds.length > 1 })
 
   if (isLoading) return <div className="loader" />
   if (error || !g) {
@@ -87,7 +95,7 @@ export default function GroupPage() {
                 current: r.number === g.currentRound,
               }))}
             />
-            <div className={`flex flex-col gap-[12px] ${rounds.length > 1 ? 'pb-[96px]' : ''}`}>
+            <div className={`flex flex-col gap-[12px] ${rounds.length > 1 ? 'pb-[96px]' : ''}`} {...swipe}>
               {roundMatches.length === 0 && <p className="text-center text-[15px] text-gray-500">Sem jogos nesta jornada.</p>}
               {/* One card for viewing and editing (Pedro, 29 Oct): signed in, the games are typed in its
                   header and a player who did not come is tapped; visitors get the same card read-only.
