@@ -20,7 +20,7 @@ const state = (pairingClosed: boolean) => ({
   me: { playerId: null, inRoster: false, myChoice: null, choseMe: [], pairId: null, isAdmin: false },
 })
 const competition = (withGroups: boolean) => ({
-  id: 27, stages: [{ id: 34, number: 1, status: 'running', groups: withGroups ? [{ id: 138, name: '1.ª Divisão', tier: 1 }, { id: 139, name: '2.ª Divisão', tier: 2 }] : [], rounds: [] }],
+  id: 27, stages: [{ id: 34, number: 1, status: 'running', groups: withGroups ? [{ id: 138, name: '1.ª Divisão', tier: 1, pointsRange: { min: 66, max: 545 } }, { id: 139, name: '2.ª Divisão', tier: 2, pointsRange: { min: 33, max: 272.5 } }] : [], rounds: [] }],
   currentStageId: 34,
 })
 vi.mock('./api', () => ({
@@ -30,7 +30,7 @@ vi.mock('./api', () => ({
 vi.mock('@/features/results/api', () => ({
   errorMessage: () => 'erro',
   resultsApi: {
-    group: vi.fn(async (id: number) => ({ id, name: id === 138 ? '1.ª Divisão' : '2.ª Divisão', tier: id === 138 ? 1 : 2, members: id === 138 ? [cou, dinis] : [pancho, archer] })),
+    group: vi.fn(async (id: number) => ({ id, name: id === 138 ? '1.ª Divisão' : '2.ª Divisão', tier: id === 138 ? 1 : 2, pointsRange: id === 138 ? { min: 66, max: 545 } : { min: 33, max: 272.5 }, members: id === 138 ? [cou, dinis] : [pancho, archer] })),
     players: vi.fn(async () => []),
   },
 }))
@@ -55,6 +55,8 @@ describe('Parelhas by division', () => {
     expect(within(second).getByText('Pancho & Archer')).toBeInTheDocument()
     expect(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(screen.getByText('Parelhas formadas (2/2)')).toBeInTheDocument()
+    expect(within(first).getByText('66–545 pts')).toBeInTheDocument() // what a player can take out of the division
+    expect(within(second).getByText('33–273 pts')).toBeInTheDocument() // formatPoints rounds for display
   })
 
   it('keeps the flat list while the divisions are not formed', async () => {

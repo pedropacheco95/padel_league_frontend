@@ -301,9 +301,17 @@ export default function PairChoice({ competitionId }: { competitionId: number })
           <div className="space-y-[18px]">
             {byDivision.divisions.map(d => (
               <section key={d.id} aria-labelledby={`pairs-div-${d.id}`}>
-                <h4 id={`pairs-div-${d.id}`} className="mb-[8px] text-[15px] font-semibold text-gray-900">
+                <h4 id={`pairs-div-${d.id}`} className="mb-[8px] flex flex-wrap items-baseline gap-x-[8px] text-[15px] font-semibold text-gray-900">
                   {d.name}
-                  <span className="ml-[8px] text-[12px] font-normal text-gray-500">{d.pairs.length} parelhas</span>
+                  <span className="text-[12px] font-normal text-gray-500">{d.pairs.length} parelhas</span>
+                  {d.pointsRange && (
+                    <span
+                      className="ml-auto text-[12px] font-normal text-gray-600"
+                      title="Pontos de ranking que cada jogador pode ganhar nesta divisão neste mini-torneio: do último lugar sem sets ao 1.º com todos os sets"
+                    >
+                      {formatPoints(d.pointsRange.min)}–{formatPoints(d.pointsRange.max)} pts
+                    </span>
+                  )}
                 </h4>
                 <ul className="grid gap-[8px] sm:grid-cols-2">{d.pairs.map(pairItem)}</ul>
               </section>

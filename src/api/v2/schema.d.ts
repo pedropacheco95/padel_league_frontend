@@ -2362,6 +2362,11 @@ export interface components {
             name: string;
             tier: number | null;
             rating?: number | null;
+            /** @description Teams only — the ranking points one player can take out of this division this mini-tournament (min 8th place with no set, max 1st with all 9 sets); null for other formats */
+            pointsRange?: {
+                min: number;
+                max: number;
+            } | null;
             hasEnded?: boolean;
             logoImage?: components["schemas"]["Image"];
             bannerImage?: components["schemas"]["Image"];
