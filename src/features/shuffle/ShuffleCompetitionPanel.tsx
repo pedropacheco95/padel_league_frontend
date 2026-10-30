@@ -2,10 +2,12 @@
 // Port of pages/Shuffle/ShufflePage.tsx onto v2: one stage per round ("jornada"), groups ranked by tier,
 // standings for the whole competition; admins generate / delete the last round.
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { Competition, StandingRow } from '@/api/v2'
 import StepperSelect from '@/components/v2/StepperSelect'
+import { useHeaderSlot } from '@/components/v2/headerSlot'
 import { useAuth } from '@/context/AuthContext'
 import { errorMessage } from '@/features/results/api'
 import GroupMatches from '@/features/results/GroupMatches'
@@ -145,6 +147,7 @@ export default function ShuffleCompetitionPanel({ competition: initial }: { comp
     if (g) setGroupId(g.id)
   }
   const swipe = useHorizontalSwipe({ onSwipeLeft: () => stepGroup(1), onSwipeRight: () => stepGroup(-1), enabled: groups.length > 1 })
+  const headerSlot = useHeaderSlot()
   const mult = multipliers(competition)
 
   const stageOptions = stages.map(s => ({ key: s.id, label: `Jornada ${s.number}`, current: s.id === competition.currentStageId }))
@@ -157,11 +160,18 @@ export default function ShuffleCompetitionPanel({ competition: initial }: { comp
 
   return (
     <div className="pb-[32px]">
-      {stages.length > 1 && (
-        <div className="-mx-[16px] -mt-[16px] mb-[4px] px-[16px] pb-[14px] pt-[2px]" style={{ background: 'linear-gradient(135deg,#006A71,#48A6A7)' }}>
-          <StepperSelect variant="header" title="Jornada" options={stageOptions} value={stage?.id ?? null} onChange={setStageId} />
-        </div>
-      )}
+      {/* Jornada switcher inside the hero (portal into PageHeader's slot, one shared background). */}
+      {stages.length > 1 && (() => {
+        const row = (
+          <div
+            className={headerSlot ? 'w-full pt-[4px]' : '-mx-[16px] -mt-[16px] mb-[4px] px-[16px] pb-[14px] pt-[2px]'}
+            style={headerSlot ? undefined : { background: 'linear-gradient(135deg,#006A71,#48A6A7)' }}
+          >
+            <StepperSelect variant="header" title="Jornada" options={stageOptions} value={stage?.id ?? null} onChange={setStageId} />
+          </div>
+        )
+        return headerSlot ? createPortal(row, headerSlot) : row
+      })()}
       <nav className="mb-[18px] flex gap-[4px] overflow-x-auto border-b border-gray-200" role="tablist">
         {([['standings', 'Classificação'], ['rounds', 'Jornadas']] as [Section, string][]).map(([key, label]) => (
           <button

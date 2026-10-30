@@ -3,11 +3,13 @@
 // starts, the projected/closed pairings), matches, pairs, ranking points won this edition, simulator.
 // The mini-torneio switcher sits in the header row above the tabs (direction C filters).
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { Competition, Stage, StandingRow } from '@/api/v2'
 import { formatPoints } from '@/components/v2/PointsValue'
 import StepperSelect from '@/components/v2/StepperSelect'
+import { useHeaderSlot } from '@/components/v2/headerSlot'
 import { useAuth } from '@/context/AuthContext'
 import { errorMessage, resultsApi } from '@/features/results/api'
 import GroupMatches from '@/features/results/GroupMatches'
@@ -249,6 +251,7 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
   // Swipe on the match list only (not the tabs, tables or sheet): left = next division, right = previous.
   const swipe = useHorizontalSwipe({ onSwipeLeft: () => stepGroup(1), onSwipeRight: () => stepGroup(-1), enabled: groups.length > 1 })
   const [heroRow, setHeroRow] = useState<HTMLDivElement | null>(null)
+  const headerSlot = useHeaderSlot()
   const heroHidden = useScrolledPast(heroRow)
   // Pair formation for the current mini-tournament: Classificação shows the live projection, Simulador appears.
   const current = stages.find(s => s.id === competition.currentStageId)
@@ -271,17 +274,20 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
 
   return (
     <div className="pb-[32px]">
-      {/* Mini-torneio switcher: first row of the panel, full-bleed teal so it reads as part of the header
-          above (FormatPanel pads 16px around the panel). Hidden with a single mini-tournament. */}
-      {stages.length > 1 && (
-        <div
-          ref={setHeroRow}
-          className="-mx-[16px] -mt-[16px] mb-[4px] px-[16px] pb-[14px] pt-[2px]"
-          style={{ background: 'linear-gradient(135deg,#006A71,#48A6A7)' }}
-        >
-          <StepperSelect variant="header" title="Mini-torneio" options={stageOptions} value={stage?.id ?? null} onChange={pickStage} />
-        </div>
-      )}
+      {/* Mini-torneio switcher inside the hero (portal into PageHeader's slot, one shared background);
+          when there is no header slot it is the panel's first row. Hidden with a single mini-tournament. */}
+      {stages.length > 1 && (() => {
+        const row = (
+          <div
+            ref={setHeroRow}
+            className={headerSlot ? 'w-full pt-[4px]' : '-mx-[16px] -mt-[16px] mb-[4px] px-[16px] pb-[14px] pt-[2px]'}
+            style={headerSlot ? undefined : { background: 'linear-gradient(135deg,#006A71,#48A6A7)' }}
+          >
+            <StepperSelect variant="header" title="Mini-torneio" options={stageOptions} value={stage?.id ?? null} onChange={pickStage} />
+          </div>
+        )
+        return headerSlot ? createPortal(row, headerSlot) : row
+      })()}
       <nav className="mb-[18px] flex gap-[4px] overflow-x-auto border-b border-gray-200" role="tablist">
         {SECTIONS.filter(([key]) => key !== 'simulator' || simulating).map(([key, label]) => (
           <button
