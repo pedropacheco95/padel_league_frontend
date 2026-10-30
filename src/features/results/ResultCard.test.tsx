@@ -177,3 +177,16 @@ describe('ResultCard', () => {
     expect(screen.getByText('Pontos: 5 – 2')).toBeInTheDocument() // 3-0, 1-1 (TE), 1-1 (not played)
   })
 })
+
+describe('winner marker', () => {
+  it("colours the winning pair's names teal with no underline (Pedro, 30 Oct)", () => {
+    renderCard(match({ status: 'played', sets: [{ setNo: 1, homeGames: 9, awayGames: 4, outcome: 'completed' }], homeScore: 9, awayScore: 4, winner: 'home' }), false)
+    const won = document.querySelectorAll('[data-won]')
+    expect(won).toHaveLength(2)
+    won.forEach(el => {
+      expect(el.className).not.toMatch(/underline/)
+      expect((el as HTMLElement).style.color).toBe('rgb(0, 106, 113)')
+    })
+    expect(document.querySelectorAll('button.font-semibold').length).toBeGreaterThan(2)
+  })
+})
