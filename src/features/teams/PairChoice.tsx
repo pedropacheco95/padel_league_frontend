@@ -2,7 +2,7 @@
 // Same behaviour and copy; data via React Query keyed by competition, every write returns the new state.
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { AxiosResponse } from 'axios'
 import { toast } from 'sonner'
 import type { PlayerRef, TeamsState } from '@/api/v2'
@@ -11,7 +11,8 @@ import PlayerAvatar from '@/components/v2/PlayerAvatar'
 import { formatPoints } from '@/components/v2/PointsValue'
 import { useAuth } from '@/context/AuthContext'
 import { errorMessage, resultsApi } from '@/features/results/api'
-import { teamsApi } from './api'
+import { teamsApi, teamsV2Api } from './api'
+import { groupPairsByDivision, type TeamsPair } from './pairsByDivision'
 
 type TeamsPlayer = TeamsState['players'][number]
 
@@ -84,6 +85,29 @@ export default function PairChoice({ competitionId }: { competitionId: number })
 
   const byId = useMemo(() => new Map((state?.players ?? []).map(p => [p.id, p])), [state])
 
+  // Parelhas by division (Pedro, 30 Oct): the pairing stage's groups come from the competition (same query
+  // key as the panel, so no extra request) and each group's members from its detail (shared with the
+  // Classificação cards). Before the divisions are formed there are no groups and the list stays flat.
+  const competitionQuery = useQuery({
+    queryKey: ['v2', 'competitions', competitionId],
+    queryFn: () => teamsV2Api.competition(competitionId),
+    staleTime: 30_000,
+  })
+  const stageId = state?.miniTournament.id
+  const stageGroups = useMemo(
+    () => competitionQuery.data?.stages?.find(s => s.id === stageId)?.groups ?? [],
+    [competitionQuery.data, stageId],
+  )
+  const groupQueries = useQueries({
+    queries: stageGroups.map(g => ({ queryKey: ['v2', 'groups', g.id], queryFn: () => resultsApi.group(g.id) })),
+  })
+  // Null until every division is known: the list stays flat meanwhile (24 pairs: no memo needed).
+  const groupDetails = groupQueries.map(q => q.data)
+  const byDivision =
+    groupDetails.length > 0 && groupDetails.every(Boolean)
+      ? groupPairsByDivision(state?.pairs ?? [], groupDetails.map(g => g!))
+      : null
+
   if (httpStatus(stateQuery.error) === 404) {
     return <p className="text-[15px] text-gray-600">Ainda não há mini-torneios da Teams.</p>
   }
@@ -113,6 +137,29 @@ export default function PairChoice({ competitionId }: { competitionId: number })
   )
   const deadline = formatDeadline(mt.pairingDeadline)
   const pairNames = (players?: PlayerRef[]) => (players ?? []).map(p => p.name).join(' & ')
+
+  const pairItem = (pair: TeamsPair) => (
+    <li key={pair.id} className="flex items-center gap-[12px] rounded-lg border border-gray-200 bg-white px-[12px] py-[10px]">
+      <div className="flex -space-x-2">
+        {(pair.players ?? []).map(p => <Avatar key={p.id} player={p} />)}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[15px] truncate font-medium">{pairNames(pair.players)}</p>
+        <p className="text-[12px] text-gray-500">
+          {formatPoints(pair.rankingPoints ?? 0)} pts{pair.source ? ` · ${SOURCE_LABEL[pair.source] ?? pair.source}` : ''}
+        </p>
+      </div>
+      {me.isAdmin && !mt.pairingClosed && pair.id != null && (
+        <button
+          className="min-h-[40px] shrink-0 px-[8px] text-[13px] text-red-700 underline"
+          disabled={busy}
+          onClick={() => run(() => teamsApi.unpair(competitionId, pair.id!), () => 'Parelha desfeita.')}
+        >
+          Desfazer
+        </button>
+      )}
+    </li>
+  )
 
   const choose = (p: TeamsPlayer) =>
     run(
@@ -250,31 +297,26 @@ export default function PairChoice({ competitionId }: { competitionId: number })
         </h3>
         {pairs.length === 0 ? (
           <p className="text-[15px] text-gray-500">Ainda não há parelhas.</p>
-        ) : (
-          <ul className="grid gap-[8px] sm:grid-cols-2">
-            {pairs.map(pair => (
-              <li key={pair.id} className="flex items-center gap-[12px] rounded-lg border border-gray-200 bg-white px-[12px] py-[10px]">
-                <div className="flex -space-x-2">
-                  {(pair.players ?? []).map(p => <Avatar key={p.id} player={p} />)}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[15px] truncate font-medium">{pairNames(pair.players)}</p>
-                  <p className="text-[12px] text-gray-500">
-                    {formatPoints(pair.rankingPoints ?? 0)} pts{pair.source ? ` · ${SOURCE_LABEL[pair.source] ?? pair.source}` : ''}
-                  </p>
-                </div>
-                {me.isAdmin && !mt.pairingClosed && pair.id != null && (
-                  <button
-                    className="min-h-[40px] shrink-0 px-[8px] text-[13px] text-red-700 underline"
-                    disabled={busy}
-                    onClick={() => run(() => teamsApi.unpair(competitionId, pair.id!), () => 'Parelha desfeita.')}
-                  >
-                    Desfazer
-                  </button>
-                )}
-              </li>
+        ) : byDivision ? (
+          <div className="space-y-[18px]">
+            {byDivision.divisions.map(d => (
+              <section key={d.id} aria-labelledby={`pairs-div-${d.id}`}>
+                <h4 id={`pairs-div-${d.id}`} className="mb-[8px] text-[15px] font-semibold text-gray-900">
+                  {d.name}
+                  <span className="ml-[8px] text-[12px] font-normal text-gray-500">{d.pairs.length} parelhas</span>
+                </h4>
+                <ul className="grid gap-[8px] sm:grid-cols-2">{d.pairs.map(pairItem)}</ul>
+              </section>
             ))}
-          </ul>
+            {byDivision.rest.length > 0 && (
+              <section aria-labelledby="pairs-div-none">
+                <h4 id="pairs-div-none" className="mb-[8px] text-[15px] font-semibold text-gray-900">Sem divisão</h4>
+                <ul className="grid gap-[8px] sm:grid-cols-2">{byDivision.rest.map(pairItem)}</ul>
+              </section>
+            )}
+          </div>
+        ) : (
+          <ul className="grid gap-[8px] sm:grid-cols-2">{pairs.map(pairItem)}</ul>
         )}
       </section>
 
