@@ -1,8 +1,10 @@
 // Teams, admin: the round's WhatsApp message. Pedro (30 Oct): after a result is saved it should float
 // at the top of the screen as a panel to copy from or close, instead of sitting inline above the
 // matches. The text itself is lib/teamsShareMessage, unchanged. A small "Mensagem da jornada" chip
-// keeps the panel reachable without saving anything (jornada 1, a re-send).
+// keeps the panel reachable without saving anything (jornada 1, a re-send); it renders into `openerSlot`
+// (the sticky division bar, bug-955: an inline chip sat under the floating jornada pill) when given.
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useQueries } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { Competition, Stage } from '@/api/v2'
@@ -33,7 +35,7 @@ async function copyText(text: string, area: HTMLTextAreaElement | null): Promise
   }
 }
 
-export default function ShareMessagePanel({ competition, stage }: { competition: Competition; stage: Stage }) {
+export default function ShareMessagePanel({ competition, stage, openerSlot }: { competition: Competition; stage: Stage; openerSlot?: HTMLElement | null }) {
   const [round, setRound] = useState<number | null>(null)
   const [copied, setCopied] = useState(false)
   const [open, setOpen] = useState(false)
@@ -93,14 +95,27 @@ export default function ShareMessagePanel({ competition, stage }: { competition:
   }
   const close = () => setOpen(false)
 
-  if (!open) {
-    return (
-      <div className="mb-[12px]">
-        <button className={chip(false)} onClick={() => setOpen(true)}>Mensagem da jornada</button>
-      </div>
-    )
-  }
+  const opener = openerSlot ? (
+    <button
+      type="button"
+      aria-label="Mensagem da jornada"
+      title="Mensagem da jornada"
+      aria-expanded={open}
+      className="grid h-[40px] w-[40px] place-items-center rounded-full text-gray-800"
+      onClick={() => setOpen(true)}
+    >
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" />
+      </svg>
+    </button>
+  ) : (
+    <button className={chip(false)} onClick={() => setOpen(true)}>Mensagem da jornada</button>
+  )
+  const openerNode = openerSlot ? createPortal(opener, openerSlot) : <div className="mb-[12px]">{opener}</div>
+  if (!open) return openerNode
   return (
+    <>
+    {openerNode}
     <div
       role="dialog"
       aria-label="Mensagem da jornada"
@@ -137,5 +152,6 @@ export default function ShareMessagePanel({ competition, stage }: { competition:
         </div>
       </div>
     </div>
+    </>
   )
 }

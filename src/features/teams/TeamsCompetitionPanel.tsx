@@ -158,6 +158,7 @@ function useScrolledPast(el: HTMLElement | null): boolean {
 export default function TeamsCompetitionPanel({ competition: initial }: { competition: Competition }) {
   const { user } = useAuth()
   const isAdmin = !!(user?.isAdmin || user?.superAdmin)
+  const [shareOpenerSlot, setShareOpenerSlot] = useState<HTMLDivElement | null>(null)
   // ?section=matches&group=<id> is where "Editar jogos" lands (EditGamesPage); read once, on mount.
   const [params] = useSearchParams()
   const [section, setSection] = useState<Section>(() => SECTIONS.find(([k]) => k === params.get('section'))?.[0] ?? 'standings')
@@ -276,13 +277,18 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
                     </div>
                   )}
                   {groups.length > 1 && (
-                    <div className="border-b border-gray-200 px-[8px] pb-[6px] pt-[8px]">
-                      <StepperSelect variant="subheader" title="Divisão" nudgeKey="division" options={groupOptions} value={activeGroupId} onChange={setGroupId} />
+                    <div className="flex items-center border-b border-gray-200 px-[8px] pb-[6px] pt-[8px]">
+                      <div className="min-w-0 flex-1">
+                        <StepperSelect variant="subheader" title="Divisão" nudgeKey="division" options={groupOptions} value={activeGroupId} onChange={setGroupId} />
+                      </div>
+                      {/* The admin's "Mensagem da jornada" opener lives here (bug-955): sticky at the top, it can
+                          never meet the jornada pill floating at the bottom, whatever the scroll. */}
+                      {isAdmin && <div ref={setShareOpenerSlot} className="shrink-0" />}
                     </div>
                   )}
                 </div>
               )}
-              {isAdmin && <ShareMessagePanel competition={competition} stage={stage} />}
+              {isAdmin && <ShareMessagePanel competition={competition} stage={stage} openerSlot={shareOpenerSlot} />}
               {!my.ready ? (
                 <div className="loader" />
               ) : (
