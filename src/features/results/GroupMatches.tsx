@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import StepperSelect from '@/components/v2/StepperSelect'
+import SwipeDebugOverlay from '@/components/v2/SwipeDebugOverlay'
 import { useAuth } from '@/context/AuthContext'
 import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe'
 import { resultsApi } from './api'
@@ -64,6 +65,7 @@ export default function GroupMatches({
   return (
     // Bottom padding keeps the last card clear of the floating pill.
     <div className={pill ? 'pb-[96px]' : ''} {...swipe}>
+      <SwipeDebugOverlay />
       <ul className="space-y-[12px]">
         {(matches.data ?? []).map(m => (
           <li key={m.id}>

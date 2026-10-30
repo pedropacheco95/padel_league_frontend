@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import FormatBadge from '@/components/v2/FormatBadge'
 import PageHeader from '@/components/v2/PageHeader'
 import StepperSelect from '@/components/v2/StepperSelect'
+import SwipeDebugOverlay from '@/components/v2/SwipeDebugOverlay'
 import StandingsTable from '@/components/v2/StandingsTable'
 import { dateRange } from '@/features/competitions/format'
 import { V2NotFound } from '@/features/competitions/v2http'
@@ -96,6 +97,7 @@ export default function GroupPage() {
               }))}
             />
             <div className={`flex flex-col gap-[12px] ${rounds.length > 1 ? 'pb-[96px]' : ''}`} {...swipe}>
+              <SwipeDebugOverlay />
               {roundMatches.length === 0 && <p className="text-center text-[15px] text-gray-500">Sem jogos nesta jornada.</p>}
               {/* One card for viewing and editing (Pedro, 29 Oct): signed in, the games are typed in its
                   header and a player who did not come is tapped; visitors get the same card read-only.
