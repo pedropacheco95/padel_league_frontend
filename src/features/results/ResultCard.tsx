@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import type { Match, Participant, ResultInput } from '@/api/v2'
 import { errorMessage, resultsApi } from './api'
 import { useAuth } from '@/context/AuthContext'
+import { blurAfterPointerClick } from '@/lib/focus'
 import { groupMatchesKey, seatKey, type SeatKey } from './keys'
 import { matchAbsences, participantName, sideParticipants } from './matchText'
 import { initials, roundNight, sameDraft, serverDraft, setsFor, setsTally, shortDate, shortTime, type Draft } from './resultDraft'
@@ -277,7 +278,10 @@ export default function ResultCard({
       <button
         type="button"
         disabled={!editable}
-        onClick={() => tap(p)}
+        onClick={e => {
+          blurAfterPointerClick(e)
+          tap(p)
+        }}
         className={`max-w-full truncate rounded-[5px] px-[6px] text-[16px] font-semibold leading-[1.35] ${member ? '' : 'italic'}`}
         // Winner marker (Pedro, 30 Oct): the winning pair's names in the card's teal, same weight, no underline.
         style={pending ? { backgroundColor: PILL, color: 'white' } : { color: won ? TEAL : DARK }}

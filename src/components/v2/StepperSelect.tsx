@@ -7,6 +7,7 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useInputFocused } from '@/hooks/useInputFocused'
+import { blurAfterPointerClick } from '@/lib/focus'
 
 export type StepperOption = {
   key: number
@@ -56,6 +57,8 @@ export default function StepperSelect({
   nudgeKey?: string
 }) {
   const [open, setOpen] = useState(false)
+  // Opened by a tap: no item is auto-focused (no ring); opened by keyboard: Radix focuses the first item.
+  const openedByPointer = useRef(false)
   const inputFocused = useInputFocused()
   const labelRef = useRef<HTMLButtonElement>(null)
 
@@ -115,6 +118,9 @@ export default function StepperSelect({
           className="fixed inset-x-0 bottom-0 z-[61] max-h-[80vh] overflow-y-auto rounded-t-[16px] bg-white px-[16px] pb-[max(18px,env(safe-area-inset-bottom))] pt-[10px] outline-none"
           style={{ boxShadow: '0 -8px 24px rgba(20,26,40,.2)', color: INK }}
           aria-label={title}
+          onOpenAutoFocus={e => {
+            if (openedByPointer.current) e.preventDefault()
+          }}
         >
           <div className="mx-auto mb-[10px] h-[4px] w-[40px] rounded-[2px] bg-gray-300" />
           <Dialog.Title className="mb-[6px] text-[18px] font-semibold">{title}</Dialog.Title>
@@ -125,7 +131,8 @@ export default function StepperSelect({
                 <button
                   type="button"
                   className={`flex min-h-[48px] w-full items-center justify-between border-b border-gray-200 text-left text-[17px] ${o.key === cur.key ? 'font-bold' : ''}`}
-                  onClick={() => {
+                  onClick={e => {
+                    blurAfterPointerClick(e)
                     onChange(o.key)
                     setOpen(false)
                   }}
@@ -159,7 +166,10 @@ export default function StepperSelect({
           className="min-h-[32px] rounded-full bg-white px-[10px] text-[14px] font-semibold"
           style={{ color: INK }}
           aria-label={openLabel}
-          onClick={() => setOpen(true)}
+          onClick={e => {
+            openedByPointer.current = e.detail > 0
+            setOpen(true)
+          }}
         >
           {chipLabel ?? cur.label} <span style={{ color: TEAL }}>▾</span>
         </button>
@@ -172,19 +182,28 @@ export default function StepperSelect({
     const arrow = 'grid h-[40px] w-[40px] place-items-center rounded-full text-[22px] leading-none text-white disabled:opacity-35'
     return (
       <div className="flex items-center gap-[6px]" role="group" aria-label={title}>
-        <button type="button" className={arrow} style={{ background: 'rgba(255,255,255,.14)' }} disabled={!prev} onClick={() => go(prev)} aria-label="Anterior">‹</button>
+        <button type="button" className={arrow} style={{ background: 'rgba(255,255,255,.14)' }} disabled={!prev} onClick={e => {
+            blurAfterPointerClick(e)
+            go(prev)
+          }} aria-label="Anterior">‹</button>
         <button
           ref={labelRef}
           type="button"
           className="flex h-[40px] flex-1 items-center justify-center gap-[8px] rounded-full bg-white text-[17px] font-semibold"
           style={{ color: INK }}
           aria-label={openLabel}
-          onClick={() => setOpen(true)}
+          onClick={e => {
+            openedByPointer.current = e.detail > 0
+            setOpen(true)
+          }}
         >
           {cur.label} <small className="text-[13px] font-medium text-gray-500">de {options.length}</small>
           <span className="text-[12px]" style={{ color: TEAL }}>▾</span>
         </button>
-        <button type="button" className={arrow} style={{ background: 'rgba(255,255,255,.14)' }} disabled={!next} onClick={() => go(next)} aria-label="Seguinte">›</button>
+        <button type="button" className={arrow} style={{ background: 'rgba(255,255,255,.14)' }} disabled={!next} onClick={e => {
+            blurAfterPointerClick(e)
+            go(next)
+          }} aria-label="Seguinte">›</button>
         {sheet}
       </div>
     )
@@ -195,7 +214,10 @@ export default function StepperSelect({
     return (
       <div role="group" aria-label={title}>
         <div className="flex items-center gap-[4px]">
-          <button type="button" className={arrow} style={{ color: TEAL }} disabled={!prev} onClick={() => go(prev)} aria-label="Anterior">‹</button>
+          <button type="button" className={arrow} style={{ color: TEAL }} disabled={!prev} onClick={e => {
+            blurAfterPointerClick(e)
+            go(prev)
+          }} aria-label="Anterior">‹</button>
           <span className="w-[62px] overflow-hidden whitespace-nowrap text-right text-[15px] text-gray-400" aria-hidden>{prev?.label ?? ''}</span>
           <button
             ref={labelRef}
@@ -203,13 +225,19 @@ export default function StepperSelect({
             className="flex-1 text-center text-[20px] font-bold"
             style={{ color: INK }}
             aria-label={openLabel}
-            onClick={() => setOpen(true)}
+            onClick={e => {
+            openedByPointer.current = e.detail > 0
+            setOpen(true)
+          }}
           >
             {cur.label}
             {cur.mine && tag('a tua')}
           </button>
           <span className="w-[62px] overflow-hidden whitespace-nowrap text-left text-[15px] text-gray-400" aria-hidden>{next?.label ?? ''}</span>
-          <button type="button" className={arrow} style={{ color: TEAL }} disabled={!next} onClick={() => go(next)} aria-label="Seguinte">›</button>
+          <button type="button" className={arrow} style={{ color: TEAL }} disabled={!next} onClick={e => {
+            blurAfterPointerClick(e)
+            go(next)
+          }} aria-label="Seguinte">›</button>
         </div>
         <div className="mt-[2px] flex justify-center gap-[6px]" aria-hidden>
           {options.map(o => (
@@ -244,13 +272,19 @@ export default function StepperSelect({
         visibility: inputFocused || open ? 'hidden' : 'visible',
       }}
     >
-      <button type="button" className={arrow} disabled={!prev} onClick={() => go(prev)} aria-label="Anterior">‹</button>
+      <button type="button" className={arrow} disabled={!prev} onClick={e => {
+            blurAfterPointerClick(e)
+            go(prev)
+          }} aria-label="Anterior">‹</button>
       <button
         ref={labelRef}
         type="button"
         className="min-w-[132px] px-[10px] text-center"
         aria-label={openLabel}
-        onClick={() => setOpen(true)}
+        onClick={e => {
+            openedByPointer.current = e.detail > 0
+            setOpen(true)
+          }}
       >
         <b className="block text-[19px] font-semibold leading-none">{cur.label}</b>
         <small className="text-[12px] tracking-[0.04em] opacity-70">
@@ -263,7 +297,10 @@ export default function StepperSelect({
           )}
         </small>
       </button>
-      <button type="button" className={arrow} disabled={!next} onClick={() => go(next)} aria-label="Seguinte">›</button>
+      <button type="button" className={arrow} disabled={!next} onClick={e => {
+            blurAfterPointerClick(e)
+            go(next)
+          }} aria-label="Seguinte">›</button>
     </div>
   )
   return (

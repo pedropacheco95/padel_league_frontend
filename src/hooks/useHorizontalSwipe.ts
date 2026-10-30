@@ -41,6 +41,19 @@ export function startsInsideProtected(target: EventTarget | null, root: Element)
 }
 
 type Point = { x: number; y: number }
+
+/** On-device diagnostics (Pedro's iPhone, 30 Oct): with `?swipedebug=1` in the URL the hook records what it
+ * sees and SwipeDebugOverlay shows it. Nothing is recorded otherwise. */
+export const swipeTrace: { enabled: boolean; lines: string[]; listeners: Set<() => void> } = {
+  enabled: typeof location !== 'undefined' && /[?&]swipedebug=1/.test(location.search),
+  lines: [],
+  listeners: new Set(),
+}
+function trace(line: string) {
+  if (!swipeTrace.enabled) return
+  swipeTrace.lines = [...swipeTrace.lines.slice(-7), line]
+  swipeTrace.listeners.forEach(fn => fn())
+}
 const point = (t: { clientX: number; clientY: number } | undefined): Point | null =>
   t && Number.isFinite(t.clientX) && Number.isFinite(t.clientY) ? { x: t.clientX, y: t.clientY } : null
 
@@ -62,14 +75,15 @@ export function useHorizontalSwipe({
 
   const onTouchStart = (e: ReactTouchEvent<HTMLElement>) => {
     reset()
-    if (!enabled || e.touches.length !== 1) return
+    if (!enabled || e.touches.length !== 1) return trace(`start ignored: enabled=${enabled} touches=${e.touches.length}`)
     const p = point(e.touches[0])
-    if (!p) return
+    if (!p) return trace('start ignored: no point')
     const width = window.innerWidth || 0
-    if (p.x < edge || (width > 0 && p.x > width - edge)) return
-    if (startsInsideProtected(e.target, e.currentTarget)) return
+    if (p.x < edge || (width > 0 && p.x > width - edge)) return trace(`start ignored: edge x=${Math.round(p.x)} w=${width}`)
+    if (startsInsideProtected(e.target, e.currentTarget)) return trace(`start ignored: protected ${(e.target as Element).tagName}`)
     start.current = p
     last.current = p
+    trace(`start ${Math.round(p.x)},${Math.round(p.y)} on ${(e.target as Element).tagName} w=${width}`)
   }
 
   const onTouchMove = (e: ReactTouchEvent<HTMLElement>) => {
@@ -83,14 +97,19 @@ export function useHorizontalSwipe({
     const s = start.current
     const l = point(e.changedTouches?.[0]) ?? last.current
     reset()
-    if (!s || !l) return
+    if (!s || !l) return trace('end without start')
     const dx = l.x - s.x
     const dy = l.y - s.y
-    if (Math.abs(dx) < minDistance || Math.abs(dx) <= ratio * Math.abs(dy)) return
+    if (Math.abs(dx) < minDistance || Math.abs(dx) <= ratio * Math.abs(dy)) return trace(`end: no swipe dx=${Math.round(dx)} dy=${Math.round(dy)}`)
+    trace(`end: swipe ${dx < 0 ? 'left' : 'right'} dx=${Math.round(dx)} dy=${Math.round(dy)}`)
     if (dx < 0) onSwipeLeft?.()
     else onSwipeRight?.()
   }
+  const onTouchCancel = () => {
+    if (start.current) trace('cancelled by the browser')
+    reset()
+  }
 
   const style: CSSProperties = { touchAction: 'pan-y' }
-  return { onTouchStart, onTouchMove, onTouchEnd, onTouchCancel: reset, style }
+  return { onTouchStart, onTouchMove, onTouchEnd, onTouchCancel, style }
 }
