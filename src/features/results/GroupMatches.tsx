@@ -1,19 +1,38 @@
 // Matches of one group by round: one inline result card per match (ResultCard), editable for
-// signed-in players, read-only for everyone else.
+// signed-in players, read-only for everyone else. The jornada is picked on a floating pill at the
+// bottom of the screen (StepperSelect `pill`). Its state is either lifted by the parent (`round` +
+// `onRound`, so the Teams page keeps the jornada while the division changes) or kept here.
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import StepperSelect from '@/components/v2/StepperSelect'
 import { useAuth } from '@/context/AuthContext'
 import { resultsApi } from './api'
 import { groupMatchesKey } from './keys'
 import ResultCard from './ResultCard'
+import { shortDate } from './resultDraft'
 
-export default function GroupMatches({ groupId }: { groupId: number }) {
+export default function GroupMatches({
+  groupId,
+  round: roundProp,
+  onRound,
+}: {
+  groupId: number
+  round?: number | null
+  onRound?: (round: number) => void
+}) {
   const { user } = useAuth()
   const isAdmin = !!(user?.isAdmin || user?.superAdmin)
   const group = useQuery({ queryKey: ['v2', 'groups', groupId], queryFn: () => resultsApi.group(groupId) })
-  const [round, setRound] = useState<number | null>(null)
+  const [ownRound, setOwnRound] = useState<number | null>(null)
+  const controlled = roundProp !== undefined
+  const round = controlled ? roundProp : ownRound
+  const setRound = (n: number) => {
+    if (!controlled) setOwnRound(n)
+    onRound?.(n)
+  }
   useEffect(() => {
     if (round === null && group.data) setRound(group.data.currentRound ?? group.data.rounds[0]?.number ?? 1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group.data, round])
 
   const matches = useQuery({
@@ -30,24 +49,11 @@ export default function GroupMatches({ groupId }: { groupId: number }) {
   const roundId = activeRound?.id
   // An ended group's results belong to the admins (the server 409s anyone else).
   const editable = !!user && (isAdmin || !group.data?.hasEnded)
+  const pill = rounds.length > 1
 
   return (
-    <div>
-      {rounds.length > 1 && (
-        <div className="mb-[12px] flex flex-wrap gap-[6px]" role="tablist" aria-label="Jornada">
-          {rounds.map(r => (
-            <button
-              key={r.id}
-              role="tab"
-              aria-selected={r.number === round}
-              className={`min-h-[40px] rounded-full px-[12px] py-[6px] text-[13px] ${r.number === round ? 'bg-gray-900 text-white' : 'bg-gray-100'}`}
-              onClick={() => setRound(r.number)}
-            >
-              Jornada {r.number}
-            </button>
-          ))}
-        </div>
-      )}
+    // Bottom padding keeps the last card clear of the floating pill.
+    <div className={pill ? 'pb-[96px]' : ''}>
       <ul className="space-y-[12px]">
         {(matches.data ?? []).map(m => (
           <li key={m.id}>
@@ -56,6 +62,20 @@ export default function GroupMatches({ groupId }: { groupId: number }) {
         ))}
         {matches.data?.length === 0 && <li className="text-[14px] text-gray-500">Sem jogos nesta jornada.</li>}
       </ul>
+      {pill && (
+        <StepperSelect
+          variant="pill"
+          title="Jornada"
+          value={round}
+          onChange={setRound}
+          options={rounds.map(r => ({
+            key: r.number,
+            label: `Jornada ${r.number}`,
+            hint: shortDate(r.date) ?? undefined,
+            current: r.number === group.data?.currentRound,
+          }))}
+        />
+      )}
     </div>
   )
 }

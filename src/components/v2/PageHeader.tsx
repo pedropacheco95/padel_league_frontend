@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { HEADER_SLOT_ID } from './headerSlot'
 
 export type HeaderTab<K extends string> = { key: K; label: string }
 
@@ -25,6 +26,8 @@ export default function PageHeader<K extends string>({ image, kicker, title, sub
         {kicker && <div className="flex items-center gap-[8px] flex-wrap justify-center text-[14px]">{kicker}</div>}
         <h1 className="text-[26px] sm:text-[32px] font-bold leading-tight m-0 text-white">{title}</h1>
         {subtitle && <p className="text-[14px] m-0 opacity-90 text-white">{subtitle}</p>}
+        {/* Portal target for a page-level control (see headerSlot.ts); hidden while empty. */}
+        <div id={HEADER_SLOT_ID} className="w-full max-w-[480px] empty:hidden" />
       </div>
       {tabs && tabs.length > 0 && (
         <nav className="flex justify-center gap-[4px] border-b border-gray-200 overflow-x-auto bg-white">
