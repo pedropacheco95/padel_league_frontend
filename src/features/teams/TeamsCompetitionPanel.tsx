@@ -1,15 +1,19 @@
 // Teams competition page body, embedded by S3's /competitions/:id under its header
 // (contract: default export, props { competition }). Sections: standings (per mini-tournament; before it
 // starts, the projected/closed pairings), matches, pairs, ranking points won this edition, simulator.
-import { useState } from 'react'
+// The mini-torneio switcher sits in the header row above the tabs (direction C filters).
+import { useEffect, useState } from 'react'
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { Competition, Stage, StandingRow } from '@/api/v2'
 import { formatPoints } from '@/components/v2/PointsValue'
+import StepperSelect from '@/components/v2/StepperSelect'
 import { useAuth } from '@/context/AuthContext'
 import { errorMessage, resultsApi } from '@/features/results/api'
 import GroupMatches from '@/features/results/GroupMatches'
 import CloseGroupButton from '@/features/results/CloseGroupButton'
+import { useMyGroup } from '@/features/results/useMyGroup'
+import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe'
 import { buildTeamsShareMessage } from '@/lib/teamsShareMessage'
 import { teamsV2Api } from './api'
 import PairChoice, { Avatar } from './PairChoice'
@@ -188,6 +192,28 @@ function ShareMessage({ competition, stage }: { competition: Competition; stage:
   )
 }
 
+/** Sheet hint for a mini-tournament: its status, or the month of its first night when still planned. */
+function stageHint(s: Stage): string | undefined {
+  if (s.status === 'running') return 'a decorrer'
+  if (s.status === 'ended') return 'terminado'
+  const first = s.rounds.map(r => r.date).filter(Boolean).sort()[0]
+  if (!first) return undefined
+  const d = new Date(first)
+  return Number.isNaN(d.getTime()) ? undefined : d.toLocaleDateString('pt-PT', { month: 'short' })
+}
+
+/** True once `el` has scrolled out of view above (IntersectionObserver; false where it does not exist). */
+function useScrolledPast(el: HTMLElement | null): boolean {
+  const [past, setPast] = useState(false)
+  useEffect(() => {
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(([e]) => setPast(!e.isIntersecting && e.boundingClientRect.top < 0), { threshold: 0 })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [el])
+  return past
+}
+
 export default function TeamsCompetitionPanel({ competition: initial }: { competition: Competition }) {
   const { user } = useAuth()
   const isAdmin = !!(user?.isAdmin || user?.superAdmin)
@@ -200,10 +226,30 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
   })
   const competition = competitionQuery.data
   const stages = [...(competition.stages ?? [])].sort((a, b) => a.number - b.number)
+  // Filters (direction C, Pedro 30 Oct): the mini-torneio is a page-level switcher in the header and
+  // applies to every tab; the division is a sticky sub-header the list can be swiped under; the jornada
+  // is a floating pill (GroupMatches). All three live here so the jornada survives a division change.
   const [stageId, setStageId] = useState<number | null>(null)
   const stage = stages.find(s => s.id === (stageId ?? competition.currentStageId)) ?? stages[0]
+  const groups = [...(stage?.groups ?? [])].sort((a, b) => (a.tier ?? 99) - (b.tier ?? 99))
   const [groupId, setGroupId] = useState<number | null>(null)
-  const activeGroupId = stage?.groups.some(g => g.id === groupId) ? groupId : stage?.groups[0]?.id ?? null
+  const [round, setRound] = useState<number | null>(null)
+  // Opens on the signed-in player's own division (groups[0] for everyone else).
+  const my = useMyGroup(groups, user?.playerId)
+  const activeGroupId = groups.some(g => g.id === groupId) ? groupId : my.mineId ?? groups[0]?.id ?? null
+  const activeIdx = groups.findIndex(g => g.id === activeGroupId)
+  const stepGroup = (d: number) => {
+    const g = groups[activeIdx + d]
+    if (g) setGroupId(g.id)
+  }
+  const pickStage = (id: number) => {
+    setStageId(id)
+    setRound(null) // the jornada numbers restart in each mini-tournament
+  }
+  // Swipe on the match list only (not the tabs, tables or sheet): left = next division, right = previous.
+  const swipe = useHorizontalSwipe({ onSwipeLeft: () => stepGroup(1), onSwipeRight: () => stepGroup(-1), enabled: groups.length > 1 })
+  const [heroRow, setHeroRow] = useState<HTMLDivElement | null>(null)
+  const heroHidden = useScrolledPast(heroRow)
   // Pair formation for the current mini-tournament: Classificação shows the live projection, Simulador appears.
   const current = stages.find(s => s.id === competition.currentStageId)
   const forming = !!current && current.groups.length === 0
@@ -215,18 +261,27 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
     enabled: section === 'points',
   })
 
-  const stagePicker = stages.length > 1 && (
-    <div className="mb-[14px] flex gap-[6px] overflow-x-auto pb-[2px]" aria-label="Mini-torneio">
-      {stages.map(s => (
-        <button key={s.id} className={chip(s.id === stage?.id)} onClick={() => setStageId(s.id)}>
-          Mini-torneio {s.number}
-        </button>
-      ))}
-    </div>
-  )
+  const stageOptions = stages.map(s => ({
+    key: s.id,
+    label: `Mini-torneio ${s.number}`,
+    hint: stageHint(s),
+    current: s.id === competition.currentStageId,
+  }))
+  const groupOptions = groups.map(g => ({ key: g.id, label: g.name, mine: g.id === my.mineId }))
 
   return (
     <div className="pb-[32px]">
+      {/* Mini-torneio switcher: first row of the panel, full-bleed teal so it reads as part of the header
+          above (FormatPanel pads 16px around the panel). Hidden with a single mini-tournament. */}
+      {stages.length > 1 && (
+        <div
+          ref={setHeroRow}
+          className="-mx-[16px] -mt-[16px] mb-[4px] px-[16px] pb-[14px] pt-[2px]"
+          style={{ background: 'linear-gradient(135deg,#006A71,#48A6A7)' }}
+        >
+          <StepperSelect variant="header" title="Mini-torneio" options={stageOptions} value={stage?.id ?? null} onChange={pickStage} />
+        </div>
+      )}
       <nav className="mb-[18px] flex gap-[4px] overflow-x-auto border-b border-gray-200" role="tablist">
         {SECTIONS.filter(([key]) => key !== 'simulator' || simulating).map(([key, label]) => (
           <button
@@ -247,22 +302,38 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
 
       {section === 'matches' && (
         <div>
-          {stagePicker}
-          {!stage || stage.groups.length === 0 ? (
+          {!stage || groups.length === 0 ? (
             <p className="text-[15px] text-gray-600">Ainda não há jogos neste mini-torneio.</p>
           ) : (
             <>
-              {isAdmin && <ShareMessage competition={competition} stage={stage} />}
-              {stage.groups.length > 1 && (
-                <div className="mb-[12px] flex gap-[6px] overflow-x-auto pb-[2px]" aria-label="Divisão">
-                  {stage.groups.map(g => (
-                    <button key={g.id} className={chip(g.id === activeGroupId)} onClick={() => setGroupId(g.id)}>
-                      {g.name}
-                    </button>
-                  ))}
+              {/* Sticky at top: 0 because the site header (.c-global-header, src/styles/_general.scss) is
+                  position: relative, not sticky, so nothing sits above this bar once the page scrolls. The
+                  compact title bar with the "MT1 ▾" chip appears once the hero switcher has scrolled away. */}
+              {(groups.length > 1 || (heroHidden && stages.length > 1)) && (
+                <div className="sticky top-0 z-30 -mx-[16px] mb-[12px] bg-white" style={{ boxShadow: '0 2px 6px rgba(20,26,40,.05)' }}>
+                  {heroHidden && stages.length > 1 && (
+                    <div className="flex items-center gap-[8px] py-[8px] pl-[16px] pr-[12px] text-white" style={{ background: '#00585e' }}>
+                      <span className="min-w-0 flex-1 truncate text-[16px] font-semibold">{competition.title || competition.label}</span>
+                      <StepperSelect variant="chip" title="Mini-torneio" chipLabel={`MT${stage.number}`} options={stageOptions} value={stage.id} onChange={pickStage} />
+                    </div>
+                  )}
+                  {groups.length > 1 && (
+                    <div className="border-b border-gray-200 px-[8px] pb-[6px] pt-[8px]">
+                      <StepperSelect variant="subheader" title="Divisão" nudgeKey="division" options={groupOptions} value={activeGroupId} onChange={setGroupId} />
+                    </div>
+                  )}
                 </div>
               )}
-              {activeGroupId && <GroupMatches key={activeGroupId} groupId={activeGroupId} />}
+              {isAdmin && <ShareMessage competition={competition} stage={stage} />}
+              {!my.ready ? (
+                <div className="loader" />
+              ) : (
+                activeGroupId && (
+                  <div {...swipe}>
+                    <GroupMatches key={activeGroupId} groupId={activeGroupId} round={round} onRound={setRound} />
+                  </div>
+                )
+              )}
             </>
           )}
         </div>
@@ -270,7 +341,6 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
 
       {section === 'standings' && (
         <div>
-          {stagePicker}
           {stage && isAdmin && <StageAdmin competition={competition} stage={stage} />}
           {forming && stage?.id === current.id ? (
             <DivisionsProjection competitionId={competition.id} onSimulate={simulating ? () => setSection('simulator') : undefined} />
@@ -278,7 +348,7 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
             <p className="text-[15px] text-gray-600">As divisões deste mini-torneio são formadas quando as parelhas fecharem.</p>
           ) : (
             <div className="space-y-[12px]">
-              {stage.groups.map(g => <GroupCard key={g.id} groupId={g.id} showStandings />)}
+              {groups.map(g => <GroupCard key={g.id} groupId={g.id} showStandings />)}
             </div>
           )}
         </div>

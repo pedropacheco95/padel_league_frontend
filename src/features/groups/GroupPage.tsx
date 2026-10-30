@@ -3,12 +3,13 @@ import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import FormatBadge from '@/components/v2/FormatBadge'
 import PageHeader from '@/components/v2/PageHeader'
-import RoundSelector from '@/components/v2/RoundSelector'
+import StepperSelect from '@/components/v2/StepperSelect'
 import StandingsTable from '@/components/v2/StandingsTable'
 import { dateRange } from '@/features/competitions/format'
 import { V2NotFound } from '@/features/competitions/v2http'
 import MonthCalendar from '@/features/calendar/MonthCalendar'
 import ResultCard from '@/features/results/ResultCard'
+import { shortDate } from '@/features/results/resultDraft'
 import { useAuth } from '@/context/AuthContext'
 import { useGroup, useGroupMatches } from './api'
 
@@ -73,8 +74,20 @@ export default function GroupPage() {
 
         {tab === 'matches' && (
           <>
-            <RoundSelector rounds={rounds} value={activeRound} onChange={setRound} />
-            <div className="flex flex-col gap-[12px]">
+            {/* Jornada on the floating pill (same control as the Teams page); padding keeps the last card clear of it. */}
+            <StepperSelect
+              variant="pill"
+              title="Jornada"
+              value={activeRound}
+              onChange={setRound}
+              options={rounds.map((r) => ({
+                key: r.number,
+                label: `Jornada ${r.number}`,
+                hint: shortDate((r as { date?: string | null }).date) ?? undefined,
+                current: r.number === g.currentRound,
+              }))}
+            />
+            <div className={`flex flex-col gap-[12px] ${rounds.length > 1 ? 'pb-[96px]' : ''}`}>
               {roundMatches.length === 0 && <p className="text-center text-[15px] text-gray-500">Sem jogos nesta jornada.</p>}
               {/* One card for viewing and editing (Pedro, 29 Oct): signed in, the games are typed in its
                   header and a player who did not come is tapped; visitors get the same card read-only.
