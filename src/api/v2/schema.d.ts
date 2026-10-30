@@ -2888,6 +2888,17 @@ export interface components {
                 source: "mutual" | "auto" | "admin";
                 players: components["schemas"]["PlayerRef"][];
                 rankingPoints: number;
+                /** @description If this pair is kept, can it change division next mini-tournament? Each rival at its own extreme, ties ignored. null until the divisions exist. */
+                movement?: {
+                    /** @description at least `seed` pairs above can finish below this pair's best case */
+                    up: boolean;
+                    /** @description at least 5 - seed pairs below can finish above this pair's worst case */
+                    down: boolean;
+                    /** @description weakest pair of the division above at its worst minus this pair at its best: <= 0 folga, > 0 faltam; null in the 1.ª */
+                    gapUp: number | null;
+                    /** @description best pair of the division below at its best minus this pair at its worst: >= 0 risco, < 0 seguro; null in the last division */
+                    gapDown: number | null;
+                } | null;
             }[];
             me: {
                 playerId: number | null;
