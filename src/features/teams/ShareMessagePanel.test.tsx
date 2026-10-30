@@ -86,4 +86,20 @@ describe('ShareMessagePanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Copiar' }))
     await waitFor(() => expect(toast.error).toHaveBeenCalled())
   })
+
+  it('renders the opener into the given slot (the sticky division bar, bug-955) instead of inline', async () => {
+    const slot = document.createElement('div')
+    document.body.appendChild(slot)
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <ShareMessagePanel competition={competition} stage={stage} openerSlot={slot} />
+      </QueryClientProvider>,
+    )
+    const opener = await screen.findByRole('button', { name: 'Mensagem da jornada' })
+    expect(slot.contains(opener)).toBe(true)
+    fireEvent.click(opener)
+    expect(dialog()).not.toBeNull()
+    expect(slot.contains(screen.getByRole('button', { name: 'Mensagem da jornada' }))).toBe(true) // stays while open
+    slot.remove()
+  })
 })
