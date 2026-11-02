@@ -1,6 +1,6 @@
 import type { AxiosResponse } from 'axios'
 import { api } from '@/api/client'
-import { API_V2_BASE, type Competition, type Stage, type StandingRow, type TeamsState } from '@/api/v2'
+import { API_V2_BASE, type Competition, type ShareMessageState, type Stage, type StandingRow, type TeamsState } from '@/api/v2'
 import { mockTeams, useMocks } from './mocks'
 import { MOCK_ME, mockProjection, mockSimulation, type TeamsProjection, type TeamsSimulation } from './projection'
 
@@ -65,6 +65,14 @@ export const teamsV2Api = {
     useMocks
       ? mockTeams.formDivisions(stageId)
       : (await api.post(`/stages/${stageId}/divisions`, null, v2)).data,
+
+  // Admin: the WhatsApp jornada message the current window offers (Wednesday 00:01 Lisbon) and whether
+  // an admin already copied it; the POST marks it copied for every admin.
+  shareMessage: async (competitionId: number): Promise<ShareMessageState> =>
+    (await api.get(`/competitions/${competitionId}/share-message`, v2)).data,
+
+  markShareCopied: async (competitionId: number, roundId: number): Promise<ShareMessageState> =>
+    (await api.post(`/competitions/${competitionId}/share-message`, { roundId }, v2)).data,
 
   // Live divisions while pairs form: mutual pairs as they are, the rest paired by ranking.
   projection: async (competitionId: number): Promise<TeamsProjection> =>

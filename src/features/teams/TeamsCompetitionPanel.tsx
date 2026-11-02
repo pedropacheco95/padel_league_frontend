@@ -19,7 +19,8 @@ import { useMyGroup } from '@/features/results/useMyGroup'
 import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe'
 import { teamsV2Api } from './api'
 import PairChoice, { Avatar } from './PairChoice'
-import ShareMessagePanel from './ShareMessagePanel'
+import ShareCopyButton from './ShareCopyButton'
+import { useShareMessage } from './shareMessage'
 import { DivisionsProjection, PartnerSimulator } from './TeamsProjection'
 
 type Section = 'standings' | 'matches' | 'pairs' | 'points' | 'simulator'
@@ -158,7 +159,10 @@ function useScrolledPast(el: HTMLElement | null): boolean {
 export default function TeamsCompetitionPanel({ competition: initial }: { competition: Competition }) {
   const { user } = useAuth()
   const isAdmin = !!(user?.isAdmin || user?.superAdmin)
-  const [shareOpenerSlot, setShareOpenerSlot] = useState<HTMLDivElement | null>(null)
+  // The WhatsApp copy button floats at the top right; while it shows, the sticky bars keep their right end
+  // clear of it (the bug-955 lesson: nothing in those rows may sit under a floating control).
+  const share = useShareMessage(initial.id, isAdmin)
+  const shareShown = isAdmin && !!share.data?.round && !share.data.copied
   // ?section=matches&group=<id> is where "Editar jogos" lands (EditGamesPage); read once, on mount.
   const [params] = useSearchParams()
   const [section, setSection] = useState<Section>(() => SECTIONS.find(([k]) => k === params.get('section'))?.[0] ?? 'standings')
@@ -223,6 +227,7 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
 
   return (
     <div className="pb-[32px]">
+      {isAdmin && <ShareCopyButton competition={competition} />}
       {/* Mini-torneio switcher inside the hero (portal into PageHeader's slot, one shared background);
           when there is no header slot it is the panel's first row. Hidden with a single mini-tournament. */}
       {stages.length > 1 && (() => {
@@ -271,24 +276,18 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
               {(groups.length > 1 || (heroHidden && stages.length > 1)) && (
                 <div className="sticky top-0 z-30 -mx-[16px] mb-[12px] bg-white" {...swipeDivision} style={{ ...swipeDivision.style, boxShadow: '0 2px 6px rgba(20,26,40,.05)' }}>
                   {heroHidden && stages.length > 1 && (
-                    <div className="flex items-center gap-[8px] py-[8px] pl-[16px] pr-[12px] text-white" style={{ background: '#00585e' }}>
+                    <div className={`flex items-center gap-[8px] py-[8px] pl-[16px] text-white ${shareShown ? 'pr-[56px]' : 'pr-[12px]'}`} style={{ background: '#00585e' }}>
                       <span className="min-w-0 flex-1 truncate text-[16px] font-semibold">{competition.title || competition.label}</span>
                       <StepperSelect variant="chip" title="Mini-torneio" chipLabel={`MT${stage.number}`} options={stageOptions} value={stage.id} onChange={pickStage} />
                     </div>
                   )}
                   {groups.length > 1 && (
-                    <div className="flex items-center border-b border-gray-200 px-[8px] pb-[6px] pt-[8px]">
-                      <div className="min-w-0 flex-1">
-                        <StepperSelect variant="subheader" title="Divisão" nudgeKey="division" options={groupOptions} value={activeGroupId} onChange={setGroupId} />
-                      </div>
-                      {/* The admin's "Mensagem da jornada" opener lives here (bug-955): sticky at the top, it can
-                          never meet the jornada pill floating at the bottom, whatever the scroll. */}
-                      {isAdmin && <div ref={setShareOpenerSlot} className="shrink-0" />}
+                    <div className={`border-b border-gray-200 pb-[6px] pl-[8px] pt-[8px] ${shareShown ? 'pr-[52px]' : 'pr-[8px]'}`}>
+                      <StepperSelect variant="subheader" title="Divisão" nudgeKey="division" options={groupOptions} value={activeGroupId} onChange={setGroupId} />
                     </div>
                   )}
                 </div>
               )}
-              {isAdmin && <ShareMessagePanel competition={competition} stage={stage} openerSlot={shareOpenerSlot} />}
               {!my.ready ? (
                 <div className="loader" />
               ) : (

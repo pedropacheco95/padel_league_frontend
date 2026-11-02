@@ -31,7 +31,7 @@ const auth = { user: { id: 1, username: 'pedro', isAdmin: false, superAdmin: fal
 vi.mock('@/context/AuthContext', () => ({ useAuth: () => auth }))
 vi.mock('./PairChoice', () => ({ default: () => null, Avatar: () => null }))
 vi.mock('./TeamsProjection', () => ({ DivisionsProjection: () => null, PartnerSimulator: () => null }))
-vi.mock('./api', () => ({ teamsV2Api: { competition: vi.fn(), standings: vi.fn(), formDivisions: vi.fn() } }))
+vi.mock('./api', () => ({ teamsV2Api: { competition: vi.fn(), standings: vi.fn(), formDivisions: vi.fn(), shareMessage: vi.fn(async () => ({ windowStartsAt: '2026-10-28T00:01:00Z', round: null, copied: false, copiedAt: null, copiedBy: null })) } }))
 vi.mock('@/features/results/api', () => ({
   resultsApi: { group: vi.fn(), groupMatches: vi.fn() },
   errorMessage: () => 'erro',
