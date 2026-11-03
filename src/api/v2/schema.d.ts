@@ -1767,6 +1767,83 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/competitions/{competitionId}/share-message": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                competitionId: components["parameters"]["competitionId"];
+            };
+            cookie?: never;
+        };
+        /** The jornada the current WhatsApp window offers (Wednesday 00:01 Europe/Lisbon) and whether an admin copied it */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    competitionId: components["parameters"]["competitionId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ShareMessageState"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        /** Record that the window's message was copied (shared by every admin until the next window) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    competitionId: components["parameters"]["competitionId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        roundId: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ShareMessageState"];
+                    };
+                };
+                400: components["responses"]["Error"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/competitions/{competitionId}/roster/{playerId}": {
         parameters: {
             query?: never;
@@ -2427,6 +2504,29 @@ export interface components {
             player: components["schemas"]["PlayerRef"] | null;
             /** @description 5 digits; the player types it at /verify-code/<userId> */
             code: string;
+        };
+        ShareMessageState: {
+            /**
+             * Format: date-time
+             * @description Wednesday 00:01 Europe/Lisbon, in UTC
+             */
+            windowStartsAt: string;
+            /** @description null when the window offers no message (no round left, or its matches do not exist yet) */
+            round: {
+                id: number;
+                stageId: number;
+                stageNumber: number;
+                number: number;
+                /** Format: date */
+                date: string | null;
+            } | null;
+            copied: boolean;
+            /** Format: date-time */
+            copiedAt: string | null;
+            copiedBy: {
+                id: number;
+                username: string;
+            } | null;
         };
         PlayerRef: {
             id: number;
