@@ -1435,10 +1435,13 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Teams pair choice state for the current mini-tournament (same shape as v1 /teams/) */
+        /** Teams pair choice state of a mini-tournament (same shape as v1 /teams/); points are those at its start */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Mini-tournament (stage id); default the one pair choice acts on. Any other stage is read-only: isAdmin and pairingOpen are false. */
+                    stage?: number;
+                };
                 header?: never;
                 path: {
                     competitionId: components["parameters"]["competitionId"];
@@ -1456,6 +1459,7 @@ export interface paths {
                         "application/json": components["schemas"]["TeamsState"];
                     };
                 };
+                400: components["responses"]["Error"];
                 404: components["responses"]["Error"];
             };
         };
@@ -2971,6 +2975,8 @@ export interface components {
                 pairingDeadline: string | null;
                 pairingClosed: boolean;
                 pairingOpen: boolean;
+                /** @description every division of the mini-tournament has closed */
+                ended: boolean;
             };
             players: (components["schemas"]["PlayerRef"] & {
                 rankingPoints: number;
@@ -2987,8 +2993,14 @@ export interface components {
                  */
                 source: "mutual" | "auto" | "admin";
                 players: components["schemas"]["PlayerRef"][];
+                /** @description The two players' points as the mini-tournament started */
                 rankingPoints: number;
-                /** @description If this pair is kept, can it change division next mini-tournament? Each rival at its own extreme, ties ignored. null until the divisions exist. */
+                /** @description Ranking points each player earned in this mini-tournament; null until the pair's division has closed. */
+                gains: {
+                    playerId: number;
+                    points: number;
+                }[] | null;
+                /** @description If this pair is kept, can it change division next mini-tournament? Each rival at its own extreme, ties ignored. null until the divisions exist, and once the pair has its gains. */
                 movement?: {
                     /** @description at least `seed` pairs above can finish below this pair's best case */
                     up: boolean;
