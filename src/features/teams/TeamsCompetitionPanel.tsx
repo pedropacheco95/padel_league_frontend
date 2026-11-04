@@ -260,7 +260,7 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
         ))}
       </nav>
 
-      {section === 'pairs' && <PairChoice competitionId={competition.id} />}
+      {section === 'pairs' && <PairChoice competitionId={competition.id} stageId={stage?.id} />}
 
       {section === 'simulator' && simulating && <PartnerSimulator competitionId={competition.id} />}
 

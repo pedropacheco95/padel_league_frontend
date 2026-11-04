@@ -19,8 +19,8 @@ const emptyOn404 = (err: { response?: { status?: number } }) => {
 type Res<T> = Promise<AxiosResponse<T>>
 
 export const teamsApi = {
-  state: (competitionId: number): Res<TeamsState> =>
-    useV2 ? api.get(`/competitions/${competitionId}/teams`, v2) : api.get('/teams/'),
+  state: (competitionId: number, stageId?: number): Res<TeamsState> =>
+    useV2 ? api.get(`/competitions/${competitionId}/teams`, { ...v2, params: stageId ? { stage: stageId } : undefined }) : api.get('/teams/'),
 
   choosePartner: (competitionId: number, partnerId: number): Res<TeamsState> =>
     useV2

@@ -45,7 +45,8 @@ const httpStatus = (err: unknown) => (err as { response?: { status?: number } } 
 
 export const teamsStateKey = (competitionId: number) => ['v2', 'teams', competitionId] as const
 
-export default function PairChoice({ competitionId }: { competitionId: number }) {
+// stageId: the mini-torneio picked in the page header (Pedro, 4 Nov: Parelhas belongs to a mini-torneio).
+export default function PairChoice({ competitionId, stageId: pickedStageId }: { competitionId: number; stageId?: number }) {
   const { user } = useAuth()
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
@@ -54,8 +55,8 @@ export default function PairChoice({ competitionId }: { competitionId: number })
   const [toAdd, setToAdd] = useState('')
 
   const stateQuery = useQuery({
-    queryKey: [...teamsStateKey(competitionId), user?.id ?? null],
-    queryFn: async () => (await teamsApi.state(competitionId)).data,
+    queryKey: [...teamsStateKey(competitionId), pickedStageId ?? null, user?.id ?? null],
+    queryFn: async () => (await teamsApi.state(competitionId, pickedStageId)).data,
     retry: (count, err) => httpStatus(err) !== 404 && count < 2,
   })
   const state = stateQuery.data
@@ -71,7 +72,7 @@ export default function PairChoice({ competitionId }: { competitionId: number })
     mutationFn: ({ action }: { action: () => Promise<AxiosResponse<TeamsState>>; success?: (s: TeamsState) => string | null }) =>
       action().then(r => r.data),
     onSuccess: (next, { success }) => {
-      qc.setQueryData([...teamsStateKey(competitionId), user?.id ?? null], next)
+      qc.setQueryData([...teamsStateKey(competitionId), pickedStageId ?? null, user?.id ?? null], next)
       // Closing pairs changes the stage (pairingClosed) that the divisions tab reads.
       qc.invalidateQueries({ queryKey: ['v2', 'competitions', competitionId], exact: true })
       const message = success?.(next)
@@ -128,6 +129,7 @@ export default function PairChoice({ competitionId }: { competitionId: number })
   const myChoice = me.myChoice ? byId.get(me.myChoice) : undefined
   const choseMe = choseMeIds.map(id => byId.get(id)).filter(Boolean) as TeamsPlayer[]
   const canChoose = !!me.inRoster && !myPair && !!mt.pairingOpen
+  const notOpened = !mt.pairingDeadline && !mt.pairingClosed
   const unpaired = state.players.filter(p => !p.paired)
   const query = search.trim().toLowerCase()
   const candidates = unpaired.filter(
@@ -161,6 +163,15 @@ export default function PairChoice({ competitionId }: { competitionId: number })
     )
   }
 
+  // Pedro, 4 Nov: once the division has closed, what the pair and each player earned.
+  const fmtGain = (n: number) => `+${formatPoints(n)}`
+  // Sum of the rounded gains, so the card adds up (67 + 67 = 134, not the exact 134.82 rounded to 135).
+  const gainTotal = (pair: TeamsPair) => (pair.gains ?? []).reduce((sum, g) => sum + Math.round(g.points), 0)
+  const gainLine = (pair: TeamsPair) =>
+    (pair.gains ?? [])
+      .map(g => `${pair.players?.find(p => p.id === g.playerId)?.name ?? ''} ${fmtGain(g.points)}`)
+      .join(' · ')
+
   const pairItem = (pair: TeamsPair) => (
     <li key={pair.id} className="flex items-center gap-[12px] rounded-lg border border-gray-200 bg-white px-[12px] py-[10px]">
       <div className="flex -space-x-2">
@@ -171,7 +182,13 @@ export default function PairChoice({ competitionId }: { competitionId: number })
         <p className="text-[12px] text-gray-500">
           {formatPoints(pair.rankingPoints ?? 0)} pts{pair.source ? ` · ${SOURCE_LABEL[pair.source] ?? pair.source}` : ''}
         </p>
+        {pair.gains && <p className="text-[12px] text-gray-600">{gainLine(pair)}</p>}
       </div>
+      {pair.gains && (
+        <span className="shrink-0 text-[15px] font-semibold tabular-nums text-green-700" title="Pontos de ranking ganhos pela parelha neste mini-torneio">
+          {fmtGain(gainTotal(pair))}
+        </span>
+      )}
       {moveLines(pair)}
       {me.isAdmin && !mt.pairingClosed && pair.id != null && (
         <button
@@ -202,13 +219,19 @@ export default function PairChoice({ competitionId }: { competitionId: number })
           </p>
         ) : (
           <p className="text-[15px] mt-1 text-gray-700">
-            {mt.pairingClosed ? 'As parelhas estão fechadas.' : 'O prazo terminou; as parelhas vão ser fechadas pela organização.'}
+            {mt.ended
+              ? 'Mini-torneio terminado.'
+              : notOpened
+                ? 'A escolha de parelhas ainda não abriu.'
+                : mt.pairingClosed
+                  ? 'As parelhas estão fechadas.'
+                  : 'O prazo terminou; as parelhas vão ser fechadas pela organização.'}
           </p>
         )}
       </header>
 
       {/* The viewer's own situation */}
-      <section className="mb-[28px] rounded-lg border border-gray-200 bg-white p-[16px] shadow-sm">
+      {!notOpened && <section className="mb-[28px] rounded-lg border border-gray-200 bg-white p-[16px] shadow-sm">
         {!user ? (
           <p className="text-[15px]">
             <Link to="/login" className="font-semibold underline">Faz login</Link> para escolher o teu parceiro.
@@ -267,7 +290,7 @@ export default function PairChoice({ competitionId }: { competitionId: number })
             )}
           </div>
         )}
-      </section>
+      </section>}
 
       {canChoose && (
         <section className="mb-[28px]">
@@ -316,9 +339,10 @@ export default function PairChoice({ competitionId }: { competitionId: number })
       )}
 
       <section className="mb-[28px]">
-        <h3 className="mb-[12px] !text-[19px] font-semibold">
+        <h3 className="mb-[4px] !text-[19px] font-semibold">
           Parelhas formadas ({pairs.length}/{Math.floor(state.players.length / 2)})
         </h3>
+        {pairs.length > 0 && <p className="mb-[12px] text-[12px] text-gray-500">Pontos no início do mini-torneio.</p>}
         {pairs.length === 0 ? (
           <p className="text-[15px] text-gray-500">Ainda não há parelhas.</p>
         ) : byDivision ? (
@@ -352,7 +376,7 @@ export default function PairChoice({ competitionId }: { competitionId: number })
         )}
       </section>
 
-      {unpaired.length > 0 && (
+      {unpaired.length > 0 && !notOpened && (
         <section className="mb-[28px]">
           <h3 className="mb-2 !text-[19px] font-semibold">Sem parelha ({unpaired.length})</h3>
           <p className="text-[15px] text-gray-700">{unpaired.map(p => p.name).join(', ')}</p>

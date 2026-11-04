@@ -4,18 +4,20 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
+import { teamsApi } from './api'
 import PairChoice from './PairChoice'
 
 vi.mock('@/context/AuthContext', () => ({ useAuth: () => ({ user: null }) }))
 
 const player = (id: number, name: string) => ({ id, name, fullName: name, pictureUrl: null })
 type Movement = { up: boolean; down: boolean; gapUp: number | null; gapDown: number | null }
-const pair = (id: number, a: ReturnType<typeof player>, b: ReturnType<typeof player>, rankingPoints: number, movement: Movement | null = null) => ({
-  id, source: 'mutual', players: [a, b], rankingPoints, movement,
+type Gain = { playerId: number; points: number }
+const pair = (id: number, a: ReturnType<typeof player>, b: ReturnType<typeof player>, rankingPoints: number, movement: Movement | null = null, gains: Gain[] | null = null) => ({
+  id, source: 'mutual', players: [a, b], rankingPoints, movement, gains,
 })
 const [cou, dinis, pancho, archer] = [player(1, 'Cou'), player(2, 'Dinis'), player(3, 'Pancho'), player(4, 'Archer')]
 const state = (pairingClosed: boolean) => ({
-  miniTournament: { id: 34, number: 1, pairingDeadline: null, pairingClosed, pairingOpen: false },
+  miniTournament: { id: 34, number: 1, pairingDeadline: null, pairingClosed, pairingOpen: false, ended: false },
   players: [cou, dinis, pancho, archer].map(p => ({ ...p, rankingPoints: 0, rankingPosition: null, paired: true, allowedForMe: false })),
   pairs: [
     pair(1, pancho, archer, 300, pairingClosed ? { up: true, down: false, gapUp: -201.92, gapDown: -19.5 } : null),
@@ -95,5 +97,47 @@ describe('Parelhas by division', () => {
     expect(await screen.findByText('Cou & Dinis')).toBeInTheDocument()
     expect(screen.getByText('Pancho & Archer')).toBeInTheDocument()
     expect(screen.queryByRole('region', { name: /Divisão/ })).toBeNull()
+  })
+})
+
+describe('Parelhas of a mini-torneio', () => {
+  it('asks for the stage picked in the header', async () => {
+    mocked.state = state(true)
+    mocked.competition = competition(true)
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <MemoryRouter><PairChoice competitionId={27} stageId={35} /></MemoryRouter>
+      </QueryClientProvider>,
+    )
+    await screen.findByText('Parelhas formadas (2/2)')
+    expect(teamsApi.state).toHaveBeenLastCalledWith(27, 35)
+  })
+
+  it('shows what the pair and each player earned once it is over, and no projection', async () => {
+    const over = state(true)
+    over.miniTournament.ended = true
+    over.pairs[0] = pair(1, pancho, archer, 300, null, [{ playerId: 3, points: 67.41 }, { playerId: 4, points: 50 }])
+    mocked.state = over
+    mocked.competition = competition(true)
+    renderTab()
+    expect(await screen.findByText('Mini-torneio terminado.')).toBeTruthy()
+    expect(await screen.findByText('Pontos no início do mini-torneio.')).toBeTruthy()
+    const item = (await screen.findByText('Pancho & Archer')).closest('li') as HTMLElement
+    expect(within(item).getByText('300 pts · escolha mútua')).toBeTruthy()
+    expect(within(item).getByText(/Pancho \+67.* · Archer \+50/)).toBeTruthy()
+    expect(within(item).getByTitle('Pontos de ranking ganhos pela parelha neste mini-torneio')).toBeTruthy()
+    expect(within(item).queryByLabelText('Subir ou descer')).toBeNull()
+  })
+
+  it('says pair choice has not opened for a mini-torneio that has not started', async () => {
+    const planned = state(false)
+    planned.pairs = []
+    planned.players = planned.players.map(p => ({ ...p, paired: false }))
+    mocked.state = planned
+    mocked.competition = competition(false)
+    renderTab()
+    expect(await screen.findByText('A escolha de parelhas ainda não abriu.')).toBeTruthy()
+    expect(screen.queryByText(/Sem parelha/)).toBeNull()
+    expect(screen.queryByText(/Faz login/)).toBeNull()
   })
 })
