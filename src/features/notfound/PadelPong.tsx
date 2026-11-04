@@ -13,7 +13,7 @@ const FONT = "'Gemunu Libre', sans-serif"
 
 const IDLE_INPUT: Input = { pointerX: null, left: false, right: false }
 
-export default function PadelPong() {
+export default function PadelPong({ courtText = '404' }: { courtText?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const game = useRef<Game>(createGame())
   const input = useRef<Input>({ ...IDLE_INPUT })
@@ -67,7 +67,7 @@ export default function PadelPong() {
           setPhase('over')
         }
       }
-      if (ctx) paint(ctx, g, flash.current && now < flash.current.until ? flash.current.text : null)
+      if (ctx) paint(ctx, g, flash.current && now < flash.current.until ? flash.current.text : null, courtText)
       frame = requestAnimationFrame(loop)
     }
     frame = requestAnimationFrame(loop)
@@ -88,7 +88,7 @@ export default function PadelPong() {
       window.removeEventListener('keydown', keyDown)
       window.removeEventListener('keyup', keyUp)
     }
-  }, [])
+  }, [courtText])
 
   const courtX = (clientX: number) => {
     const rect = canvasRef.current!.getBoundingClientRect()
@@ -156,7 +156,7 @@ export default function PadelPong() {
   )
 }
 
-function paint(ctx: CanvasRenderingContext2D, g: Game, flashText: string | null) {
+function paint(ctx: CanvasRenderingContext2D, g: Game, flashText: string | null, courtText: string) {
   const { w, h } = COURT
   ctx.clearRect(0, 0, w, h)
   ctx.fillStyle = TEAL
@@ -190,7 +190,7 @@ function paint(ctx: CanvasRenderingContext2D, g: Game, flashText: string | null)
   ctx.font = `800 96px ${FONT}`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText('404', w / 2, h / 2 + 6)
+  ctx.fillText(courtText, w / 2, h / 2 + 6)
 
   ctx.fillStyle = LINE
   paddle(ctx, g.me.x, PLAYER_Y)

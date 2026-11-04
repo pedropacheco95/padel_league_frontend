@@ -30,6 +30,7 @@ import TeamsPage from "./pages/teams/TeamsPage";
 import CreateDivisionsPage from "./pages/editions/CreateDivisionsPage";
 import NextMatchweekMessagePage from "./pages/editions/NextMatchweekMessagePage";
 import GlobalApiLoader from "./components/GlobalApiLoader";
+import OutageGate from "./features/outage/OutageGate";
 // S3 v2 public pages (VITE_V2_PUBLIC switches the old URLs over)
 import { v2Or, v2FormatOr, v2PublicElements as v2, v2PublicRoutes } from "./features/publicRoutes";
 import CompetitionWizard from "./features/admin/CompetitionWizard";
@@ -39,52 +40,54 @@ import { BadgeDetailPage, BadgesCataloguePage } from "./features/players/story/B
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <TournamentProvider>
-          <GlobalApiLoader />
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Layout>{v2Or(<Home />, v2.home)}</Layout>} />
-              <Route path="/login" element={<Layout><Login /></Layout>} />
-              <Route path="/register" element={<Layout><Register /></Layout>} />
-              <Route path="/forgot-password" element={<Layout><ForgotPassword /></Layout>} />
-              <Route path="/verify-code/:user_id" element={<Layout><VerifyCode /></Layout>} />
-              <Route path="/tournaments" element={<Layout>{v2Or(<TournamentsPage />, v2.tournaments)}</Layout>} />
-              <Route path="/tournaments/:id" element={<Layout>{v2Or(<TournamentPage />, v2.tournament)}</Layout>} />
-              <Route path="/players" element={<Layout>{v2Or(<PlayersPage />, v2.players)}</Layout>} />
-              <Route path="/players/edit/:id" element={<Layout><EditPlayerPage /></Layout>} />
-              {/* The story page is the player page (Pedro, 2026-10-18); the previous page stays at /antigo for a while. */}
-              <Route path="/players/:id" element={<Layout><PlayerStoryPage /></Layout>} />
-              <Route path="/players/:id/antigo" element={<Layout>{v2Or(<PlayerPage />, v2.player)}</Layout>} />
-              <Route path="/players/:id/novo" element={<RedirectToPlayer />} />
-              <Route path="/conquistas" element={<Layout><BadgesCataloguePage /></Layout>} />
-              <Route path="/conquistas/:key" element={<Layout><BadgeDetailPage /></Layout>} />
-              <Route path="/matches/for_edit" element={<Layout><ForEditPage /></Layout>} />
-              {/* "Editar jogos": the signed-in player's division on the current jornada (owner: S3). */}
-              <Route path="/editar-jogos" element={<Layout><EditGamesPage /></Layout>} />
-              <Route path="/calendar" element={<Layout>{v2Or(<CalendarPage />, v2.calendar)}</Layout>} />
-              <Route path="/chatbot" element={<Layout><ChatbotPage /></Layout>} />
-              <Route path="/statues" element={<Layout><StatuesPage /></Layout>} />
-              <Route path="/teams" element={<Layout>{v2FormatOr(<TeamsPage />, v2.teams)}</Layout>} />
-              <Route path="/shuffle" element={<Layout>{v2FormatOr(<ShufflePage />, v2.shuffle)}</Layout>} />
-              <Route path="/shuffle/create" element={<Layout><CreateShufflePage /></Layout>} />
-              <Route path="/edition/create_divisions" element={<Layout><CreateDivisionsPage /></Layout>} />
-              <Route path="/edition/matchweek_message" element={<Layout><NextMatchweekMessagePage /></Layout>} />
-              {/* S3: new v2 public routes */}
-              {v2PublicRoutes}
-              <Route path="/admin/passwords" element={<Layout><PasswordCodesPage /></Layout>} />
-              <Route path="/admin/competitions/new" element={<Layout><CompetitionWizard /></Layout>} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TournamentProvider>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+  <OutageGate>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <TournamentProvider>
+            <GlobalApiLoader />
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Layout>{v2Or(<Home />, v2.home)}</Layout>} />
+                <Route path="/login" element={<Layout><Login /></Layout>} />
+                <Route path="/register" element={<Layout><Register /></Layout>} />
+                <Route path="/forgot-password" element={<Layout><ForgotPassword /></Layout>} />
+                <Route path="/verify-code/:user_id" element={<Layout><VerifyCode /></Layout>} />
+                <Route path="/tournaments" element={<Layout>{v2Or(<TournamentsPage />, v2.tournaments)}</Layout>} />
+                <Route path="/tournaments/:id" element={<Layout>{v2Or(<TournamentPage />, v2.tournament)}</Layout>} />
+                <Route path="/players" element={<Layout>{v2Or(<PlayersPage />, v2.players)}</Layout>} />
+                <Route path="/players/edit/:id" element={<Layout><EditPlayerPage /></Layout>} />
+                {/* The story page is the player page (Pedro, 2026-10-18); the previous page stays at /antigo for a while. */}
+                <Route path="/players/:id" element={<Layout><PlayerStoryPage /></Layout>} />
+                <Route path="/players/:id/antigo" element={<Layout>{v2Or(<PlayerPage />, v2.player)}</Layout>} />
+                <Route path="/players/:id/novo" element={<RedirectToPlayer />} />
+                <Route path="/conquistas" element={<Layout><BadgesCataloguePage /></Layout>} />
+                <Route path="/conquistas/:key" element={<Layout><BadgeDetailPage /></Layout>} />
+                <Route path="/matches/for_edit" element={<Layout><ForEditPage /></Layout>} />
+                {/* "Editar jogos": the signed-in player's division on the current jornada (owner: S3). */}
+                <Route path="/editar-jogos" element={<Layout><EditGamesPage /></Layout>} />
+                <Route path="/calendar" element={<Layout>{v2Or(<CalendarPage />, v2.calendar)}</Layout>} />
+                <Route path="/chatbot" element={<Layout><ChatbotPage /></Layout>} />
+                <Route path="/statues" element={<Layout><StatuesPage /></Layout>} />
+                <Route path="/teams" element={<Layout>{v2FormatOr(<TeamsPage />, v2.teams)}</Layout>} />
+                <Route path="/shuffle" element={<Layout>{v2FormatOr(<ShufflePage />, v2.shuffle)}</Layout>} />
+                <Route path="/shuffle/create" element={<Layout><CreateShufflePage /></Layout>} />
+                <Route path="/edition/create_divisions" element={<Layout><CreateDivisionsPage /></Layout>} />
+                <Route path="/edition/matchweek_message" element={<Layout><NextMatchweekMessagePage /></Layout>} />
+                {/* S3: new v2 public routes */}
+                {v2PublicRoutes}
+                <Route path="/admin/passwords" element={<Layout><PasswordCodesPage /></Layout>} />
+                <Route path="/admin/competitions/new" element={<Layout><CompetitionWizard /></Layout>} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TournamentProvider>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </OutageGate>
 );
 
 export default App;
