@@ -1,6 +1,6 @@
 // Port of src/pages/teams/TeamsPage.tsx (feature/teams-pairs) into the Teams competition page.
 // Same behaviour and copy; data via React Query keyed by competition, every write returns the new state.
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { AxiosResponse } from 'axios'
@@ -15,6 +15,7 @@ import { teamsApi, teamsV2Api } from './api'
 import { groupPairsByDivision, type TeamsPair } from './pairsByDivision'
 
 type TeamsPlayer = TeamsState['players'][number]
+type PlayerPoints = TeamsPair['startPoints'][number]
 
 const deadlineFormat = new Intl.DateTimeFormat('pt-PT', {
   weekday: 'long',
@@ -30,8 +31,8 @@ function formatDeadline(iso?: string) {
   return d && !Number.isNaN(d.getTime()) ? deadlineFormat.format(d) : null
 }
 
+// Pedro, 5 Nov: a mutual choice is the normal case, so only the exceptions are named.
 const SOURCE_LABEL: Record<string, string> = {
-  mutual: 'escolha mútua',
   auto: 'por ranking',
   admin: 'organização',
 }
@@ -163,44 +164,60 @@ export default function PairChoice({ competitionId, stageId: pickedStageId }: { 
     )
   }
 
-  // Pedro, 4 Nov: once the division has closed, what the pair and each player earned.
+  // Pedro, 5 Nov: the card shows each player's and the pair's points at the start and, once the division
+  // has closed, what each of them earned.
   const fmtGain = (n: number) => `+${formatPoints(n)}`
-  // Sum of the rounded gains, so the card adds up (67 + 67 = 134, not the exact 134.82 rounded to 135).
-  const gainTotal = (pair: TeamsPair) => (pair.gains ?? []).reduce((sum, g) => sum + Math.round(g.points), 0)
-  const gainLine = (pair: TeamsPair) =>
-    (pair.gains ?? [])
-      .map(g => `${pair.players?.find(p => p.id === g.playerId)?.name ?? ''} ${fmtGain(g.points)}`)
-      .join(' · ')
+  // Sum of the rounded values, so the card adds up (67 + 67 = 134, not the exact 134.82 rounded to 135).
+  const roundedSum = (values?: PlayerPoints[] | null) => (values ?? []).reduce((sum, v) => sum + Math.round(v.points), 0)
+  const pointsOf = (values: PlayerPoints[] | null | undefined, id: number) => values?.find(v => v.playerId === id)?.points ?? 0
 
-  const pairItem = (pair: TeamsPair) => (
-    <li key={pair.id} className="flex items-center gap-[12px] rounded-lg border border-gray-200 bg-white px-[12px] py-[10px]">
-      <div className="flex -space-x-2">
-        {(pair.players ?? []).map(p => <Avatar key={p.id} player={p} />)}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-[15px] truncate font-medium">{pairNames(pair.players)}</p>
-        <p className="text-[12px] text-gray-500">
-          {formatPoints(pair.rankingPoints ?? 0)} pts{pair.source ? ` · ${SOURCE_LABEL[pair.source] ?? pair.source}` : ''}
-        </p>
-        {pair.gains && <p className="text-[12px] text-gray-600">{gainLine(pair)}</p>}
-      </div>
-      {pair.gains && (
-        <span className="shrink-0 text-[15px] font-semibold tabular-nums text-green-700" title="Pontos de ranking ganhos pela parelha neste mini-torneio">
-          {fmtGain(gainTotal(pair))}
+  const pairItem = (pair: TeamsPair) => {
+    const source = SOURCE_LABEL[pair.source]
+    const canUndo = me.isAdmin && !mt.pairingClosed && pair.id != null
+    return (
+      <li
+        key={pair.id}
+        className={`grid items-center gap-x-[6px] gap-y-[6px] rounded-lg border border-gray-200 bg-white px-[12px] py-[10px] tabular-nums ${pair.gains ? 'grid-cols-[minmax(0,1fr)_52px_52px]' : 'grid-cols-[minmax(0,1fr)_52px]'}`}
+      >
+        <span />
+        <span className="text-right text-[11px] uppercase tracking-[0.05em] text-gray-500">Início</span>
+        {pair.gains && <span className="text-right text-[11px] uppercase tracking-[0.05em] text-gray-500">Ganhos</span>}
+        {(pair.players ?? []).map(p => (
+          <Fragment key={p.id}>
+            <span className="flex min-w-0 items-center gap-[8px]">
+              <Avatar player={p} size={32} />
+              <span className="min-w-0 break-words text-[15px] font-medium">{p.name}</span>
+            </span>
+            <span className="text-right text-[15px]">{formatPoints(pointsOf(pair.startPoints, p.id))}</span>
+            {pair.gains && <span className="text-right text-[15px] text-green-700">{fmtGain(pointsOf(pair.gains, p.id))}</span>}
+          </Fragment>
+        ))}
+        <span className="border-t border-gray-200 pt-[6px] text-[15px] font-semibold">
+          Parelha{source && <span className="text-[12px] font-normal text-gray-500"> · {source}</span>}
         </span>
-      )}
-      {moveLines(pair)}
-      {me.isAdmin && !mt.pairingClosed && pair.id != null && (
-        <button
-          className="min-h-[40px] shrink-0 px-[8px] text-[13px] text-red-700 underline"
-          disabled={busy}
-          onClick={() => run(() => teamsApi.unpair(competitionId, pair.id!), () => 'Parelha desfeita.')}
-        >
-          Desfazer
-        </button>
-      )}
-    </li>
-  )
+        <span className="border-t border-gray-200 pt-[6px] text-right text-[15px] font-semibold">{formatPoints(roundedSum(pair.startPoints))}</span>
+        {pair.gains && (
+          <span className="border-t border-gray-200 pt-[6px] text-right text-[15px] font-semibold text-green-700" title="Pontos de ranking ganhos pela parelha neste mini-torneio">
+            {fmtGain(roundedSum(pair.gains))}
+          </span>
+        )}
+        {(pair.movement || canUndo) && (
+          <div className="col-span-full flex items-center justify-end gap-[12px]">
+            {moveLines(pair)}
+            {canUndo && (
+              <button
+                className="min-h-[40px] shrink-0 px-[8px] text-[13px] text-red-700 underline"
+                disabled={busy}
+                onClick={() => run(() => teamsApi.unpair(competitionId, pair.id!), () => 'Parelha desfeita.')}
+              >
+                Desfazer
+              </button>
+            )}
+          </div>
+        )}
+      </li>
+    )
+  }
 
   const choose = (p: TeamsPlayer) =>
     run(

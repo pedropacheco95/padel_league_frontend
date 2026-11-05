@@ -2995,6 +2995,11 @@ export interface components {
                 players: components["schemas"]["PlayerRef"][];
                 /** @description The two players' points as the mini-tournament started */
                 rankingPoints: number;
+                /** @description Each player's points as the mini-tournament started. */
+                startPoints: {
+                    playerId: number;
+                    points: number;
+                }[];
                 /** @description Ranking points each player earned in this mini-tournament; null until the pair's division has closed. */
                 gains: {
                     playerId: number;
@@ -3050,8 +3055,11 @@ export interface components {
             pairId: number | null;
             players: components["schemas"]["RankedPlayerRef"][];
             sum: number;
-            /** @enum {string} */
-            formedBy: "mutual" | "manual" | "ranking" | "extra";
+            /**
+             * @description declared: one player chose the other and is waiting for an answer; provisional
+             * @enum {string}
+             */
+            formedBy: "mutual" | "manual" | "ranking" | "extra" | "declared";
             provisional: boolean;
             unpairedSlots: number[] | null;
             pending: components["schemas"]["TeamsDeclaration"][];

@@ -14,6 +14,7 @@ type Movement = { up: boolean; down: boolean; gapUp: number | null; gapDown: num
 type Gain = { playerId: number; points: number }
 const pair = (id: number, a: ReturnType<typeof player>, b: ReturnType<typeof player>, rankingPoints: number, movement: Movement | null = null, gains: Gain[] | null = null) => ({
   id, source: 'mutual', players: [a, b], rankingPoints, movement, gains,
+  startPoints: [{ playerId: a.id, points: rankingPoints * 0.6 }, { playerId: b.id, points: rankingPoints * 0.4 }],
 })
 const [cou, dinis, pancho, archer] = [player(1, 'Cou'), player(2, 'Dinis'), player(3, 'Pancho'), player(4, 'Archer')]
 const state = (pairingClosed: boolean) => ({
@@ -56,9 +57,9 @@ describe('Parelhas by division', () => {
     renderTab()
     const first = await screen.findByRole('region', { name: /1\.ª Divisão/ })
     const second = screen.getByRole('region', { name: /2\.ª Divisão/ })
-    expect(within(first).getByText('Cou & Dinis')).toBeInTheDocument()
-    expect(within(first).queryByText('Pancho & Archer')).toBeNull()
-    expect(within(second).getByText('Pancho & Archer')).toBeInTheDocument()
+    expect(within(first).getByText('Cou')).toBeInTheDocument()
+    expect(within(first).queryByText('Pancho')).toBeNull()
+    expect(within(second).getByText('Pancho')).toBeInTheDocument()
     expect(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(screen.getByText('Parelhas formadas (2/2)')).toBeInTheDocument()
     expect(within(first).getByText('66–545 pts')).toBeInTheDocument() // what a player can take out of the division
@@ -86,7 +87,7 @@ describe('Parelhas by division', () => {
     mocked.state = state(false)
     mocked.competition = competition(false)
     renderTab()
-    await screen.findByText('Cou & Dinis')
+    await screen.findByText('Cou')
     expect(screen.queryByLabelText('Subir ou descer')).toBeNull()
   })
 
@@ -94,8 +95,8 @@ describe('Parelhas by division', () => {
     mocked.state = state(false)
     mocked.competition = competition(false)
     renderTab()
-    expect(await screen.findByText('Cou & Dinis')).toBeInTheDocument()
-    expect(screen.getByText('Pancho & Archer')).toBeInTheDocument()
+    expect(await screen.findByText('Cou')).toBeInTheDocument()
+    expect(screen.getByText('Pancho')).toBeInTheDocument()
     expect(screen.queryByRole('region', { name: /Divisão/ })).toBeNull()
   })
 })
@@ -122,11 +123,23 @@ describe('Parelhas of a mini-torneio', () => {
     renderTab()
     expect(await screen.findByText('Mini-torneio terminado.')).toBeTruthy()
     expect(await screen.findByText('Pontos no início do mini-torneio.')).toBeTruthy()
-    const item = (await screen.findByText('Pancho & Archer')).closest('li') as HTMLElement
-    expect(within(item).getByText('300 pts · escolha mútua')).toBeTruthy()
-    expect(within(item).getByText(/Pancho \+67.* · Archer \+50/)).toBeTruthy()
-    expect(within(item).getByTitle('Pontos de ranking ganhos pela parelha neste mini-torneio')).toBeTruthy()
+    const item = (await screen.findByText('Pancho')).closest('li') as HTMLElement
+    expect(within(item).getByText('Início')).toBeTruthy()
+    expect(within(item).getByText('Ganhos')).toBeTruthy()
+    for (const value of ['180', '120', '300', '+67', '+50']) expect(within(item).getByText(value)).toBeTruthy()
+    expect(within(item).getByTitle('Pontos de ranking ganhos pela parelha neste mini-torneio').textContent).toBe('+117')
+    expect(within(item).queryByText(/escolha mútua/)).toBeNull()
     expect(within(item).queryByLabelText('Subir ou descer')).toBeNull()
+  })
+
+  it('names how a pair was formed only when it was not a mutual choice', async () => {
+    const withAdmin = state(true)
+    withAdmin.pairs[0] = { ...withAdmin.pairs[0], source: 'admin' }
+    mocked.state = withAdmin
+    mocked.competition = competition(true)
+    renderTab()
+    expect(await screen.findByText('· organização')).toBeTruthy()
+    expect(screen.queryByText(/escolha mútua/)).toBeNull()
   })
 
   it('says pair choice has not opened for a mini-torneio that has not started', async () => {
