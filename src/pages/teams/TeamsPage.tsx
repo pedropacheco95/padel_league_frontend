@@ -17,6 +17,7 @@ const deadlineFormat = new Intl.DateTimeFormat('pt-PT', {
 
 const SOURCE_LABEL: Record<string, string> = {
   mutual: 'escolha mútua',
+  previous: 'parelha anterior',
   auto: 'por ranking',
   admin: 'organização',
 }
@@ -114,7 +115,7 @@ export default function TeamsPage() {
         {mt.pairingOpen ? (
           <p className="text-[15px] mt-1 text-gray-700">
             Escolhe o teu parceiro até <strong>{deadlineFormat.format(new Date(mt.pairingDeadline))}</strong>. A
-            parelha só conta se a escolha for mútua; quem ficar sem parelha é emparelhado pelo ranking.
+            parelha só conta se a escolha for mútua; quem não declarar mantém a parelha anterior, se possível, e os restantes são emparelhados pelo ranking.
           </p>
         ) : (
           <p className="text-[15px] mt-1 text-gray-700">

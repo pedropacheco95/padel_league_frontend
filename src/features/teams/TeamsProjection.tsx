@@ -51,7 +51,8 @@ function PairRow({ pair }: { pair: ProjectedPair }) {
         </div>
         <span className={`text-[20px] font-bold tabular-nums ${pair.provisional && !pair.mine ? 'text-gray-600' : 'text-[#006A71]'}`}>{pts(pair.sum)}</span>
       </div>
-      {pair.provisional && pair.formedBy !== 'declared' && (
+      {pair.formedBy === 'previous' && <p className="mt-[4px] text-[12px] text-gray-600">Parelha anterior</p>}
+      {pair.provisional && pair.formedBy === 'ranking' && (
         <p className="mt-[4px] text-[12px] text-gray-600">Por ranking{slots ? ` · ${slots} sem parelha` : ''}</p>
       )}
       {pair.pending?.map(d => (
@@ -87,7 +88,7 @@ function Legend({ mine }: { mine?: boolean }) {
     <ul className="flex flex-wrap gap-x-[14px] gap-y-[4px] text-[12px] text-gray-700">
       {mine && <li><span className={`${box} border-2 border-orange-600 bg-orange-50`} /> A tua parelha</li>}
       <li><span className={`${box} border border-[#006A71] bg-[#E6F2F3]`} /> Confirmada</li>
-      <li><span className={`${box} border border-dashed border-gray-400 bg-gray-50`} /> Por ranking (provisória)</li>
+      <li><span className={`${box} border border-dashed border-gray-400 bg-gray-50`} /> Provisória</li>
     </ul>
   )
 }
@@ -104,8 +105,9 @@ export function DivisionsProjection({ competitionId, onSimulate }: { competition
       <div>
         <h3 className="!text-[19px] font-semibold">Projeção das divisões · Mini-torneio {stage.number}</h3>
         <p className="mt-[6px] text-[14px] text-gray-700">
-          As divisões atualizam-se à medida que as parelhas são confirmadas. As parelhas a tracejado ainda não existem: foram
-          calculadas juntando os jogadores sem parelha pela ordem do ranking, e mudam sempre que alguém confirma.
+          As divisões atualizam-se à medida que as parelhas são confirmadas. As parelhas a tracejado ainda não existem: juntam
+          quem declarou alguém, quem mantém a parelha do mini-torneio anterior e, por fim, os restantes pela ordem do ranking.
+          Mudam sempre que alguém declara ou confirma.
         </p>
       </div>
       {deadline && (
@@ -121,7 +123,7 @@ export function DivisionsProjection({ competitionId, onSimulate }: { competition
         </div>
         <div className={`${card} border-dashed border-gray-400`}>
           <p className="text-[22px] font-bold tabular-nums">{counts.unpaired}</p>
-          <p className="text-[12px] text-gray-700">jogadores sem parelha — emparelhados por ranking</p>
+          <p className="text-[12px] text-gray-700">jogadores sem parelha confirmada</p>
         </div>
         <div className={`${card} border-gray-200`}>
           <p className="text-[22px] font-bold tabular-nums">{counts.pendingDeclarations}</p>
@@ -144,7 +146,7 @@ export function DivisionsProjection({ competitionId, onSimulate }: { competition
         <ol className="grid gap-[8px] text-[14px] text-gray-800 md:grid-cols-3">
           {[
             'Cada jogador declara um parceiro até ao prazo. A parelha só conta se a escolha for mútua.',
-            'Quem fica sem parelha é ordenado pelo ranking e emparelhado em sequência (1.º com 2.º, 3.º com 4.º…), saltando quem já jogou 3 mini-torneios com esse parceiro.',
+            'Quem não declara parceiro mantém a parelha do mini-torneio anterior, se ambos estiverem livres e ainda puderem jogar juntos. Os restantes são ordenados pelo ranking e emparelhados em sequência (1.º com 2.º, 3.º com 4.º…), saltando quem já jogou 3 mini-torneios com esse parceiro.',
             'As parelhas são ordenadas pela soma dos pontos e cortadas em grupos de 4. Não há subidas nem descidas: tudo é refeito a cada mini-torneio.',
           ].map((t, i) => (
             <li key={i} className="flex gap-[10px] rounded-[8px] border border-gray-200 bg-white p-[10px]">
@@ -216,8 +218,9 @@ export function PartnerSimulator({ competitionId }: { competitionId: number }) {
       <div>
         <h3 className="!text-[19px] font-semibold">Onde ficarias com outro parceiro?</h3>
         <p className="mt-[6px] text-[14px] text-gray-700">
-          Escolhe um parceiro e vê a divisão em que a vossa parelha entraria, tendo em conta as parelhas já confirmadas e o
-          emparelhamento por ranking de quem ainda não tem parelha. É só uma simulação: a parelha só existe se ambos se declararem.
+          Escolhe um parceiro e vê a divisão em que a vossa parelha entraria, tendo em conta as parelhas já confirmadas, as
+          declarações feitas e, para os restantes, a parelha anterior ou o ranking. É só uma simulação: a parelha só existe se
+          ambos se declararem.
         </p>
       </div>
 
@@ -233,7 +236,7 @@ export function PartnerSimulator({ competitionId }: { competitionId: number }) {
           <label className={label}>
             Parceiro a simular
             <select className={field} value={partnerId ?? ''} disabled={playerId === null} onChange={e => setPartner(Number(e.target.value) || null)}>
-              <option value="">Sem declaração — emparelhar por ranking</option>
+              <option value="">Sem declaração — parelha anterior ou ranking</option>
               {roster.filter(p => p.id !== playerId).map(p => {
                 const w = confirmedWith.get(p.id)
                 return <option key={p.id} value={p.id}>{p.name} · {pts(p.rankingPoints)} pts{w && w.id !== playerId ? ` (confirmado com ${w.name})` : ''}</option>
@@ -245,7 +248,7 @@ export function PartnerSimulator({ competitionId }: { competitionId: number }) {
           {s && r && (
             <div ref={resultRef} className={`scroll-mt-[12px] rounded-[8px] border-2 border-orange-600 bg-orange-50 p-[14px] ${sim.isFetching ? 'opacity-60' : ''}`} aria-live="polite">
               <p className="text-[11px] font-bold uppercase tracking-wide text-orange-800">
-                {s.partner ? `Com ${s.partner.name}` : 'Sem declaração · emparelhado por ranking'}
+                {s.partner ? `Com ${s.partner.name}` : `Sem declaração · ${r.formedBy === 'previous' ? 'parelha anterior' : 'emparelhado por ranking'}`}
               </p>
               <p className="text-[34px] font-bold leading-[40px] text-orange-900">Divisão {r.tier}</p>
               <p className="text-[15px] font-semibold text-orange-900">{r.seed}.ª parelha de 4</p>
