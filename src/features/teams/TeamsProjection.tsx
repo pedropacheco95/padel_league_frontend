@@ -51,7 +51,7 @@ function PairRow({ pair }: { pair: ProjectedPair }) {
         </div>
         <span className={`text-[20px] font-bold tabular-nums ${pair.provisional && !pair.mine ? 'text-gray-600' : 'text-[#006A71]'}`}>{pts(pair.sum)}</span>
       </div>
-      {pair.provisional && (
+      {pair.provisional && pair.formedBy !== 'declared' && (
         <p className="mt-[4px] text-[12px] text-gray-600">Por ranking{slots ? ` · ${slots} sem parelha` : ''}</p>
       )}
       {pair.pending?.map(d => (
