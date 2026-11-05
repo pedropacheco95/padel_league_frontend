@@ -598,7 +598,6 @@ export interface paths {
          *     each `completed`, `timeout_draw` or `not_started`; 3 sets complete the match (status `played`),
          *     1–2 completed sets save it set by set (status stays `scheduled`, `inProgress` true, nothing counts it yet);
          *     a walkover sends no sets and `walkoverWinner` (Teams: 3-0).
-         *
          */
         put: {
             parameters: {
@@ -636,7 +635,6 @@ export interface paths {
          * Clear a result saved by mistake (any signed-in player)
          * @description The match goes back to scheduled with no sets and standings follow. Absences stay
          *     (undo them on their own). Refused (409 group_closed) on a finished group.
-         *
          */
         delete: {
             parameters: {
@@ -766,7 +764,6 @@ export interface paths {
          *     member is put back (the absence goes once they play the whole round again).
          *     Otherwise the substitute is replaced. A group member can't be a substitute.
          *     Standings (and, for a closed group, awards and ranking) follow.
-         *
          */
         put: {
             parameters: {
@@ -2353,6 +2350,7 @@ export interface components {
         Role: "player" | "admin" | "super_admin";
         Season: {
             id: number;
+            /** @example 2026/27 */
             name: string;
             /** Format: date */
             startsOn?: string | null;
@@ -2368,16 +2366,34 @@ export interface components {
         /** @description Everything a Tournaments-page card needs. */
         CompetitionCard: {
             id: number;
+            /**
+             * @example 22ª Edição
+             * @example 16ª Edição Powered by QSC
+             */
             name: string;
             /** @description Tournament name when it is not a Classic's season, e.g. Shuffle 2026 */
             title?: string | null;
             /** @description The running edition number across every format (null for the 2022 Play Off); lists sort on it */
             editionNumber: number | null;
-            /** @description The display name: <Nª Edição> - <tournament>, no sponsor */
+            /**
+             * @description The display name: <Nª Edição> - <tournament>, no sponsor
+             * @example 22ª Edição - Outono 2026
+             * @example 20ª Edição - Shuffle 2026
+             * @example 23ª Edição - Teams 2026/27
+             */
             label: string;
             format: components["schemas"]["Format"];
+            /**
+             * @example Classic
+             * @example Teams
+             * @example Shuffle
+             * @example Super Cup
+             */
             formatLabel?: string;
-            /** @description Recurring event key */
+            /**
+             * @description Recurring event key
+             * @example classica-1
+             */
             eventSlot?: string | null;
             season: components["schemas"]["Season"];
             status: components["schemas"]["CompetitionStatus"];
@@ -2421,6 +2437,7 @@ export interface components {
         Stage: {
             id: number;
             number: number;
+            /** @example Mini-torneio 1 */
             name?: string | null;
             /** @enum {string} */
             status: "planned" | "running" | "ended";
@@ -2631,7 +2648,11 @@ export interface components {
             /** @description One row per competition entry, newest edition first */
             history?: {
                 competition: components["schemas"]["CompetitionCard"];
-                /** @description Classic: the edition and division; other formats: the competition label */
+                /**
+                 * @description Classic: the edition and division; other formats: the competition label
+                 * @example 21ª Edição - Primavera 2026 - 5ª Divisão
+                 * @example 20ª Edição - Shuffle 2026
+                 */
                 label: string;
                 /** @description The Classic division (null for Shuffle/Teams rows */
                 groupId?: number | null;
@@ -2662,6 +2683,7 @@ export interface components {
         /** @description One fingerprint ring = one edition; matches are [margin, matchId] in game order (corrupt scores and walkovers left out) */
         StoryRing: {
             competitionId: number;
+            /** @example 5ª */
             edition: string;
             format: string;
             tier?: number | null;
@@ -2941,6 +2963,7 @@ export interface components {
             competitions?: {
                 id: number;
                 name: string;
+                /** @example 22ª Edição - Outono 2026 */
                 label: string;
             }[];
             entries: {
@@ -2962,6 +2985,11 @@ export interface components {
                 placePoints?: number;
                 bonusPoints?: number;
                 counted?: boolean;
+                /**
+                 * @example one of the last 3 completed
+                 * @example current competition
+                 * @example dropped: older
+                 */
                 reason?: string;
             }[];
         };
@@ -2988,10 +3016,10 @@ export interface components {
             pairs: {
                 id: number;
                 /**
-                 * @description formed_by mutual→mutual; ranking/draw/rotation→auto; manual→admin
+                 * @description formed_by mutual→mutual; previous→previous; ranking/draw/rotation→auto; manual→admin
                  * @enum {string}
                  */
-                source: "mutual" | "auto" | "admin";
+                source: "mutual" | "previous" | "auto" | "admin";
                 players: components["schemas"]["PlayerRef"][];
                 /** @description The two players' points as the mini-tournament started */
                 rankingPoints: number;
@@ -3056,10 +3084,10 @@ export interface components {
             players: components["schemas"]["RankedPlayerRef"][];
             sum: number;
             /**
-             * @description declared: one player chose the other and is waiting for an answer; provisional
+             * @description declared: one player chose the other and is waiting for an answer; previous: kept from the previous mini-tournament by default; both provisional
              * @enum {string}
              */
-            formedBy: "mutual" | "manual" | "ranking" | "extra" | "declared";
+            formedBy: "mutual" | "manual" | "ranking" | "extra" | "declared" | "previous";
             provisional: boolean;
             unpairedSlots: number[] | null;
             pending: components["schemas"]["TeamsDeclaration"][];
@@ -3109,6 +3137,8 @@ export interface components {
                 maxPlacePoints: number;
                 maxBonusPoints: number;
                 partner: components["schemas"]["RankedPlayerRef"];
+                /** @enum {string} */
+                formedBy: "mutual" | "manual" | "ranking" | "extra" | "declared" | "previous";
                 sum: number;
                 sumBreakdown: {
                     player: components["schemas"]["PlayerRef"];

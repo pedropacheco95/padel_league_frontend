@@ -188,7 +188,7 @@ export interface TeamsPlayer {
 
 export interface TeamsPair {
   id: number
-  source: 'mutual' | 'auto' | 'admin'
+  source: 'mutual' | 'previous' | 'auto' | 'admin'
   players: PlayerShort[]
   rankingPoints: number
 }

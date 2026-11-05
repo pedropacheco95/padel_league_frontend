@@ -33,6 +33,7 @@ function formatDeadline(iso?: string) {
 
 // Pedro, 5 Nov: a mutual choice is the normal case, so only the exceptions are named.
 const SOURCE_LABEL: Record<string, string> = {
+  previous: 'parelha anterior',
   auto: 'por ranking',
   admin: 'organização',
 }
@@ -232,7 +233,7 @@ export default function PairChoice({ competitionId, stageId: pickedStageId }: { 
         {mt.pairingOpen ? (
           <p className="text-[15px] mt-1 text-gray-700">
             Escolhe o teu parceiro{deadline ? <> até <strong>{deadline}</strong></> : null}. A parelha só conta se a
-            escolha for mútua; quem ficar sem parelha é emparelhado pelo ranking.
+            escolha for mútua; quem não declarar mantém a parelha anterior, se possível, e os restantes são emparelhados pelo ranking.
           </p>
         ) : (
           <p className="text-[15px] mt-1 text-gray-700">

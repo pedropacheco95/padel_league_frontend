@@ -142,6 +142,15 @@ describe('Parelhas of a mini-torneio', () => {
     expect(screen.queryByText(/escolha mútua/)).toBeNull()
   })
 
+  it('names a pair kept from the previous mini-torneio', async () => {
+    const kept = state(true)
+    kept.pairs[0] = { ...kept.pairs[0], source: 'previous' }
+    mocked.state = kept
+    mocked.competition = competition(true)
+    renderTab()
+    expect(await screen.findByText('· parelha anterior')).toBeTruthy()
+  })
+
   it('says pair choice has not opened for a mini-torneio that has not started', async () => {
     const planned = state(false)
     planned.pairs = []
