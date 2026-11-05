@@ -177,8 +177,11 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
   // Filters (direction C, Pedro 30 Oct): the mini-torneio is a page-level switcher in the header and
   // applies to every tab; the division is a sticky sub-header the list can be swiped under; the jornada
   // is a floating pill (GroupMatches). All three live here so the jornada survives a division change.
+  // The latest mini-torneio that opened pair choice, as the API's mini_tournament: the next one is
+  // current from the moment its choice opens, while currentStageId stays on the one that just ended.
+  const current = [...stages].reverse().find(s => s.pairingDeadline) ?? stages.find(s => s.id === competition.currentStageId)
   const [stageId, setStageId] = useState<number | null>(null)
-  const stage = stages.find(s => s.id === (stageId ?? competition.currentStageId)) ?? stages[0]
+  const stage = stages.find(s => s.id === (stageId ?? current?.id)) ?? stages[0]
   const groups = [...(stage?.groups ?? [])].sort((a, b) => (a.tier ?? 99) - (b.tier ?? 99))
   const [groupId, setGroupId] = useState<number | null>(() => Number(params.get('group')) || null)
   const [round, setRound] = useState<number | null>(null)
@@ -207,7 +210,6 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
   const headerSlot = useHeaderSlot()
   const heroHidden = useScrolledPast(heroRow)
   // Pair formation for the current mini-tournament: Classificação shows the live projection, Simulador appears.
-  const current = stages.find(s => s.id === competition.currentStageId)
   const forming = !!current && current.groups.length === 0
   const simulating = forming && !current.pairingClosed
 
@@ -221,7 +223,7 @@ export default function TeamsCompetitionPanel({ competition: initial }: { compet
     key: s.id,
     label: `Mini-torneio ${s.number}`,
     hint: stageHint(s),
-    current: s.id === competition.currentStageId,
+    current: s.id === current?.id,
   }))
   const groupOptions = groups.map(g => ({ key: g.id, label: g.name, mine: g.id === my.mineId }))
 

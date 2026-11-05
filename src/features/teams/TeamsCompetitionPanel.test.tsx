@@ -81,6 +81,17 @@ describe('TeamsCompetitionPanel filters', () => {
     expect(resultsApi.groupMatches).not.toHaveBeenCalledWith(21, expect.anything())
   })
 
+  it('moves to the next mini-torneio as soon as its pair choice opens, with the Simulador', () => {
+    const c = competition(2, 3)
+    const [ended, next] = c.stages!
+    Object.assign(ended, { status: 'ended', pairingDeadline: '2026-10-19T22:59:59Z' })
+    Object.assign(next, { status: 'planned', pairingDeadline: '2026-11-08T23:59:59Z', pairingClosed: false, groups: [], rounds: [] })
+    c.currentStageId = ended.id
+    renderPanel(c, '/competitions/27?section=standings')
+    expect(screen.getByRole('tab', { name: 'Simulador' })).toBeInTheDocument()
+    expect(screen.getByText('Mini-torneio 2')).toBeInTheDocument()
+  })
+
   it('keeps the jornada when the division changes with the arrow', async () => {
     renderPanel(competition(2, 3))
     await waitFor(() => expect(resultsApi.groupMatches).toHaveBeenCalledWith(22, 2))
