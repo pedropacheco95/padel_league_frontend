@@ -1,5 +1,6 @@
 import axios from "axios";
 import type { AxiosRequestConfig, InternalAxiosRequestConfig } from "axios";
+import { isServerFailure, reportServerFailure } from "@/features/outage/outage";
 
 export const api = axios.create({
   baseURL: "/api/v1",
@@ -114,6 +115,8 @@ api.interceptors.response.use(
       trackedConfig.__trackedByGlobalLoader = false;
       finishRequest();
     }
+
+    if (isServerFailure(error)) reportServerFailure();
 
     const config = error?.config as RetryConfig | undefined;
     const sentToken = !!config?.headers?.Authorization;
